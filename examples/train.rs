@@ -28,7 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize logging
     tracing_subscriber::fmt().with_env_filter("info").init();
 
-    println!("=== Bastique Training Pipeline ===\n");
+    println!("=== JailGuard Training Pipeline ===\n");
 
     // Step 1: Download/load dataset
     println!("Step 1: Loading dataset...");

@@ -1,4 +1,4 @@
-//! Bastique: RL-Based Prompt Injection Defense
+//! JailGuard: RL-Based Prompt Injection Defense
 //!
 //! A reinforcement learning approach to detecting prompt injection attacks,
 //! using the Burn deep learning framework.
