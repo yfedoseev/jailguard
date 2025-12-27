@@ -1,0 +1,43 @@
+#!/bin/bash
+# Pre-commit hook to run checks matching GitHub CI
+#
+# To install this hook, run: ./scripts/setup-hooks.sh
+# Or manually: cp hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+set -e
+
+echo "Running pre-commit checks..."
+
+# 1. Format check
+echo "🔍 Checking code formatting..."
+if ! cargo fmt --check; then
+    echo "❌ Format check failed. Run 'cargo fmt' to fix."
+    exit 1
+fi
+echo "✅ Format check passed"
+
+# 2. Clippy lints
+echo "🔍 Running clippy..."
+if ! cargo clippy --all-targets --all-features; then
+    echo "❌ Clippy found errors. Fix them before committing."
+    exit 1
+fi
+echo "✅ Clippy passed"
+
+# 3. Build check
+echo "🔍 Checking build..."
+if ! cargo check --all-features; then
+    echo "❌ Build check failed."
+    exit 1
+fi
+echo "✅ Build check passed"
+
+# 4. Run library tests
+echo "🔍 Running library tests..."
+if ! cargo test --lib; then
+    echo "❌ Library tests failed."
+    exit 1
+fi
+echo "✅ Library tests passed"
+
+echo "✅ All pre-commit checks passed!"
