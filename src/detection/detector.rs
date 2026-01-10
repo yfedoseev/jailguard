@@ -102,7 +102,7 @@ impl Detector {
         let embeddings = self.embedding.forward(tokens_tensor); // [1, seq_len, embed_dim]
 
         // Mean pooling over sequence - squeeze to get [1, embed_dim]
-        let pooled = embeddings.mean_dim(1).squeeze::<2>(1);
+        let pooled = embeddings.mean_dim(1).squeeze::<2>();
 
         // Get action probabilities
         let action_probs = self.policy.forward(pooled);

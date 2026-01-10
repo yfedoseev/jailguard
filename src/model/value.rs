@@ -84,6 +84,6 @@ impl<B: Backend> ValueNetwork<B> {
     /// # Returns
     /// Value tensor of shape [batch_size]
     pub fn forward_scalar(&self, x: Tensor<B, 2>) -> Tensor<B, 1> {
-        self.forward(x).squeeze(1)
+        self.forward(x).squeeze()
     }
 }

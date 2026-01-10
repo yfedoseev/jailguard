@@ -10,11 +10,11 @@ categories = ["security", "machine-learning"]
 
 [dependencies]
 # Burn deep learning framework
-burn = { version = "0.16", default-features = false }
-burn-ndarray = { version = "0.16", default-features = false }
-burn-wgpu = { version = "0.16", optional = true }
-# burn-train with metrics but not TUI to avoid unicode-width version conflicts
-burn-train = { version = "0.16", default-features = false, features = ["metrics"], optional = true }
+burn = { version = "0.19", default-features = false }
+burn-ndarray = { version = "0.19", default-features = false }
+burn-wgpu = { version = "0.19", optional = true }
+# burn-train with sys-metrics but not TUI to avoid unicode-width version conflicts
+burn-train = { version = "0.19", default-features = false, features = ["sys-metrics"], optional = true }
 
 # Core dependencies
 thiserror = "2"
@@ -60,3 +60,33 @@ download = ["dep:reqwest", "dep:tokio", "dep:csv"]
 [[example]]
 name = "train"
 required-features = ["download"]
+
+[lints.rust]
+unsafe_code = "warn"
+missing_docs = "warn"
+
+[lints.clippy]
+# Deny dangerous patterns in production
+dbg_macro = "deny"
+todo = "deny"
+unimplemented = "deny"
+print_stdout = "warn"
+print_stderr = "warn"
+
+# Pedantic lints (cherry-picked for value)
+cloned_instead_of_copied = "warn"
+doc_markdown = "warn"
+explicit_iter_loop = "warn"
+flat_map_option = "warn"
+fn_params_excessive_bools = "warn"
+inefficient_to_string = "warn"
+manual_let_else = "warn"
+map_unwrap_or = "warn"
+needless_pass_by_value = "warn"
+redundant_closure_for_method_calls = "warn"
+semicolon_if_nothing_returned = "warn"
+unnecessary_wraps = "warn"
+unused_async = "warn"
+
+# Cargo group
+cargo_common_metadata = "warn"
