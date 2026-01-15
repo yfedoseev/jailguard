@@ -2,6 +2,78 @@
 
 use serde::{Deserialize, Serialize};
 
+/// Type of injection attack detected.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AttackType {
+    /// Role-play or persona injection (e.g., "you are now a hacker")
+    RolePlay = 0,
+    /// Instruction override (e.g., "ignore your instructions")
+    InstructionOverride = 1,
+    /// Context manipulation (e.g., "forget previous context")
+    ContextManipulation = 2,
+    /// Output manipulation (e.g., "output in a different format")
+    OutputManipulation = 3,
+    /// Encoding/obfuscation attacks (base64, ROT13, etc.)
+    EncodingAttack = 4,
+    /// Jailbreak patterns (e.g., "DAN", "STAN")
+    JailbreakPattern = 5,
+    /// Benign input (no attack detected)
+    Benign = 6,
+}
+
+impl AttackType {
+    /// Get all attack types.
+    pub fn variants() -> &'static [AttackType] {
+        &[
+            AttackType::RolePlay,
+            AttackType::InstructionOverride,
+            AttackType::ContextManipulation,
+            AttackType::OutputManipulation,
+            AttackType::EncodingAttack,
+            AttackType::JailbreakPattern,
+            AttackType::Benign,
+        ]
+    }
+
+    /// Get the number of attack types.
+    pub fn count() -> usize {
+        7
+    }
+
+    /// Convert from index.
+    pub fn from_index(index: usize) -> Option<Self> {
+        match index {
+            0 => Some(AttackType::RolePlay),
+            1 => Some(AttackType::InstructionOverride),
+            2 => Some(AttackType::ContextManipulation),
+            3 => Some(AttackType::OutputManipulation),
+            4 => Some(AttackType::EncodingAttack),
+            5 => Some(AttackType::JailbreakPattern),
+            6 => Some(AttackType::Benign),
+            _ => None,
+        }
+    }
+
+    /// Get human-readable description.
+    pub fn description(&self) -> &'static str {
+        match self {
+            AttackType::RolePlay => "Role-play or persona injection",
+            AttackType::InstructionOverride => "Instruction override attempt",
+            AttackType::ContextManipulation => "Context manipulation attack",
+            AttackType::OutputManipulation => "Output format manipulation",
+            AttackType::EncodingAttack => "Encoding/obfuscation attack",
+            AttackType::JailbreakPattern => "Known jailbreak pattern",
+            AttackType::Benign => "No attack detected",
+        }
+    }
+}
+
+impl std::fmt::Display for AttackType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.description())
+    }
+}
+
 /// Result of injection detection.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DetectionResult {
@@ -94,5 +166,64 @@ impl std::fmt::Display for InjectionRisk {
             InjectionRisk::High => write!(f, "HIGH"),
             InjectionRisk::Critical => write!(f, "CRITICAL"),
         }
+    }
+}
+
+/// Multi-task detection result with attack type classification.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MultiTaskDetectionResult {
+    /// Base detection result (injection yes/no + confidence)
+    pub detection: DetectionResult,
+    /// Classified attack type
+    pub attack_type: AttackType,
+    /// Probabilities for each attack type (7 classes)
+    pub attack_probs: [f32; 7],
+    /// Semantic similarity score (0.0 to 1.0)
+    pub semantic_score: f32,
+    /// Embedding vector for downstream use
+    #[serde(skip)]
+    pub embedding: Vec<f32>,
+}
+
+impl MultiTaskDetectionResult {
+    /// Create a new multi-task detection result.
+    pub fn new(
+        is_injection: bool,
+        confidence: f32,
+        action_probs: [f32; 2],
+        attack_type: AttackType,
+        attack_probs: [f32; 7],
+        semantic_score: f32,
+        embedding: Vec<f32>,
+    ) -> Self {
+        let detection = DetectionResult::new(is_injection, confidence, action_probs);
+
+        Self {
+            detection,
+            attack_type,
+            attack_probs,
+            semantic_score,
+            embedding,
+        }
+    }
+
+    /// Check if this should be blocked based on a threshold.
+    pub fn should_block(&self, threshold: f32) -> bool {
+        self.detection.should_block(threshold)
+    }
+
+    /// Get the most likely attack type with its probability.
+    pub fn top_attack(&self) -> (AttackType, f32) {
+        let (idx, &prob) = self
+            .attack_probs
+            .iter()
+            .enumerate()
+            .max_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(std::cmp::Ordering::Equal))
+            .unwrap();
+
+        (
+            AttackType::from_index(idx).unwrap_or(AttackType::Benign),
+            prob,
+        )
     }
 }

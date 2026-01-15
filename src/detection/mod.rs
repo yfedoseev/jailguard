@@ -5,6 +5,8 @@
 
 mod detector;
 mod result;
+pub mod transformer_detector;
 
 pub use detector::{Detector, DetectorConfig};
-pub use result::{DetectionResult, InjectionRisk};
+pub use result::{AttackType, DetectionResult, InjectionRisk, MultiTaskDetectionResult};
+pub use transformer_detector::{TransformerDetector, TransformerDetectorConfig};

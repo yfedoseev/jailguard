@@ -6,12 +6,16 @@
 //! - Value network (for PPO advantage estimation)
 //! - Transformer encoder (multi-head attention based detection)
 
+mod classifier;
 mod embedding;
 mod policy;
+mod semantic_head;
 pub mod transformer;
 mod value;
 
+pub use classifier::{AttackClassifier, AttackClassifierConfig};
 pub use embedding::{TextEmbedding, TextEmbeddingConfig};
 pub use policy::{PolicyNetwork, PolicyNetworkConfig};
+pub use semantic_head::{SemanticSimilarityHead, SemanticSimilarityHeadConfig};
 pub use transformer::{TransformerConfig, TransformerEncoder, TransformerEncoderConfig};
 pub use value::{ValueNetwork, ValueNetworkConfig};
