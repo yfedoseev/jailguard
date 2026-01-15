@@ -1,0 +1,22 @@
+# Rust formatting configuration
+# https://rust-lang.github.io/rustfmt/
+
+# Edition for parsing (should match Cargo.toml)
+edition = "2021"
+
+# Maximum line width
+max_width = 100
+
+# Use spaces, not tabs
+hard_tabs = false
+tab_spaces = 4
+
+# Import organization
+reorder_imports = true
+reorder_modules = true
+
+# Unix line endings
+newline_style = "Unix"
+
+# Use default heuristics for formatting decisions
+use_small_heuristics = "Default"

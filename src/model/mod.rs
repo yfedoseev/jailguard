@@ -4,11 +4,14 @@
 //! - Text embedding layer
 //! - Policy network (action selection)
 //! - Value network (for PPO advantage estimation)
+//! - Transformer encoder (multi-head attention based detection)
 
 mod embedding;
 mod policy;
+pub mod transformer;
 mod value;
 
 pub use embedding::{TextEmbedding, TextEmbeddingConfig};
 pub use policy::{PolicyNetwork, PolicyNetworkConfig};
+pub use transformer::{TransformerConfig, TransformerEncoder, TransformerEncoderConfig};
 pub use value::{ValueNetwork, ValueNetworkConfig};

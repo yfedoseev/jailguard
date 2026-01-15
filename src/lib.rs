@@ -30,6 +30,7 @@ pub mod error;
 pub mod feedback;
 pub mod model;
 pub mod pretrained;
+pub mod spotlighting;
 pub mod tokenizer;
 pub mod training;
 
@@ -37,6 +38,7 @@ pub mod training;
 pub use detection::{DetectionResult, Detector, DetectorConfig, InjectionRisk};
 pub use error::{Error, Result};
 pub use feedback::{FeedbackCollector, FeedbackType};
+pub use spotlighting::{Spotlighting, SpotlightingConfig};
 
 // Agent re-exports
 pub use agent::{AgentConfig, DQNAgent, DQNConfig, Experience, PPOAgent, PPOConfig};
