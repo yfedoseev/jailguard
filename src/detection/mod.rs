@@ -3,10 +3,12 @@
 //! This module provides the main detection interface that combines
 //! tokenization, embedding, and the policy network to detect injections.
 
+pub mod calibrated_detector;
 mod detector;
 mod result;
 pub mod transformer_detector;
 
+pub use calibrated_detector::{CalibratedDetectionResult, CalibratedDetector};
 pub use detector::{Detector, DetectorConfig};
 pub use result::{AttackType, DetectionResult, InjectionRisk, MultiTaskDetectionResult};
 pub use transformer_detector::{TransformerDetector, TransformerDetectorConfig};

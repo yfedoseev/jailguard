@@ -65,7 +65,9 @@ impl SimpleTokenizer {
             text.to_string()
         };
 
-        text.unicode_words().map(|w| w.to_string()).collect()
+        text.unicode_words()
+            .map(std::string::ToString::to_string)
+            .collect()
     }
 
     /// Get token ID for a word.

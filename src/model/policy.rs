@@ -8,7 +8,7 @@ use burn::tensor::{backend::Backend, Tensor};
 ///
 /// Architecture:
 /// - Mean pooling over sequence
-/// - Two hidden layers with ReLU activation
+/// - Two hidden layers with `ReLU` activation
 /// - Softmax output for action probabilities
 #[derive(Module, Debug)]
 pub struct PolicyNetwork<B: Backend> {
@@ -18,7 +18,7 @@ pub struct PolicyNetwork<B: Backend> {
     hidden2: Linear<B>,
     /// Action output layer
     action_head: Linear<B>,
-    /// ReLU activation
+    /// `ReLU` activation
     relu: Relu,
 }
 
@@ -63,10 +63,10 @@ impl<B: Backend> PolicyNetwork<B> {
     /// Forward pass: compute action probabilities.
     ///
     /// # Arguments
-    /// * `x` - Pooled embedding tensor of shape [batch_size, embed_dim]
+    /// * `x` - Pooled embedding tensor of shape [`batch_size`, `embed_dim`]
     ///
     /// # Returns
-    /// Action probabilities tensor of shape [batch_size, action_dim]
+    /// Action probabilities tensor of shape [`batch_size`, `action_dim`]
     pub fn forward(&self, x: Tensor<B, 2>) -> Tensor<B, 2> {
         // First hidden layer with ReLU
         let x = self.hidden1.forward(x);
@@ -84,10 +84,10 @@ impl<B: Backend> PolicyNetwork<B> {
     /// Get action log probabilities (for PPO loss calculation).
     ///
     /// # Arguments
-    /// * `x` - Pooled embedding tensor of shape [batch_size, embed_dim]
+    /// * `x` - Pooled embedding tensor of shape [`batch_size`, `embed_dim`]
     ///
     /// # Returns
-    /// Log probabilities tensor of shape [batch_size, action_dim]
+    /// Log probabilities tensor of shape [`batch_size`, `action_dim`]
     pub fn log_probs(&self, x: Tensor<B, 2>) -> Tensor<B, 2> {
         // First hidden layer with ReLU
         let x = self.hidden1.forward(x);

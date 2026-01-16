@@ -1,4 +1,5 @@
 //! Feedback collection and storage.
+#![allow(clippy::unnecessary_wraps)]
 
 use parking_lot::RwLock;
 use std::collections::HashMap;

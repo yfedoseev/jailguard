@@ -1,4 +1,5 @@
 //! Deep Q-Network (DQN) agent.
+#![allow(clippy::unnecessary_wraps)]
 
 use burn::tensor::{backend::Backend, Tensor, TensorData};
 use burn_ndarray::NdArray;
@@ -70,7 +71,7 @@ impl DQNAgent {
 
     /// Select an action given the current state.
     ///
-    /// Returns (action, log_probability).
+    /// Returns (action, `log_probability`).
     pub fn select_action(&self, state: &[f32]) -> (usize, f32) {
         let mut rng = rand::thread_rng();
 

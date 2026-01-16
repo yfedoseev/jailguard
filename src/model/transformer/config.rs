@@ -11,7 +11,7 @@ pub struct TransformerConfig {
     pub num_heads: usize,
     /// Number of encoder layers
     pub num_layers: usize,
-    /// Feedforward dimension (usually 4x embed_dim)
+    /// Feedforward dimension (usually 4x `embed_dim`)
     pub ff_dim: usize,
     /// Maximum sequence length
     pub max_seq_len: usize,
@@ -73,7 +73,7 @@ impl TransformerConfig {
 
     /// Validate configuration parameters.
     pub fn validate(&self) -> Result<(), String> {
-        if self.embed_dim % self.num_heads != 0 {
+        if !self.embed_dim.is_multiple_of(self.num_heads) {
             return Err(format!(
                 "embed_dim ({}) must be divisible by num_heads ({})",
                 self.embed_dim, self.num_heads
@@ -91,7 +91,7 @@ impl TransformerConfig {
         Ok(())
     }
 
-    /// Get the head dimension (embed_dim / num_heads).
+    /// Get the head dimension (`embed_dim` / `num_heads`).
     pub fn head_dim(&self) -> usize {
         self.embed_dim / self.num_heads
     }

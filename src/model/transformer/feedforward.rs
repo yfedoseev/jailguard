@@ -10,9 +10,9 @@ use burn::tensor::Tensor;
 /// Implements the feedforward sub-layer: Linear -> GELU -> Dropout -> Linear
 #[derive(Module, Debug)]
 pub struct PositionWiseFeedForward<B: Backend> {
-    /// First linear layer (embed_dim -> ff_dim)
+    /// First linear layer (`embed_dim` -> `ff_dim`)
     linear1: Linear<B>,
-    /// Second linear layer (ff_dim -> embed_dim)
+    /// Second linear layer (`ff_dim` -> `embed_dim`)
     linear2: Linear<B>,
     /// GELU activation
     gelu: Gelu,
@@ -24,10 +24,10 @@ impl<B: Backend> PositionWiseFeedForward<B> {
     /// Forward pass for position-wise feedforward.
     ///
     /// # Arguments
-    /// * `x` - Input tensor of shape [batch_size, seq_len, embed_dim]
+    /// * `x` - Input tensor of shape [`batch_size`, `seq_len`, `embed_dim`]
     ///
     /// # Returns
-    /// Output tensor of shape [batch_size, seq_len, embed_dim]
+    /// Output tensor of shape [`batch_size`, `seq_len`, `embed_dim`]
     pub fn forward(&self, x: Tensor<B, 3>) -> Tensor<B, 3> {
         // First linear transformation: embed_dim -> ff_dim
         let x = self.linear1.forward(x);
@@ -48,7 +48,7 @@ impl<B: Backend> PositionWiseFeedForward<B> {
 pub struct PositionWiseFeedForwardConfig {
     /// Input/output dimension (embedding dimension)
     pub embed_dim: usize,
-    /// Intermediate dimension (typically 4x embed_dim)
+    /// Intermediate dimension (typically 4x `embed_dim`)
     pub ff_dim: usize,
     /// Dropout rate
     pub dropout: f64,

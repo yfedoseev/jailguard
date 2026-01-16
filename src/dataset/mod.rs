@@ -5,9 +5,11 @@
 //! - Synthetic data generation
 
 mod deepset;
+mod multitask_sample;
 mod synthetic;
 
 pub use deepset::DeepsetDataset;
+pub use multitask_sample::MultiTaskSample;
 pub use synthetic::SyntheticDataset;
 
 /// A labeled sample for training.

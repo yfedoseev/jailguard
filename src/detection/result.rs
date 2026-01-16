@@ -83,7 +83,7 @@ pub struct DetectionResult {
     pub confidence: f32,
     /// Risk level based on confidence
     pub risk_level: InjectionRisk,
-    /// Action probabilities: [block_prob, allow_prob]
+    /// Action probabilities: [`block_prob`, `allow_prob`]
     pub action_probabilities: [f32; 2],
     /// Unique ID for this detection (for feedback tracking)
     pub id: String,

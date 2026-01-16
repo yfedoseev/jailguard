@@ -73,6 +73,7 @@ impl TransformerDetector {
     }
 
     /// Create a new transformer detector with custom configuration.
+    #[allow(clippy::unnecessary_wraps)]
     pub fn with_config(config: TransformerDetectorConfig) -> Result<Self> {
         let device = Default::default();
 
@@ -142,7 +143,7 @@ impl TransformerDetector {
         let binary_logits = self.binary_head.forward(pooled.clone());
         let binary_probs = softmax_2d(binary_logits);
         let binary_data = binary_probs.to_data().to_vec::<f32>().unwrap_or_default();
-        let block_prob = binary_data.get(0).copied().unwrap_or(0.5);
+        let block_prob = binary_data.first().copied().unwrap_or(0.5);
         let allow_prob = binary_data.get(1).copied().unwrap_or(0.5);
 
         // Attack type classification: [1, 7]
@@ -152,7 +153,7 @@ impl TransformerDetector {
 
         // Find most likely attack type
         let attack_probs_array = [
-            attack_data.get(0).copied().unwrap_or(0.0),
+            attack_data.first().copied().unwrap_or(0.0),
             attack_data.get(1).copied().unwrap_or(0.0),
             attack_data.get(2).copied().unwrap_or(0.0),
             attack_data.get(3).copied().unwrap_or(0.0),
@@ -175,7 +176,7 @@ impl TransformerDetector {
             .to_data()
             .to_vec::<f32>()
             .unwrap_or_default();
-        let semantic_score = semantic_data.get(0).copied().unwrap_or(0.5);
+        let semantic_score = semantic_data.first().copied().unwrap_or(0.5);
         // Clamp to [0, 1] after sigmoid-like transformation
         let semantic_score = (semantic_score + 1.0) / 2.0; // Map from [-1, 1] to [0, 1]
         let semantic_score = semantic_score.clamp(0.0, 1.0);

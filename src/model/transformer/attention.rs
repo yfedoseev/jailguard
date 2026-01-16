@@ -28,13 +28,13 @@ impl<B: Backend> MultiHeadAttention<B> {
     /// Forward pass for multi-head attention.
     ///
     /// # Arguments
-    /// * `query` - Query tensor of shape [batch_size, seq_len, embed_dim]
-    /// * `key` - Key tensor of shape [batch_size, seq_len, embed_dim]
-    /// * `value` - Value tensor of shape [batch_size, seq_len, embed_dim]
-    /// * `mask` - Optional attention mask [batch_size, 1, seq_len, seq_len]
+    /// * `query` - Query tensor of shape [`batch_size`, `seq_len`, `embed_dim`]
+    /// * `key` - Key tensor of shape [`batch_size`, `seq_len`, `embed_dim`]
+    /// * `value` - Value tensor of shape [`batch_size`, `seq_len`, `embed_dim`]
+    /// * `mask` - Optional attention mask [`batch_size`, 1, `seq_len`, `seq_len`]
     ///
     /// # Returns
-    /// Output tensor of shape [batch_size, seq_len, embed_dim]
+    /// Output tensor of shape [`batch_size`, `seq_len`, `embed_dim`]
     pub fn forward(
         &self,
         query: Tensor<B, 3>,
@@ -99,11 +99,11 @@ impl<B: Backend> MultiHeadAttention<B> {
     /// Self-attention forward pass (query = key = value).
     ///
     /// # Arguments
-    /// * `x` - Input tensor of shape [batch_size, seq_len, embed_dim]
+    /// * `x` - Input tensor of shape [`batch_size`, `seq_len`, `embed_dim`]
     /// * `mask` - Optional attention mask
     ///
     /// # Returns
-    /// Output tensor of shape [batch_size, seq_len, embed_dim]
+    /// Output tensor of shape [`batch_size`, `seq_len`, `embed_dim`]
     pub fn forward_self(&self, x: Tensor<B, 3>, mask: Option<Tensor<B, 4>>) -> Tensor<B, 3> {
         self.forward(x.clone(), x.clone(), x, mask)
     }

@@ -1,4 +1,4 @@
-//! JailGuard: RL-Based Prompt Injection Defense
+//! `JailGuard`: RL-Based Prompt Injection Defense
 //!
 //! A reinforcement learning approach to detecting prompt injection attacks,
 //! using the Burn deep learning framework.
@@ -26,11 +26,17 @@
 pub mod agent;
 pub mod dataset;
 pub mod detection;
+pub mod embeddings;
 pub mod error;
 pub mod feedback;
+pub mod jailguard;
 pub mod model;
+pub mod monitoring;
+pub mod output_validation;
 pub mod pretrained;
+pub mod privilege;
 pub mod spotlighting;
+pub mod task_tracking;
 pub mod tokenizer;
 pub mod training;
 
@@ -40,8 +46,19 @@ pub use error::{Error, Result};
 pub use feedback::{FeedbackCollector, FeedbackType};
 pub use spotlighting::{Spotlighting, SpotlightingConfig};
 
+// Unified API re-exports
+pub use jailguard::{
+    InputValidationResult, JailGuard, JailGuardConfig, OutputCheckResult, RequestContext,
+    SessionStats,
+};
+
 // Agent re-exports
 pub use agent::{AgentConfig, DQNAgent, DQNConfig, Experience, PPOAgent, PPOConfig};
 
 // Training re-exports
 pub use training::{Trainer, TrainerConfig, TrainingMetrics};
+
+// Monitoring re-exports
+pub use monitoring::{
+    AnomalyConfig, AnomalyDetector, AnomalyResult, DetectionEvent, SessionTracker,
+};

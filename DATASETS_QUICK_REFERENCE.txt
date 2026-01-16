@@ -1,0 +1,216 @@
+================================================================================
+                    JAILGUARD PUBLIC DATASETS SUMMARY
+================================================================================
+
+CURRENT BASELINE: deepset/prompt-injections (662 samples)
+
+================================================================================
+                           RECOMMENDED TIER 1 DATASETS
+                    (Highest Priority - Immediate Integration)
+================================================================================
+
+Dataset Name              | Samples  | License | Format | Commercial | Access
+--------------------------+----------+---------+--------+------------+--------
+TrustAIRLab In-The-Wild   | 15,140   | MIT     | CSV    | ✅ Yes    | HF
+SPML Chatbot Injection    | 16,012   | MIT     | CSV    | ✅ Yes    | HF
+TOTAL TIER 1              | 31,152   | MIT     |        | ✅ Yes    |
+
+Key Benefits:
+  • 31,152 additional samples = 47x expansion of baseline
+  • Real-world sourced data (Reddit, Discord, websites)
+  • MIT licensed (commercial use allowed)
+  • Direct HuggingFace integration
+  • Well-documented in academic papers
+
+Integration Effort: 2-4 hours for both
+Download Time: 15-30 minutes each
+
+================================================================================
+                        TIER 2 DATASETS (Secondary)
+                   (Medium Priority - Add Within 1-2 Weeks)
+================================================================================
+
+Dataset Name              | Samples  | License  | Format | Commercial | Access
+--------------------------+----------+----------+--------+------------+--------
+JailbreakV-28K            | 28,000   | Unknown  | HF     | ⚠️ Check  | HF
+Mindgard Evaded           | ~50,000  | CC-NC-4  | Parq   | ❌ No     | HF
+xTRam1 Safe-Guard         | 10,296   | Unknown  | HF     | ⚠️ Check  | HF
+BeaverTails (subset)      | 700      | CC-NC-4  | HF     | ❌ No     | HF
+JailbreakBench            | 200      | Unknown  | HF/Py  | ⚠️ Check  | HF
+TOTAL TIER 2              | ~89,000  |          |        |            |
+
+Key Characteristics:
+  • JailbreakV-28K: 16 safety policies coverage
+  • Mindgard: Specializes in evasion techniques
+  • xTRam1: Category-organized attacks
+  • BeaverTails: 14 harm categories, human-annotated
+  • JailbreakBench: Structured with goals/targets
+
+Integration Effort: 4-8 hours for all
+Download Time: 30-60 minutes total
+
+================================================================================
+                          TIER 3 DATASETS (Tertiary)
+                  (Low Priority - Specialized/Complementary)
+================================================================================
+
+Dataset Name              | Samples  | License      | Format | Commercial | Access
+--------------------------+----------+--------------+--------+------------+--------
+AdvBench                  | 520      | Unknown      | CSV    | ⚠️ Check  | GitHub
+SafetyBench               | 11,435   | Unknown      | MCQ    | ⚠️ Check  | Paper
+Qualifire Benchmark       | 5,000    | CC-BY-NC-4.0 | CSV    | ❌ No     | HF
+Giskard Collection        | Unknown  | Unknown      | CSV    | ⚠️ Check  | GitHub
+CyberSecEval3 Visual      | 1,000    | Eval Only    | JSON   | ❌ Train  | HF
+TOTAL TIER 3              | ~18,000  |              |        |            |
+
+Notes:
+  • CyberSecEval3: Evaluation-only, do NOT use for training
+  • SafetyBench: MCQ format needs adaptation for injection detection
+  • Giskard: Size unknown but integration is straightforward
+
+Integration Effort: 2-4 hours for applicable datasets
+Download Time: 5-10 minutes total
+
+================================================================================
+                          TOTAL DATASET POTENTIAL
+================================================================================
+
+Conservative Estimate (Tier 1 + 2):
+  Baseline:               662
+  + TrustAIRLab:          15,140
+  + SPML:                 16,012
+  + JailbreakV-28K:       28,000
+  + Mindgard (est):       50,000
+  + xTRam1:               10,296
+  + Others:               5,000
+  ────────────────────────────────
+  SUBTOTAL (no dedup):    125,110
+
+After 15-20% Deduplication:
+  ESTIMATED UNIQUE:       100K - 106K samples
+
+Commercial Use Only (MIT Licensed):
+  Baseline:               662
+  + TrustAIRLab:          15,140
+  + SPML:                 16,012
+  ────────────────────────────────
+  COMMERCIAL TOTAL:       31,814 samples (48x baseline)
+
+================================================================================
+                        LICENSING BREAKDOWN
+================================================================================
+
+MIT License (Commercial OK):
+  • TrustAIRLab (15,140)
+  • SPML (16,012)
+  • JailbreakBench (200)
+  Total: 31,352 samples
+
+CC-BY-NC-4.0 (Non-Commercial Only):
+  • Mindgard (~50,000)
+  • BeaverTails (partial, 700 eval)
+  • Qualifire (5,000)
+  Total: ~55,700 samples
+
+Research/Evaluation Only:
+  • CyberSecEval3 (1,000) - NO training use
+
+Unknown/Unspecified:
+  • JailbreakV-28K (28,000)
+  • xTRam1 (10,296)
+  • AdvBench (520)
+  • SafetyBench (11,435)
+  • Giskard (unknown)
+  Total: ~50,251 samples - CHECK LICENSES
+
+================================================================================
+                        INTEGRATION ROADMAP
+================================================================================
+
+WEEK 1 - PRIORITY 1:
+  [ ] Download TrustAIRLab (15,140 samples)
+  [ ] Download SPML (16,012 samples)
+  [ ] Integrate into training pipeline
+  [ ] Test on both datasets
+  Estimated effort: 4-6 hours
+  Impact: +31,152 samples (47x baseline)
+
+WEEK 2 - PRIORITY 2:
+  [ ] Download xTRam1 (10,296 samples)
+  [ ] Add Mindgard support (50,000 samples)
+  [ ] Implement deduplication logic
+  [ ] Benchmark training results
+  Estimated effort: 6-8 hours
+  Impact: +60,296 additional samples
+
+WEEK 3 - PRIORITY 3:
+  [ ] Add BeaverTails subset
+  [ ] Integrate JailbreakBench (200 behaviors)
+  [ ] Add AdvBench (520 samples)
+  [ ] Set up evaluation on CyberSecEval3
+  Estimated effort: 4-6 hours
+  Impact: Specialized coverage + evaluation
+
+WEEK 4 - POLISH:
+  [ ] Analyze dataset overlaps
+  [ ] Create balanced training splits
+  [ ] Document dataset sources in model
+  [ ] Generate training statistics report
+
+================================================================================
+                        QUICK START COMMAND
+================================================================================
+
+# Make datasets directory
+mkdir -p data/external
+
+# Download Tier 1 datasets using script
+cd data/external
+bash ../../examples/download_datasets.sh .
+
+# Or manually with HuggingFace CLI:
+huggingface-cli download TrustAIRLab/in-the-wild-jailbreak-prompts \
+  --repo-type dataset --local-dir trustailab
+
+huggingface-cli download reshabhs/SPML_Chatbot_Prompt_Injection \
+  --repo-type dataset --local-dir spml
+
+================================================================================
+                          KEY REFERENCES
+================================================================================
+
+Documentation:
+  → Full details in: DATASETS.md (this project)
+  → Download script: examples/download_datasets.sh
+
+Academic Papers:
+  [CCS 2024] "Do Anything Now" (TrustAIRLab)
+    https://arxiv.org/abs/2308.03825
+
+  [2402.11755] SPML: DSL for Defending LLMs
+    https://arxiv.org/abs/2402.11755
+
+  [2307.04657] BeaverTails: Safety Alignment
+    https://arxiv.org/abs/2307.04657
+
+  [NeurIPS 2024] JailbreakBench: Robustness Benchmark
+    https://github.com/JailbreakBench/jailbreakbench
+
+Research Repositories:
+  [GitHub] Jailbreak LLMs (CCS 2024)
+    https://github.com/verazuo/jailbreak_llms
+
+  [GitHub] Open-Prompt-Injection Framework
+    https://github.com/liu00222/Open-Prompt-Injection
+
+  [GitHub] Giskard LLM Testing
+    https://github.com/Giskard-AI/prompt-injections
+
+================================================================================
+
+Questions? See DATASETS.md for detailed information on:
+  • Integration examples
+  • Data format specifications
+  • Licensing details
+  • Citation information
+  • Evaluation strategies

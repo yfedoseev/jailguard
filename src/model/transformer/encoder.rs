@@ -9,7 +9,7 @@ use burn::tensor::Tensor;
 
 /// A single transformer encoder block.
 ///
-/// Implements: LayerNorm -> MultiHeadAttention -> Residual -> LayerNorm -> FeedForward -> Residual
+/// Implements: `LayerNorm` -> `MultiHeadAttention` -> Residual -> `LayerNorm` -> `FeedForward` -> Residual
 #[derive(Module, Debug)]
 pub struct TransformerEncoderBlock<B: Backend> {
     /// Layer normalization before attention
@@ -28,11 +28,11 @@ impl<B: Backend> TransformerEncoderBlock<B> {
     /// Forward pass for a single encoder block (Pre-LN architecture).
     ///
     /// # Arguments
-    /// * `x` - Input tensor of shape [batch_size, seq_len, embed_dim]
+    /// * `x` - Input tensor of shape [`batch_size`, `seq_len`, `embed_dim`]
     /// * `mask` - Optional attention mask
     ///
     /// # Returns
-    /// Output tensor of shape [batch_size, seq_len, embed_dim]
+    /// Output tensor of shape [`batch_size`, `seq_len`, `embed_dim`]
     pub fn forward(&self, x: Tensor<B, 3>, mask: Option<Tensor<B, 4>>) -> Tensor<B, 3> {
         // Self-attention with pre-LN
         let norm_x = self.norm1.forward(x.clone());
@@ -105,11 +105,12 @@ impl<B: Backend> TransformerEncoder<B> {
     /// Forward pass through all encoder blocks.
     ///
     /// # Arguments
-    /// * `x` - Input tensor of shape [batch_size, seq_len, embed_dim]
+    /// * `x` - Input tensor of shape [`batch_size`, `seq_len`, `embed_dim`]
     /// * `mask` - Optional attention mask
     ///
     /// # Returns
-    /// Output tensor of shape [batch_size, seq_len, embed_dim]
+    /// Output tensor of shape [`batch_size`, `seq_len`, `embed_dim`]
+    #[allow(clippy::needless_pass_by_value)]
     pub fn forward(&self, mut x: Tensor<B, 3>, mask: Option<Tensor<B, 4>>) -> Tensor<B, 3> {
         for block in &self.blocks {
             x = block.forward(x, mask.clone());

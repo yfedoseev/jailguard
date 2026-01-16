@@ -79,7 +79,7 @@ pub fn is_available(model: PretrainedModel) -> bool {
 
 /// Download a pre-trained model.
 #[cfg(feature = "pretrained")]
-pub async fn download(_model: PretrainedModel) -> Result<()> {
+pub fn download(_model: PretrainedModel) -> Result<()> {
     // In a full implementation, this would download weights from a URL
     Err(Error::Model("Download not implemented yet".to_string()))
 }

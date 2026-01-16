@@ -1,6 +1,6 @@
 //! Loader for the deepset/prompt-injections dataset.
 //!
-//! Dataset: https://huggingface.co/datasets/deepset/prompt-injections
+//! Dataset: <https://huggingface.co/datasets/deepset/prompt-injections>
 //! Contains 662 prompts (263 injections, 399 legitimate)
 //!
 //! # Example
@@ -19,7 +19,7 @@
 use super::{Dataset, Sample};
 use crate::error::{Error, Result};
 
-/// HuggingFace dataset URL for deepset/prompt-injections
+/// `HuggingFace` dataset URL for deepset/prompt-injections
 #[cfg(feature = "download")]
 const HUGGINGFACE_URL: &str =
     "https://huggingface.co/datasets/deepset/prompt-injections/resolve/main/train.csv";
@@ -35,7 +35,7 @@ impl DeepsetDataset {
         Self { samples }
     }
 
-    /// Download the dataset from HuggingFace.
+    /// Download the dataset from `HuggingFace`.
     ///
     /// Downloads the train split of deepset/prompt-injections and saves it locally.
     ///
@@ -86,7 +86,7 @@ impl DeepsetDataset {
         Self::from_huggingface_csv(csv_path.to_str().unwrap())
     }
 
-    /// Parse HuggingFace CSV format (text,label format with possible quotes).
+    /// Parse `HuggingFace` CSV format (text,label format with possible quotes).
     #[cfg(feature = "download")]
     pub fn from_huggingface_csv(path: &str) -> Result<Self> {
         let mut reader = csv::ReaderBuilder::new()

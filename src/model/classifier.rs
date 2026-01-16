@@ -21,7 +21,7 @@ pub struct AttackClassifier<B: Backend> {
     hidden: Linear<B>,
     /// Output layer (7 classes)
     output: Linear<B>,
-    /// ReLU activation
+    /// `ReLU` activation
     relu: Relu,
     /// Dropout for regularization
     dropout: Dropout,
@@ -31,10 +31,10 @@ impl<B: Backend> AttackClassifier<B> {
     /// Forward pass for attack type classification.
     ///
     /// # Arguments
-    /// * `x` - Input tensor of shape [batch_size, embed_dim]
+    /// * `x` - Input tensor of shape [`batch_size`, `embed_dim`]
     ///
     /// # Returns
-    /// Logits tensor of shape [batch_size, 7]
+    /// Logits tensor of shape [`batch_size`, 7]
     pub fn forward(&self, x: Tensor<B, 2>) -> Tensor<B, 2> {
         let x = self.hidden.forward(x);
         let x = self.relu.forward(x);

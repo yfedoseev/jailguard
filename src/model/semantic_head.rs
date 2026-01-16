@@ -19,10 +19,10 @@ impl<B: Backend> SemanticSimilarityHead<B> {
     /// Compute semantic similarity score.
     ///
     /// # Arguments
-    /// * `x` - Input embedding of shape [batch_size, embed_dim]
+    /// * `x` - Input embedding of shape [`batch_size`, `embed_dim`]
     ///
     /// # Returns
-    /// Similarity scores of shape [batch_size, 1]
+    /// Similarity scores of shape [`batch_size`, 1]
     pub fn forward(&self, x: Tensor<B, 2>) -> Tensor<B, 2> {
         // Project to 1D score (will be passed through sigmoid later)
         self.projection.forward(x)
@@ -31,11 +31,11 @@ impl<B: Backend> SemanticSimilarityHead<B> {
     /// Compute cosine similarity between two embeddings.
     ///
     /// # Arguments
-    /// * `embedding1` - First embedding [batch_size, embed_dim]
-    /// * `embedding2` - Second embedding [batch_size, embed_dim]
+    /// * `embedding1` - First embedding [`batch_size`, `embed_dim`]
+    /// * `embedding2` - Second embedding [`batch_size`, `embed_dim`]
     ///
     /// # Returns
-    /// Cosine similarity scores [batch_size, 1]
+    /// Cosine similarity scores [`batch_size`, 1]
     pub fn cosine_similarity(
         &self,
         embedding1: Tensor<B, 2>,

@@ -56,6 +56,7 @@ impl Detector {
     }
 
     /// Create a new detector with custom configuration.
+    #[allow(clippy::unnecessary_wraps)]
     pub fn with_config(config: DetectorConfig) -> Result<Self> {
         let device = Default::default();
 

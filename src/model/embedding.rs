@@ -57,10 +57,10 @@ impl<B: Backend> TextEmbedding<B> {
     /// Forward pass: convert token IDs to embeddings.
     ///
     /// # Arguments
-    /// * `tokens` - Token IDs tensor of shape [batch_size, seq_len]
+    /// * `tokens` - Token IDs tensor of shape [`batch_size`, `seq_len`]
     ///
     /// # Returns
-    /// Embedded tensor of shape [batch_size, seq_len, embed_dim]
+    /// Embedded tensor of shape [`batch_size`, `seq_len`, `embed_dim`]
     pub fn forward(&self, tokens: Tensor<B, 2, Int>) -> Tensor<B, 3> {
         let [batch_size, seq_len] = tokens.dims();
         let device = tokens.device();

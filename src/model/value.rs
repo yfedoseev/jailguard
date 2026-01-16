@@ -7,7 +7,7 @@ use burn::tensor::{backend::Backend, Tensor};
 /// Value network that estimates state values for PPO.
 ///
 /// Architecture:
-/// - Two hidden layers with ReLU activation
+/// - Two hidden layers with `ReLU` activation
 /// - Single scalar value output
 #[derive(Module, Debug)]
 pub struct ValueNetwork<B: Backend> {
@@ -17,7 +17,7 @@ pub struct ValueNetwork<B: Backend> {
     hidden2: Linear<B>,
     /// Value output layer
     value_head: Linear<B>,
-    /// ReLU activation
+    /// `ReLU` activation
     relu: Relu,
 }
 
@@ -59,10 +59,10 @@ impl<B: Backend> ValueNetwork<B> {
     /// Forward pass: estimate state value.
     ///
     /// # Arguments
-    /// * `x` - Pooled embedding tensor of shape [batch_size, embed_dim]
+    /// * `x` - Pooled embedding tensor of shape [`batch_size`, `embed_dim`]
     ///
     /// # Returns
-    /// Value tensor of shape [batch_size, 1]
+    /// Value tensor of shape [`batch_size`, 1]
     pub fn forward(&self, x: Tensor<B, 2>) -> Tensor<B, 2> {
         // First hidden layer with ReLU
         let x = self.hidden1.forward(x);
@@ -79,10 +79,10 @@ impl<B: Backend> ValueNetwork<B> {
     /// Get scalar value from batch.
     ///
     /// # Arguments
-    /// * `x` - Pooled embedding tensor of shape [batch_size, embed_dim]
+    /// * `x` - Pooled embedding tensor of shape [`batch_size`, `embed_dim`]
     ///
     /// # Returns
-    /// Value tensor of shape [batch_size]
+    /// Value tensor of shape [`batch_size`]
     pub fn forward_scalar(&self, x: Tensor<B, 2>) -> Tensor<B, 1> {
         self.forward(x).squeeze()
     }

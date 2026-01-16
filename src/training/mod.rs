@@ -1,17 +1,40 @@
-//! Training infrastructure for RL agents.
+//! Training infrastructure for RL agents and multi-task learning.
 //!
 //! This module provides:
 //! - Experience replay buffer
 //! - Reward shaping
 //! - Training loop orchestration
 //! - Metrics collection
+//! - Multi-task learning (binary + attack type + semantic)
+//! - Adversarial training with robustness
+//! - Confidence calibration
+//! - Online learning from feedback
+#![allow(clippy::unnecessary_wraps)]
 
+pub mod adversarial;
+pub mod adversarial_trainer;
 mod buffer;
+pub mod calibration;
 mod metrics;
+mod multitask;
+pub mod multitask_trainer;
+pub mod online;
 mod reward;
 
+pub use adversarial::{
+    AdversarialConfig, AdversarialGenerator, CharSubstitutionAttack, EncodingAttack,
+    ParaphraseAttack,
+};
+pub use adversarial_trainer::{AdversarialMetrics, AdversarialTrainer, AdversarialTrainingConfig};
 pub use buffer::ExperienceBuffer;
+pub use calibration::{CalibrationConfig, CalibrationMetrics, TemperatureScaling};
 pub use metrics::TrainingMetrics;
+pub use multitask::MultiTaskLoss;
+pub use multitask_trainer::{MultiTaskMetrics, MultiTaskTrainer, MultiTaskTrainingConfig};
+pub use online::{
+    FeedbackCollector, FeedbackCollectorConfig, FeedbackSample, FeedbackStatistics,
+    IncrementalMetrics, IncrementalTrainer, IncrementalTrainingConfig,
+};
 pub use reward::{RewardConfig, RewardShaper};
 
 use crate::agent::Experience;
