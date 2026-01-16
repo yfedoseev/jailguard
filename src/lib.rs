@@ -24,11 +24,14 @@
 //! ```
 
 pub mod agent;
+pub mod attention_tracker;
 pub mod dataset;
 pub mod detection;
 pub mod embeddings;
+pub mod ensemble;
 pub mod error;
 pub mod feedback;
+pub mod heuristics;
 pub mod jailguard;
 pub mod model;
 pub mod monitoring;
@@ -41,9 +44,12 @@ pub mod tokenizer;
 pub mod training;
 
 // Re-exports for convenience
+pub use attention_tracker::{AttentionTracker, AttentionTrackerConfig, AttentionTrackerResult};
 pub use detection::{DetectionResult, Detector, DetectorConfig, InjectionRisk};
+pub use ensemble::{EnsembleDetectionResult, EnsembleDetector, ModelWeights};
 pub use error::{Error, Result};
 pub use feedback::{FeedbackCollector, FeedbackType};
+pub use heuristics::{HeuristicDetector, HeuristicResult, HeuristicRule, RuleCategory};
 pub use spotlighting::{Spotlighting, SpotlightingConfig};
 
 // Unified API re-exports
