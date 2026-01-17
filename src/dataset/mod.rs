@@ -4,15 +4,25 @@
 //! - deepset/prompt-injections (primary dataset)
 //! - Synthetic data generation
 
+pub mod deduplication;
 mod deepset;
 pub mod external;
+pub mod llm_augmentation;
 mod multitask_sample;
+pub mod phase1_pipeline;
 mod synthetic;
+pub mod synthetic_generator;
 
+pub use deduplication::{DeduplicationConfig, Deduplicator, SampleWithEmbedding};
 pub use deepset::DeepsetDataset;
 pub use external::{ExpandedDataset, ExternalDatasetConfig};
+pub use llm_augmentation::{
+    AttackTypeSpec, LLMAugmentationConfig, LLMAugmentationGenerator, LLMAugmentedSample,
+};
 pub use multitask_sample::MultiTaskSample;
+pub use phase1_pipeline::{ExtendedDataset, Phase1Config, Phase1Pipeline, Phase1Stats};
 pub use synthetic::SyntheticDataset;
+pub use synthetic_generator::{SyntheticDataGenerator, SyntheticGeneratorConfig, SyntheticSample};
 
 /// A labeled sample for training.
 #[derive(Debug, Clone)]

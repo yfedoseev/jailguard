@@ -55,7 +55,7 @@ pub struct UserFeedback {
     /// Whether prediction was correct (before user feedback)
     pub was_correct: bool,
 
-    /// Type of error (if any): false_positive, false_negative, correct
+    /// Type of error (if any): `false_positive`, `false_negative`, correct
     pub error_type: ErrorType,
 }
 

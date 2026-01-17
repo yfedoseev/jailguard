@@ -319,8 +319,7 @@ impl MultiTaskLearner {
             .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
-            .map(|(idx, _)| idx)
-            .unwrap_or(0);
+            .map_or(0, |(idx, _)| idx);
 
         let attack_type = AttackType::from_index(attack_idx).unwrap_or(AttackType::Novel);
         let attack_confidence = attack_probs[attack_idx];

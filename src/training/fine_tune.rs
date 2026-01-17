@@ -191,7 +191,7 @@ impl FineTuner {
         // 8. Early stopping check
 
         let num_samples = samples.len();
-        let num_batches = (num_samples + self.config.batch_size - 1) / self.config.batch_size;
+        let num_batches = num_samples.div_ceil(self.config.batch_size);
 
         println!("📊 Fine-tuning Configuration:");
         println!("  Learning Rate: {}", self.config.learning_rate);

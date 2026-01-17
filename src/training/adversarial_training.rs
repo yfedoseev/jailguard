@@ -9,7 +9,7 @@
 //! 1. **Character Substitution** (10%)
 //!    - Homoglyph attacks: а(Cyrillic a) for a, е for e, о for o
 //!    - Leetspeak: a→4, e→3, i→1, o→0
-//!    - Case variation: InJeCt → iNjEcT
+//!    - Case variation: `InJeCt` → iNjEcT
 //!
 //! 2. **Encoding Obfuscation** (10%)
 //!    - ROT13 transformation
@@ -236,7 +236,7 @@ impl AdversarialGenerator {
         // Replace with synonyms
         for (original, alternatives) in synonyms {
             if result.contains(original) {
-                let choice = (result.len() % alternatives.len());
+                let choice = result.len() % alternatives.len();
                 let replacement = alternatives[choice];
                 result = result.replace(original, replacement);
                 break; // Replace only first match

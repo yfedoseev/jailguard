@@ -1,6 +1,6 @@
 //! Validation framework for SOTA accuracy achievement
 //!
-//! This module implements comprehensive validation to verify that JailGuard
+//! This module implements comprehensive validation to verify that `JailGuard`
 //! has achieved state-of-the-art 95%+ accuracy on standard benchmarks.
 //!
 //! ## Validation Scope

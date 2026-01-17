@@ -4,7 +4,7 @@
 //! 1. Attention Tracker (training-free)
 //! 2. Heuristic rules (pattern-based)
 //! 3. Fine-tuned transformer models (ML-based)
-//! 4. Pre-trained models from HuggingFace (optional)
+//! 4. Pre-trained models from `HuggingFace` (optional)
 //!
 //! The ensemble uses weighted voting to achieve higher accuracy than any single model.
 //!

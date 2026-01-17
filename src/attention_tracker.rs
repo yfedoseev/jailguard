@@ -44,7 +44,7 @@ pub struct AttentionTrackerConfig {
     /// Recommended: 0.3-0.5
     pub threshold: f32,
 
-    /// Token range of original instruction (start_idx, end_idx)
+    /// Token range of original instruction (`start_idx`, `end_idx`)
     /// Marks where in the token sequence the original instruction appears
     pub instruction_range: (usize, usize),
 
@@ -124,7 +124,7 @@ impl AttentionTracker {
     /// # Arguments
     ///
     /// * `attention_weights` - Flattened attention weights from final token
-    ///   Expected shape: (num_heads, seq_len) flattened to 1D
+    ///   Expected shape: (`num_heads`, `seq_len`) flattened to 1D
     ///   Values should be normalized (sum to 1.0 per head)
     ///
     /// # Returns
@@ -216,8 +216,8 @@ impl AttentionTracker {
     ///
     /// # Arguments
     ///
-    /// * `attention_matrix` - 2D matrix: [num_heads][seq_len]
-    ///   (num_heads rows, seq_len columns)
+    /// * `attention_matrix` - 2D matrix: [`num_heads`][seq_len]
+    ///   (`num_heads` rows, `seq_len` columns)
     pub fn detect_from_matrix(
         &self,
         attention_matrix: &[Vec<f32>],

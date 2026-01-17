@@ -3,7 +3,7 @@
 //! This module implements ensemble learning strategies to combine predictions
 //! from multiple detector models:
 //!
-//! 1. **JailGuard Multi-Task Detector** (60% weight)
+//! 1. **`JailGuard` Multi-Task Detector** (60% weight)
 //!    - Stage 4: Binary + 7-way attack classification
 //!    - Stage 5: Confidence calibration
 //!
@@ -11,7 +11,7 @@
 //!    - Pre-trained on public jailbreak datasets
 //!    - Strong generalization to novel attacks
 //!
-//! 3. **ProtectAI Detector** (15% weight)
+//! 3. **`ProtectAI` Detector** (15% weight)
 //!    - Specialized in prompt injection detection
 //!    - High precision on industry-standard benchmarks
 //!
@@ -30,13 +30,13 @@ use super::DetectionResult;
 /// Ensemble detector configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnsembleConfig {
-    /// Weight for JailGuard multi-task detector (default: 0.60)
+    /// Weight for `JailGuard` multi-task detector (default: 0.60)
     pub jailguard_weight: f32,
 
     /// Weight for GenTel-Shield model (default: 0.25)
     pub gentelshed_weight: f32,
 
-    /// Weight for ProtectAI detector (default: 0.15)
+    /// Weight for `ProtectAI` detector (default: 0.15)
     pub protect_ai_weight: f32,
 
     /// Injection confidence threshold (default: 0.5)

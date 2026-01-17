@@ -1,13 +1,13 @@
 //! External dataset integration and augmentation
 //!
-//! This module provides tools for loading datasets from external sources (HuggingFace,
-//! JailbreakBench) and augmenting them with additional examples to expand training data
+//! This module provides tools for loading datasets from external sources (`HuggingFace`,
+//! `JailbreakBench`) and augmenting them with additional examples to expand training data
 //! from 257 samples to 10k+ samples for improved model accuracy.
 //!
 //! # Strategy
 //!
 //! 1. **Data Sources**:
-//!    - JailbreakBench (HuggingFace) - 10k+ examples
+//!    - `JailbreakBench` (`HuggingFace`) - 10k+ examples
 //!    - DeepSeek-Jailbreak variants - 1k+ crafted examples
 //!    - PAIR adversarial refinement - 100+ variants
 //!
@@ -30,10 +30,10 @@ use std::collections::HashMap;
 /// External data source configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExternalDatasetConfig {
-    /// Enable JailbreakBench loading (requires network access)
+    /// Enable `JailbreakBench` loading (requires network access)
     pub enable_jailbreakbench: bool,
 
-    /// Enable DeepSeek variants (requires network access)
+    /// Enable `DeepSeek` variants (requires network access)
     pub enable_deepseek: bool,
 
     /// Enable local mock data generation
