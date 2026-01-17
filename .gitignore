@@ -4,3 +4,6 @@ Cargo.lock
 *.swo
 .DS_Store
 .env
+
+# Publication planning documents (confidential, pre-publication)
+docs/publications/
