@@ -53,8 +53,8 @@ impl Default for ExternalDatasetConfig {
     fn default() -> Self {
         Self {
             enable_jailbreakbench: false, // Requires network
-            enable_deepseek: false,        // Requires network
-            enable_mock_generation: true,  // Local generation
+            enable_deepseek: false,       // Requires network
+            enable_mock_generation: true, // Local generation
             samples_per_attack_type: 1_000,
             augmentation_multiplier: 3,
             seed: 42,
@@ -120,9 +120,7 @@ impl ExpandedDataset {
     }
 
     /// Generate mock JailbreakBench-like data
-    fn generate_jailbreakbench_mock(
-        config: &ExternalDatasetConfig,
-    ) -> Vec<TrainingSample> {
+    fn generate_jailbreakbench_mock(config: &ExternalDatasetConfig) -> Vec<TrainingSample> {
         let attack_categories = Self::attack_categories();
         let mut samples = Vec::new();
 
@@ -131,7 +129,10 @@ impl ExpandedDataset {
                 // Create base injection
                 let text = format!(
                     "{} (variant {})",
-                    category.patterns.get(i % category.patterns.len()).unwrap_or(&String::new()),
+                    category
+                        .patterns
+                        .get(i % category.patterns.len())
+                        .unwrap_or(&String::new()),
                     i
                 );
 
@@ -201,9 +202,7 @@ impl ExpandedDataset {
     }
 
     /// Generate benign examples
-    fn generate_benign_samples(
-        count: usize,
-    ) -> Vec<TrainingSample> {
+    fn generate_benign_samples(count: usize) -> Vec<TrainingSample> {
         let benign_texts = vec![
             "What is machine learning?",
             "How do I use this API?",
@@ -308,9 +307,7 @@ impl ExpandedDataset {
     /// Apply character substitution (homoglyph attacks)
     fn apply_char_substitution(text: &str) -> String {
         // Homoglyph substitutions: а(Cyrillic a) for a, е for e, о for o
-        text.replace('a', "а")
-            .replace('e', "е")
-            .replace('o', "о")
+        text.replace('a', "а").replace('e', "е").replace('o', "о")
     }
 
     /// Apply encoding obfuscation (ROT13, unicode normalization)
@@ -451,7 +448,11 @@ impl ExpandedDataset {
         &self,
         train_ratio: f32,
         val_ratio: f32,
-    ) -> (Vec<TrainingSample>, Vec<TrainingSample>, Vec<TrainingSample>) {
+    ) -> (
+        Vec<TrainingSample>,
+        Vec<TrainingSample>,
+        Vec<TrainingSample>,
+    ) {
         let train_count = (self.samples.len() as f32 * train_ratio) as usize;
         let val_count = (self.samples.len() as f32 * val_ratio) as usize;
 
@@ -485,7 +486,10 @@ mod tests {
 
         // With 7 attack types, ~14 samples per type (100/7), 3x augmentation, plus benign
         // Expected: (7 * 14 * 4) + same for benign = ~784 samples
-        assert!(dataset.samples.len() > 500, "Dataset should have 500+ samples");
+        assert!(
+            dataset.samples.len() > 500,
+            "Dataset should have 500+ samples"
+        );
         assert!(dataset.statistics.injection_count > 0);
         assert!(dataset.statistics.benign_count > 0);
         assert_eq!(

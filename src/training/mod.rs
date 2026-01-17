@@ -13,6 +13,7 @@
 
 pub mod adversarial;
 pub mod adversarial_trainer;
+pub mod adversarial_training;
 mod buffer;
 pub mod calibration;
 pub mod fine_tune;
@@ -27,6 +28,10 @@ pub use adversarial::{
     ParaphraseAttack,
 };
 pub use adversarial_trainer::{AdversarialMetrics, AdversarialTrainer, AdversarialTrainingConfig};
+pub use adversarial_training::{
+    AdversarialConfig as AdvConfig, AdversarialDatasetMixer, AdversarialGenerator as AdvGenerator,
+    AugmentationStats,
+};
 pub use buffer::ExperienceBuffer;
 pub use calibration::{CalibrationConfig, CalibrationMetrics, TemperatureScaling};
 pub use fine_tune::{FineTuneConfig, FineTuner, TrainingMetrics as FinetuneMetrics};

@@ -19,11 +19,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load expanded dataset
     println!("📂 Loading expanded dataset...");
     let dataset_config = ExternalDatasetConfig {
-        enable_jailbreakbench: false, // Disabled: requires network
-        enable_deepseek: false,        // Disabled: requires network
-        enable_mock_generation: true,  // Enabled: local generation
+        enable_jailbreakbench: false,   // Disabled: requires network
+        enable_deepseek: false,         // Disabled: requires network
+        enable_mock_generation: true,   // Enabled: local generation
         samples_per_attack_type: 1_000, // 1k samples per attack type = 7k total
-        augmentation_multiplier: 3,    // 3x variants per sample
+        augmentation_multiplier: 3,     // 3x variants per sample
         seed: 42,
     };
 
@@ -34,10 +34,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Display dataset statistics
     println!("📊 Dataset Statistics:");
-    println!(
-        "  Total Samples:     {}",
-        dataset.statistics.total_samples
-    );
+    println!("  Total Samples:     {}", dataset.statistics.total_samples);
     println!(
         "  Injection Samples: {} ({:.1}%)",
         dataset.statistics.injection_count,
@@ -47,8 +44,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "  Benign Samples:    {} ({:.1}%)",
         dataset.statistics.benign_count,
-        (dataset.statistics.benign_count as f32 / dataset.statistics.total_samples as f32)
-            * 100.0
+        (dataset.statistics.benign_count as f32 / dataset.statistics.total_samples as f32) * 100.0
     );
     println!(
         "  Average Length:    {:.1} chars",
@@ -132,7 +128,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for epoch_metrics in &metrics.epochs {
         print!(
             "  Epoch {:2}: train_acc={:.1}%",
-            epoch_metrics.epoch, epoch_metrics.train_accuracy * 100.0
+            epoch_metrics.epoch,
+            epoch_metrics.train_accuracy * 100.0
         );
 
         if let Some(val_acc) = epoch_metrics.val_accuracy {
@@ -206,7 +203,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("💡 Key Insights:");
-    println!("  • Expanded dataset ({} → {}) enabled {}% improvement",
+    println!(
+        "  • Expanded dataset ({} → {}) enabled {}% improvement",
         257,
         dataset.statistics.total_samples,
         (metrics.best_val_accuracy * 100.0 - 90.0) as i32
