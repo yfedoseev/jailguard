@@ -49,25 +49,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let result = detector.detect(text);
         let elapsed = sample_start.elapsed();
 
-        // Get embedding from detection result
-        let embedding_vec = &result.embedding;
-
-        // Store embedding with label
+        // Store detection result with label
         embeddings_data.push(serde_json::json!({
-            "embedding": embedding_vec,
             "is_injection": is_injection,
+            "prediction": result.is_injection,
+            "confidence": result.confidence,
             "text": text,
             "index": idx,
-            "embedding_dim": embedding_vec.len()
+            "accuracy": if result.is_injection == is_injection { 1 } else { 0 }
         }));
 
         if (idx + 1) % 100 == 0 || idx == 0 {
             println!(
-                "   Sample {:3}/{} | {:.3}s | Dim: {} | Text: \"{}...\"",
+                "   Sample {:3}/{} | {:.3}s | Conf: {:.2} | Text: \"{}...\"",
                 idx + 1,
                 samples.len(),
                 elapsed.as_secs_f32(),
-                embedding_vec.len(),
+                result.confidence,
                 &text[..text.len().min(40)]
             );
         }
