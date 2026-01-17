@@ -6,11 +6,15 @@
 pub mod calibrated_detector;
 mod detector;
 pub mod ensemble_detector;
+pub mod feedback_learning;
 mod result;
 pub mod transformer_detector;
 
 pub use calibrated_detector::{CalibratedDetectionResult, CalibratedDetector};
 pub use detector::{Detector, DetectorConfig};
 pub use ensemble_detector::{EnsembleConfig, EnsembleDetectionResult, EnsembleDetector};
+pub use feedback_learning::{
+    ErrorType, FeedbackCollector, FeedbackStatistics, OnlineLearningConfig, UserFeedback,
+};
 pub use result::{AttackType, DetectionResult, InjectionRisk, MultiTaskDetectionResult};
 pub use transformer_detector::{TransformerDetector, TransformerDetectorConfig};
