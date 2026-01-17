@@ -30,16 +30,20 @@
 //! let is_valid = validator.validate("Sample jailbreak attempt").is_ok();
 //! ```
 
+pub mod arxiv_collector;
 pub mod error;
 pub mod github_collector;
 pub mod rate_limiter;
 pub mod reddit_collector;
+pub mod stackoverflow_collector;
 pub mod validation;
 
+pub use arxiv_collector::{ArxivCollector, ArxivCollectorConfig};
 pub use error::{CollectionError, CollectionResult};
 pub use github_collector::{GitHubCollector, GitHubCollectorConfig};
 pub use rate_limiter::{RateLimitConfig, RateLimiter};
 pub use reddit_collector::{RedditCollector, RedditCollectorConfig};
+pub use stackoverflow_collector::{StackOverflowCollector, StackOverflowCollectorConfig};
 pub use validation::{SampleValidator, ValidationConfig, ValidationResult};
 
 /// Raw sample from collection source

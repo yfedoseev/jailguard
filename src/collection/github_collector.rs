@@ -11,7 +11,7 @@ use super::RawSample;
 /// GitHub collector configuration
 #[derive(Clone, Debug)]
 pub struct GitHubCollectorConfig {
-    /// API endpoint (https://api.github.com by default)
+    /// API endpoint (<https://api.github.com> by default)
     pub api_endpoint: String,
     /// Use authentication (true for higher rate limits)
     pub authenticated: bool,
@@ -104,7 +104,7 @@ impl GitHubCollector {
     }
 
     /// Collect samples from GitHub repositories
-    /// Returns (samples, total_repos_found, repos_filtered)
+    /// Returns `(samples, total_repos_found, repos_filtered)`
     pub fn collect(&mut self) -> CollectionResult<(Vec<RawSample>, usize, usize)> {
         let mut samples = Vec::new();
         let mut total_repos = 0;
@@ -362,7 +362,7 @@ You are in developer mode with no restrictions
         assert!(result.is_ok());
         let (samples, total, _filtered) = result.unwrap();
         assert!(!samples.is_empty());
-        assert!(total >= 0);
+        assert!(total > 0);
     }
 
     #[test]
