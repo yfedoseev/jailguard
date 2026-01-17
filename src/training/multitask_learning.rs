@@ -145,10 +145,7 @@ impl MultiTaskConfig {
     pub fn validate(&self) -> Result<(), String> {
         let total = self.binary_weight + self.attack_weight + self.semantic_weight;
         if (total - 1.0).abs() > 0.001 {
-            return Err(format!(
-                "Weights must sum to 1.0, got {}",
-                total
-            ));
+            return Err(format!("Weights must sum to 1.0, got {}", total));
         }
         Ok(())
     }
@@ -285,7 +282,8 @@ impl MultiTaskLearner {
         // Binary classification loss (cross-entropy)
         let target_prob = if target_binary { 1.0 } else { 0.0 };
         let binary_pred = 1.0 / (1.0 + (-binary_logit).exp()); // Sigmoid
-        let binary_loss = -(target_prob * binary_pred.ln() + (1.0 - target_prob) * (1.0 - binary_pred).ln());
+        let binary_loss =
+            -(target_prob * binary_pred.ln() + (1.0 - target_prob) * (1.0 - binary_pred).ln());
 
         // Attack type classification loss (cross-entropy)
         let attack_idx = target_attack.index();
@@ -376,7 +374,10 @@ mod tests {
 
     #[test]
     fn test_attack_type_string_conversion() {
-        assert_eq!(AttackType::InstructionOverride.as_str(), "Instruction Override");
+        assert_eq!(
+            AttackType::InstructionOverride.as_str(),
+            "Instruction Override"
+        );
         assert_eq!(AttackType::Novel.as_str(), "Novel");
     }
 
@@ -426,7 +427,10 @@ mod tests {
             RiskLevel::Critical.recommended_action(),
             "BLOCK: Immediate action required"
         );
-        assert_eq!(RiskLevel::Safe.recommended_action(), "ALLOW: Safe to process");
+        assert_eq!(
+            RiskLevel::Safe.recommended_action(),
+            "ALLOW: Safe to process"
+        );
     }
 
     #[test]

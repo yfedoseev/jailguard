@@ -33,11 +33,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Multi-task configuration
     println!("⚙️  Multi-Task Learning Configuration:");
     let config = MultiTaskConfig::default();
-    println!("  Binary Classification Weight:   {:.0}%", config.binary_weight * 100.0);
-    println!("  Attack Type Weight:             {:.0}%", config.attack_weight * 100.0);
-    println!("  Semantic Similarity Weight:     {:.0}%", config.semantic_weight * 100.0);
-    println!("  Injection Threshold:            {:.2}", config.injection_threshold);
-    println!("  Attack Confidence Threshold:    {:.2}", config.attack_confidence_threshold);
+    println!(
+        "  Binary Classification Weight:   {:.0}%",
+        config.binary_weight * 100.0
+    );
+    println!(
+        "  Attack Type Weight:             {:.0}%",
+        config.attack_weight * 100.0
+    );
+    println!(
+        "  Semantic Similarity Weight:     {:.0}%",
+        config.semantic_weight * 100.0
+    );
+    println!(
+        "  Injection Threshold:            {:.2}",
+        config.injection_threshold
+    );
+    println!(
+        "  Attack Confidence Threshold:    {:.2}",
+        config.attack_confidence_threshold
+    );
     println!();
 
     // Create multi-task learner
@@ -223,16 +238,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// Print formatted result
 fn print_result(result: &jailguard::training::MultiTaskResult, scenario: usize) {
     println!("  📊 Results:");
-    println!("    Binary Classification: {} ({:.1}%)",
-        if result.is_injection { "INJECTION" } else { "BENIGN" },
+    println!(
+        "    Binary Classification: {} ({:.1}%)",
+        if result.is_injection {
+            "INJECTION"
+        } else {
+            "BENIGN"
+        },
         result.binary_confidence * 100.0
     );
-    println!("    Attack Type: {} ({:.1}%)",
+    println!(
+        "    Attack Type: {} ({:.1}%)",
         result.attack_type.as_str(),
         result.attack_confidence * 100.0
     );
-    println!("    Semantic Similarity: {:.1}%", result.semantic_similarity * 100.0);
+    println!(
+        "    Semantic Similarity: {:.1}%",
+        result.semantic_similarity * 100.0
+    );
     println!("    Combined Score: {:.3}", result.combined_score);
     println!("    Risk Level: {:?}", result.risk_level);
-    println!("    Recommended Action: {}", result.risk_level.recommended_action());
+    println!(
+        "    Recommended Action: {}",
+        result.risk_level.recommended_action()
+    );
 }
