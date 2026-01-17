@@ -7,10 +7,12 @@
 mod deepset;
 mod multitask_sample;
 mod synthetic;
+pub mod external;
 
 pub use deepset::DeepsetDataset;
 pub use multitask_sample::MultiTaskSample;
 pub use synthetic::SyntheticDataset;
+pub use external::{ExpandedDataset, ExternalDatasetConfig};
 
 /// A labeled sample for training.
 #[derive(Debug, Clone)]
