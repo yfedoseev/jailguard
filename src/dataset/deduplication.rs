@@ -200,26 +200,9 @@ impl Deduplicator {
             avg_cluster_size,
         };
 
-        if self.config.verbose {
-            println!("Deduplication Results:");
-            println!("  Input samples: {}", stats.total_input);
-            println!("  Clusters: {}", stats.total_clusters);
-            println!(
-                "  Kept: {} ({:.1}%)",
-                stats.total_kept,
-                (stats.total_kept as f32 / stats.total_input as f32) * 100.0
-            );
-            println!(
-                "  Removed: {} ({:.1}%)",
-                stats.total_removed,
-                stats.removal_rate * 100.0
-            );
-            println!("  Avg cluster size: {:.2}", stats.avg_cluster_size);
-            println!(
-                "  Similarity threshold: {}",
-                self.config.similarity_threshold
-            );
-        }
+        // Verbose logging would go here (use log crate in future)
+        // Currently stats are returned for caller to display as needed
+        let _ = self.config.verbose;
 
         (kept_samples, result_clusters, stats)
     }
