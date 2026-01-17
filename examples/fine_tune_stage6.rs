@@ -59,9 +59,7 @@ fn main() {
     println!();
     println!("  Model                   │ Type              │ Weight │ Best At");
     println!("  ────────────────────────┼───────────────────┼────────┼─────────────────────");
-    println!(
-        "  JailGuard Multi-Task    │ Transformer + MT  │ 60%    │ Comprehensive attacks"
-    );
+    println!("  JailGuard Multi-Task    │ Transformer + MT  │ 60%    │ Comprehensive attacks");
     println!("  GenTel-Shield           │ Pre-trained       │ 25%    │ Novel/unseen attacks");
     println!("  ProtectAI               │ Industry Standard │ 15%    │ Production scenarios");
     println!();
@@ -105,9 +103,18 @@ fn main() {
             "BENIGN"
         }
     );
-    println!("    Confidence:         {:.1}%", ensemble_pred1.result.confidence * 100.0);
-    println!("    Agreement Score:    {:.1}%", ensemble_pred1.agreement_score * 100.0);
-    println!("    Confidence Variance: {:.4}", ensemble_pred1.confidence_variance);
+    println!(
+        "    Confidence:         {:.1}%",
+        ensemble_pred1.result.confidence * 100.0
+    );
+    println!(
+        "    Agreement Score:    {:.1}%",
+        ensemble_pred1.agreement_score * 100.0
+    );
+    println!(
+        "    Confidence Variance: {:.4}",
+        ensemble_pred1.confidence_variance
+    );
     println!();
 
     // Scenario 2: Borderline case
@@ -145,8 +152,14 @@ fn main() {
             "BENIGN ✅"
         }
     );
-    println!("    Confidence:         {:.1}%", ensemble_pred2.result.confidence * 100.0);
-    println!("    Agreement Score:    {:.1}%", ensemble_pred2.agreement_score * 100.0);
+    println!(
+        "    Confidence:         {:.1}%",
+        ensemble_pred2.result.confidence * 100.0
+    );
+    println!(
+        "    Agreement Score:    {:.1}%",
+        ensemble_pred2.agreement_score * 100.0
+    );
     println!(
         "    Confidence Variance: {:.4} (disagreement detected)",
         ensemble_pred2.confidence_variance
@@ -189,9 +202,18 @@ fn main() {
             "BENIGN"
         }
     );
-    println!("    Confidence:         {:.1}%", ensemble_pred3.result.confidence * 100.0);
-    println!("    Agreement Score:    {:.1}%", ensemble_pred3.agreement_score * 100.0);
-    println!("    Confidence Variance: {:.4}", ensemble_pred3.confidence_variance);
+    println!(
+        "    Confidence:         {:.1}%",
+        ensemble_pred3.result.confidence * 100.0
+    );
+    println!(
+        "    Agreement Score:    {:.1}%",
+        ensemble_pred3.agreement_score * 100.0
+    );
+    println!(
+        "    Confidence Variance: {:.4}",
+        ensemble_pred3.confidence_variance
+    );
     println!();
 
     // Performance comparison
@@ -265,12 +287,30 @@ fn main() {
     // Ensemble configuration
     println!("⚙️  Ensemble Configuration:");
     println!();
-    println!("  JailGuard Weight:       {:.0}%", ensemble.config().jailguard_weight * 100.0);
-    println!("  GenTel-Shield Weight:   {:.0}%", ensemble.config().gentelshed_weight * 100.0);
-    println!("  ProtectAI Weight:       {:.0}%", ensemble.config().protect_ai_weight * 100.0);
-    println!("  Injection Threshold:    {:.2}", ensemble.config().injection_threshold);
-    println!("  Use Weighted Voting:    {}", ensemble.config().use_weighted_voting);
-    println!("  Agreement Threshold:    {:.0}%", ensemble.config().agreement_threshold * 100.0);
+    println!(
+        "  JailGuard Weight:       {:.0}%",
+        ensemble.config().jailguard_weight * 100.0
+    );
+    println!(
+        "  GenTel-Shield Weight:   {:.0}%",
+        ensemble.config().gentelshed_weight * 100.0
+    );
+    println!(
+        "  ProtectAI Weight:       {:.0}%",
+        ensemble.config().protect_ai_weight * 100.0
+    );
+    println!(
+        "  Injection Threshold:    {:.2}",
+        ensemble.config().injection_threshold
+    );
+    println!(
+        "  Use Weighted Voting:    {}",
+        ensemble.config().use_weighted_voting
+    );
+    println!(
+        "  Agreement Threshold:    {:.0}%",
+        ensemble.config().agreement_threshold * 100.0
+    );
     println!();
 
     // Integration points

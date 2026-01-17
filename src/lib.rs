@@ -43,6 +43,7 @@ pub mod spotlighting;
 pub mod task_tracking;
 pub mod tokenizer;
 pub mod training;
+pub mod validation;
 
 // Re-exports for convenience
 pub use advanced_ensemble::{AdvancedDetectionResult, AdvancedEnsemble, LayerScores};
@@ -69,4 +70,10 @@ pub use training::{Trainer, TrainerConfig, TrainingMetrics};
 // Monitoring re-exports
 pub use monitoring::{
     AnomalyConfig, AnomalyDetector, AnomalyResult, DetectionEvent, SessionTracker,
+};
+
+// Validation re-exports
+pub use validation::{
+    BenchmarkDataset, ModelComparison, SOTAValidator, SecurityAssessment, ValidationMetrics,
+    ValidationReport,
 };

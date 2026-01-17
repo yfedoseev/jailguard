@@ -160,10 +160,7 @@ impl EnsembleDetector {
         ];
 
         // Compute weighted confidence
-        let ensemble_confidence: f32 = detector_votes
-            .iter()
-            .map(|v| v.confidence * v.weight)
-            .sum();
+        let ensemble_confidence: f32 = detector_votes.iter().map(|v| v.confidence * v.weight).sum();
 
         // Compute agreement score
         let injection_votes = detector_votes

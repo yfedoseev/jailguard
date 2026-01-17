@@ -250,15 +250,15 @@ impl FeedbackCollector {
             ErrorType::Correct => self.statistics.confirmed_correct += 1,
         }
 
-        self.statistics.avg_corrected_confidence =
-            (self.statistics.avg_corrected_confidence * (self.statistics.total_feedback as f32 - 1.0)
-                + feedback.predicted_confidence)
-                / self.statistics.total_feedback as f32;
+        self.statistics.avg_corrected_confidence = (self.statistics.avg_corrected_confidence
+            * (self.statistics.total_feedback as f32 - 1.0)
+            + feedback.predicted_confidence)
+            / self.statistics.total_feedback as f32;
 
-        self.statistics.avg_corrected_agreement =
-            (self.statistics.avg_corrected_agreement * (self.statistics.total_feedback as f32 - 1.0)
-                + feedback.agreement_score)
-                / self.statistics.total_feedback as f32;
+        self.statistics.avg_corrected_agreement = (self.statistics.avg_corrected_agreement
+            * (self.statistics.total_feedback as f32 - 1.0)
+            + feedback.agreement_score)
+            / self.statistics.total_feedback as f32;
 
         // Check if we should update
         self.ready_for_update = self.buffer.len() >= self.config.batch_size - 1;
@@ -542,7 +542,10 @@ mod tests {
         let stats = collector.statistics();
         assert_eq!(stats.total_feedback, 10);
         assert_eq!(stats.confirmed_correct, 7); // 7 predictions were correct
-        assert_eq!(stats.false_positives_corrected + stats.false_negatives_corrected, 3); // 3 errors
+        assert_eq!(
+            stats.false_positives_corrected + stats.false_negatives_corrected,
+            3
+        ); // 3 errors
         assert!(stats.original_accuracy() > 0.6);
     }
 }

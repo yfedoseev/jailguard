@@ -425,7 +425,7 @@ mod tests {
         let stats = mixer.get_statistics(samples.len(), mixed.len());
         // With adversarial ratio of 0.3, we expect at least some augmentation
         assert!(
-            stats.adversarial_samples_added >= 0,
+            stats.adversarial_samples_added > 0,
             "Should track augmentation"
         );
     }
