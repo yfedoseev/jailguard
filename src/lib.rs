@@ -26,6 +26,7 @@
 pub mod advanced_ensemble;
 pub mod agent;
 pub mod attention_tracker;
+pub mod collection;
 pub mod dataset;
 pub mod detection;
 pub mod embeddings;
