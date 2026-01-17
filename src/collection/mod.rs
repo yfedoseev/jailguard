@@ -35,6 +35,7 @@ pub mod deduplication;
 pub mod error;
 pub mod github_collector;
 pub mod labeling;
+pub mod manual_submission;
 pub mod rate_limiter;
 pub mod reddit_collector;
 pub mod stackoverflow_collector;
@@ -45,6 +46,9 @@ pub use deduplication::{DeduplicationConfig, DeduplicationResult, Deduplicator, 
 pub use error::{CollectionError, CollectionResult};
 pub use github_collector::{GitHubCollector, GitHubCollectorConfig};
 pub use labeling::{AttackClassifier, AttackType, LabelingConfig, LabelingResult};
+pub use manual_submission::{
+    RejectionReason, SubmissionConfig, SubmissionHandler, SubmissionStatus, UserSubmission,
+};
 pub use rate_limiter::{RateLimitConfig, RateLimiter};
 pub use reddit_collector::{RedditCollector, RedditCollectorConfig};
 pub use stackoverflow_collector::{StackOverflowCollector, StackOverflowCollectorConfig};
