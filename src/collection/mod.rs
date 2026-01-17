@@ -31,11 +31,15 @@
 //! ```
 
 pub mod error;
+pub mod github_collector;
 pub mod rate_limiter;
+pub mod reddit_collector;
 pub mod validation;
 
 pub use error::{CollectionError, CollectionResult};
-pub use rate_limiter::{RateLimiter, RateLimitConfig};
+pub use github_collector::{GitHubCollector, GitHubCollectorConfig};
+pub use rate_limiter::{RateLimitConfig, RateLimiter};
+pub use reddit_collector::{RedditCollector, RedditCollectorConfig};
 pub use validation::{SampleValidator, ValidationConfig, ValidationResult};
 
 /// Raw sample from collection source
@@ -100,14 +104,14 @@ mod tests {
 
     #[test]
     fn test_raw_sample_builder() {
-        let sample = RawSample::new(
-            "Test attack".to_string(),
-            "github".to_string(),
-        )
-        .with_url("https://github.com/example/repo".to_string())
-        .with_metadata("stars".to_string(), "1000".to_string());
+        let sample = RawSample::new("Test attack".to_string(), "github".to_string())
+            .with_url("https://github.com/example/repo".to_string())
+            .with_metadata("stars".to_string(), "1000".to_string());
 
-        assert_eq!(sample.source_url, Some("https://github.com/example/repo".to_string()));
+        assert_eq!(
+            sample.source_url,
+            Some("https://github.com/example/repo".to_string())
+        );
         assert_eq!(sample.metadata.get("stars"), Some(&"1000".to_string()));
     }
 }

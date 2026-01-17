@@ -11,6 +11,7 @@ pub enum CollectionError {
     ApiError(String),
     /// Rate limit exceeded
     RateLimitExceeded {
+        /// When the rate limit resets (if available)
         reset_time: Option<String>,
     },
     /// Parse error (invalid response format)
@@ -70,10 +71,8 @@ mod tests {
 
     #[test]
     fn test_collection_error_types() {
-        let _api_err: CollectionResult<()> =
-            Err(CollectionError::ApiError("test".to_string()));
-        let _parse_err: CollectionResult<()> =
-            Err(CollectionError::ParseError("test".to_string()));
+        let _api_err: CollectionResult<()> = Err(CollectionError::ApiError("test".to_string()));
+        let _parse_err: CollectionResult<()> = Err(CollectionError::ParseError("test".to_string()));
         let _val_err: CollectionResult<()> =
             Err(CollectionError::ValidationError("test".to_string()));
 

@@ -3,7 +3,6 @@
 //! Manages API rate limits and quota to avoid getting blocked.
 
 use super::error::{CollectionError, CollectionResult};
-use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
 
 /// Rate limit configuration
@@ -145,12 +144,17 @@ impl RateLimiter {
         let window_duration = Duration::from_secs(self.config.window_secs);
         let cutoff_time = now - window_duration;
 
-        self.request_times.iter().filter(|&&t| t > cutoff_time).count() as u32
+        self.request_times
+            .iter()
+            .filter(|&&t| t > cutoff_time)
+            .count() as u32
     }
 
     /// Get remaining requests in window
     pub fn remaining_requests(&self) -> u32 {
-        self.config.max_requests.saturating_sub(self.current_requests())
+        self.config
+            .max_requests
+            .saturating_sub(self.current_requests())
     }
 
     /// Reset the rate limiter

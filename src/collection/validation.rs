@@ -2,7 +2,7 @@
 //!
 //! Validates collected samples meet quality criteria before inclusion.
 
-use super::error::{CollectionError, CollectionResult};
+use super::error::CollectionResult;
 use std::collections::HashSet;
 
 /// Configuration for sample validation
@@ -157,7 +157,9 @@ mod tests {
     #[test]
     fn test_valid_sample() {
         let validator = SampleValidator::new(ValidationConfig::default());
-        let result = validator.validate("This is a valid injection attempt").unwrap();
+        let result = validator
+            .validate("This is a valid injection attempt")
+            .unwrap();
         assert!(result.is_valid);
     }
 
@@ -172,7 +174,9 @@ mod tests {
     #[test]
     fn test_forbidden_pattern_detection() {
         let validator = SampleValidator::new(ValidationConfig::default());
-        let result = validator.validate("I cannot help with this request").unwrap();
+        let result = validator
+            .validate("I cannot help with this request")
+            .unwrap();
         assert!(!result.is_valid);
         assert!(result.errors.iter().any(|e| e.contains("forbidden")));
     }
