@@ -38,6 +38,7 @@ pub mod jailguard;
 pub mod model;
 pub mod monitoring;
 pub mod output_validation;
+pub mod performance;
 pub mod pretrained;
 pub mod privilege;
 pub mod spotlighting;
@@ -72,6 +73,9 @@ pub use training::{Trainer, TrainerConfig, TrainingMetrics};
 pub use monitoring::{
     AnomalyConfig, AnomalyDetector, AnomalyResult, DetectionEvent, SessionTracker,
 };
+
+// Performance re-exports
+pub use performance::{ResponseCache, EnsembleProfiler, EnsembleProfile, PerformanceMetrics};
 
 // Validation re-exports
 pub use validation::{
