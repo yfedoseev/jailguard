@@ -51,28 +51,89 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     println!("Sources to collect from:");
-    println!("  ✓ Reddit r/jailbreak - {}", if config.enable_reddit { "ENABLED" } else { "disabled" });
-    println!("  ✓ GitHub adversarial - {}", if config.enable_github { "ENABLED" } else { "disabled" });
-    println!("  ✓ Stack Overflow - {}", if config.enable_stackoverflow { "ENABLED" } else { "disabled" });
-    println!("  ✓ arXiv papers - {}", if config.enable_arxiv { "ENABLED" } else { "disabled" });
-    println!("  ✓ Manual submissions - {}", if config.enable_manual { "ENABLED" } else { "disabled" });
-    println!("\nCollection cycle: Every {} hours", config.collection_interval_hours);
+    println!(
+        "  ✓ Reddit r/jailbreak - {}",
+        if config.enable_reddit {
+            "ENABLED"
+        } else {
+            "disabled"
+        }
+    );
+    println!(
+        "  ✓ GitHub adversarial - {}",
+        if config.enable_github {
+            "ENABLED"
+        } else {
+            "disabled"
+        }
+    );
+    println!(
+        "  ✓ Stack Overflow - {}",
+        if config.enable_stackoverflow {
+            "ENABLED"
+        } else {
+            "disabled"
+        }
+    );
+    println!(
+        "  ✓ arXiv papers - {}",
+        if config.enable_arxiv {
+            "ENABLED"
+        } else {
+            "disabled"
+        }
+    );
+    println!(
+        "  ✓ Manual submissions - {}",
+        if config.enable_manual {
+            "ENABLED"
+        } else {
+            "disabled"
+        }
+    );
+    println!(
+        "\nCollection cycle: Every {} hours",
+        config.collection_interval_hours
+    );
     println!("Output directory: {}", config.output_directory);
-    println!("Deduplication: {}", if config.enable_deduplication { "ENABLED" } else { "disabled" });
-    println!("Labeling: {}", if config.enable_labeling { "ENABLED" } else { "disabled" });
-    println!("Monitoring: {}\n", if config.enable_monitoring { "ENABLED" } else { "disabled" });
+    println!(
+        "Deduplication: {}",
+        if config.enable_deduplication {
+            "ENABLED"
+        } else {
+            "disabled"
+        }
+    );
+    println!(
+        "Labeling: {}",
+        if config.enable_labeling {
+            "ENABLED"
+        } else {
+            "disabled"
+        }
+    );
+    println!(
+        "Monitoring: {}\n",
+        if config.enable_monitoring {
+            "ENABLED"
+        } else {
+            "disabled"
+        }
+    );
 
     // =============================
     // API CREDENTIALS & SETUP
     // =============================
 
-    println!("{}","-".repeat(70));
+    println!("{}", "-".repeat(70));
     println!("🔑 API CREDENTIALS & SETUP\n");
 
     let credentials = CollectionCredentials {
         reddit_client_id: std::env::var("REDDIT_CLIENT_ID").ok(),
         reddit_client_secret: std::env::var("REDDIT_CLIENT_SECRET").ok(),
-        reddit_user_agent: Some("JailGuard/1.0 (Data Collection for Security Research)".to_string()),
+        reddit_user_agent: Some(
+            "JailGuard/1.0 (Data Collection for Security Research)".to_string(),
+        ),
         github_token: std::env::var("GITHUB_TOKEN").ok(),
         github_username: std::env::var("GITHUB_USERNAME").ok(),
         stackoverflow_api_key: std::env::var("STACKOVERFLOW_API_KEY").ok(),
@@ -85,7 +146,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut all_ready = true;
 
     if config.enable_reddit {
-        match (&credentials.reddit_client_id, &credentials.reddit_client_secret) {
+        match (
+            &credentials.reddit_client_id,
+            &credentials.reddit_client_secret,
+        ) {
             (Some(_), Some(_)) => println!("  ✅ Reddit: Credentials found"),
             _ => {
                 println!("  ⚠️  Reddit: Missing credentials");
@@ -131,14 +195,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!();
     if !all_ready {
-        println!("⚠️  Some credentials missing. Collection will continue with available sources.\n");
+        println!(
+            "⚠️  Some credentials missing. Collection will continue with available sources.\n"
+        );
     }
 
     // =============================
     // RATE LIMIT CONFIGURATION
     // =============================
 
-    println!("{}","-".repeat(70));
+    println!("{}", "-".repeat(70));
     println!("⏱️  RATE LIMIT CONFIGURATION\n");
 
     let rate_limits = RateLimitConfiguration {
@@ -170,24 +236,54 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     println!("Reddit r/jailbreak:");
-    println!("  Limit: {} requests per {}", rate_limits.reddit.max_requests, rate_limits.reddit.window);
-    println!("  Expected: ~{} samples/day\n", rate_limits.reddit.expected_samples_per_day);
+    println!(
+        "  Limit: {} requests per {}",
+        rate_limits.reddit.max_requests, rate_limits.reddit.window
+    );
+    println!(
+        "  Expected: ~{} samples/day\n",
+        rate_limits.reddit.expected_samples_per_day
+    );
 
     println!("GitHub Adversarial:");
-    println!("  Limit: {} requests per {}", rate_limits.github.max_requests, rate_limits.github.window);
-    println!("  Expected: ~{} samples/day\n", rate_limits.github.expected_samples_per_day);
+    println!(
+        "  Limit: {} requests per {}",
+        rate_limits.github.max_requests, rate_limits.github.window
+    );
+    println!(
+        "  Expected: ~{} samples/day\n",
+        rate_limits.github.expected_samples_per_day
+    );
 
     println!("Stack Overflow:");
-    println!("  Limit: {} requests per {}", rate_limits.stackoverflow.max_requests, rate_limits.stackoverflow.window);
-    println!("  Expected: ~{} samples/day\n", rate_limits.stackoverflow.expected_samples_per_day);
+    println!(
+        "  Limit: {} requests per {}",
+        rate_limits.stackoverflow.max_requests, rate_limits.stackoverflow.window
+    );
+    println!(
+        "  Expected: ~{} samples/day\n",
+        rate_limits.stackoverflow.expected_samples_per_day
+    );
 
     println!("arXiv Papers:");
-    println!("  Limit: {} requests per {}", rate_limits.arxiv.max_requests, rate_limits.arxiv.window);
-    println!("  Expected: ~{} samples/day\n", rate_limits.arxiv.expected_samples_per_day);
+    println!(
+        "  Limit: {} requests per {}",
+        rate_limits.arxiv.max_requests, rate_limits.arxiv.window
+    );
+    println!(
+        "  Expected: ~{} samples/day\n",
+        rate_limits.arxiv.expected_samples_per_day
+    );
 
     println!("Manual Submissions:");
-    println!("  Limit: {} requests per {}", rate_limits.manual.max_requests, rate_limits.manual.window);
-    println!("  Expected: ~{} samples/day\n", rate_limits.manual.expected_samples_per_day);
+    println!(
+        "  Limit: {} requests per {}",
+        rate_limits.manual.max_requests, rate_limits.manual.window
+    );
+    println!(
+        "  Expected: ~{} samples/day\n",
+        rate_limits.manual.expected_samples_per_day
+    );
 
     let total_daily = rate_limits.reddit.expected_samples_per_day
         + rate_limits.github.expected_samples_per_day
@@ -203,12 +299,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // DEPLOYMENT STEPS
     // =============================
 
-    println!("{}","-".repeat(70));
+    println!("{}", "-".repeat(70));
     println!("📋 DEPLOYMENT STEPS\n");
 
     let steps = vec![
-        ("1. Verify Credentials", verify_credentials_step(&credentials)),
-        ("2. Create Output Directories", create_directories_step(&config)),
+        (
+            "1. Verify Credentials",
+            verify_credentials_step(&credentials),
+        ),
+        (
+            "2. Create Output Directories",
+            create_directories_step(&config),
+        ),
         ("3. Initialize Collectors", initialize_collectors_step()),
         ("4. Start Collection Loop", start_collection_loop_step()),
         ("5. Monitor Ingestion", monitor_ingestion_step()),
@@ -225,7 +327,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // SETUP EXECUTION
     // =============================
 
-    println!("{}","-".repeat(70));
+    println!("{}", "-".repeat(70));
     println!("⚙️  SETUP EXECUTION\n");
 
     // Create output directories
@@ -242,7 +344,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // DEPLOYMENT STATUS
     // =============================
 
-    println!("{}","-".repeat(70));
+    println!("{}", "-".repeat(70));
     println!("📊 DEPLOYMENT STATUS\n");
 
     let status = DeploymentStatus {
@@ -258,17 +360,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     println!("Status timestamp: {}", format_timestamp(status.timestamp));
-    println!("Configuration valid: {}", if status.configuration_valid { "✅ Yes" } else { "❌ No" });
-    println!("Directories ready: {}", if status.directories_ready { "✅ Yes" } else { "❌ No" });
+    println!(
+        "Configuration valid: {}",
+        if status.configuration_valid {
+            "✅ Yes"
+        } else {
+            "❌ No"
+        }
+    );
+    println!(
+        "Directories ready: {}",
+        if status.directories_ready {
+            "✅ Yes"
+        } else {
+            "❌ No"
+        }
+    );
     println!("API credentials found: {}/{}", status.credentials_found, 7);
     println!("Sources enabled: {}/{}", status.sources_enabled, 5);
-    println!("Estimated daily samples: {}\n", status.estimated_daily_samples);
+    println!(
+        "Estimated daily samples: {}\n",
+        status.estimated_daily_samples
+    );
 
     // =============================
     // MONITORING & MAINTENANCE
     // =============================
 
-    println!("{}","-".repeat(70));
+    println!("{}", "-".repeat(70));
     println!("🔍 MONITORING & MAINTENANCE\n");
 
     println!("Recommended monitoring interval: 24 hours");
@@ -290,7 +409,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // NEXT STEPS
     // =============================
 
-    println!("{}","-".repeat(70));
+    println!("{}", "-".repeat(70));
     println!("🚀 NEXT STEPS\n");
 
     println!("1. Configure credentials:");
@@ -311,11 +430,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("5. Verify data quality:");
     println!("   cargo test --lib collection --release\n");
 
-    println!("{}","-".repeat(70));
+    println!("{}", "-".repeat(70));
     println!("✅ COLLECTION PIPELINE READY FOR DEPLOYMENT\n");
     println!("Expected first data collection cycle: 24 hours");
     println!("Expected weekly samples: ~{}", total_daily * 7);
-    println!("Monthly improvement potential: ~{} new samples\n", total_daily * 30);
+    println!(
+        "Monthly improvement potential: ~{} new samples\n",
+        total_daily * 30
+    );
 
     println!("{}\n", separator);
 
@@ -382,11 +504,15 @@ fn verify_credentials_step(_credentials: &CollectionCredentials) -> String {
 }
 
 fn create_directories_step(config: &DeploymentConfig) -> String {
-    format!("Create {} and logs/ directories for output and logs.", config.output_directory)
+    format!(
+        "Create {} and logs/ directories for output and logs.",
+        config.output_directory
+    )
 }
 
 fn initialize_collectors_step() -> String {
-    "Initialize collector instances for Reddit, GitHub, Stack Overflow, arXiv, and Manual.".to_string()
+    "Initialize collector instances for Reddit, GitHub, Stack Overflow, arXiv, and Manual."
+        .to_string()
 }
 
 fn start_collection_loop_step() -> String {
@@ -407,21 +533,41 @@ fn verify_report_step() -> String {
 
 fn count_available_credentials(creds: &CollectionCredentials) -> u32 {
     let mut count = 0;
-    if creds.reddit_client_id.is_some() { count += 1; }
-    if creds.reddit_client_secret.is_some() { count += 1; }
-    if creds.github_token.is_some() { count += 1; }
-    if creds.stackoverflow_api_key.is_some() { count += 1; }
-    if creds.manual_submission_webhook.is_some() { count += 1; }
+    if creds.reddit_client_id.is_some() {
+        count += 1;
+    }
+    if creds.reddit_client_secret.is_some() {
+        count += 1;
+    }
+    if creds.github_token.is_some() {
+        count += 1;
+    }
+    if creds.stackoverflow_api_key.is_some() {
+        count += 1;
+    }
+    if creds.manual_submission_webhook.is_some() {
+        count += 1;
+    }
     count
 }
 
 fn count_enabled_sources(config: &DeploymentConfig) -> u32 {
     let mut count = 0;
-    if config.enable_reddit { count += 1; }
-    if config.enable_github { count += 1; }
-    if config.enable_stackoverflow { count += 1; }
-    if config.enable_arxiv { count += 1; }
-    if config.enable_manual { count += 1; }
+    if config.enable_reddit {
+        count += 1;
+    }
+    if config.enable_github {
+        count += 1;
+    }
+    if config.enable_stackoverflow {
+        count += 1;
+    }
+    if config.enable_arxiv {
+        count += 1;
+    }
+    if config.enable_manual {
+        count += 1;
+    }
     count
 }
 

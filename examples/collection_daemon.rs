@@ -36,19 +36,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("📋 INITIALIZING COLLECTION DAEMON\n");
 
     let config = DaemonConfig {
-        output_dir: std::env::var("OUTPUT_DIR").unwrap_or_else(|_| "data/collected_samples".to_string()),
-        log_file: std::env::var("LOG_FILE").unwrap_or_else(|_| "logs/collection_daemon.log".to_string()),
+        output_dir: std::env::var("OUTPUT_DIR")
+            .unwrap_or_else(|_| "data/collected_samples".to_string()),
+        log_file: std::env::var("LOG_FILE")
+            .unwrap_or_else(|_| "logs/collection_daemon.log".to_string()),
         collection_interval: Duration::from_secs(
             std::env::var("COLLECTION_INTERVAL_SECS")
                 .unwrap_or_else(|_| "3600".to_string())
                 .parse()
-                .unwrap_or(3600)
+                .unwrap_or(3600),
         ),
-        enable_reddit: std::env::var("ENABLE_REDDIT").unwrap_or_else(|_| "true".to_string()) == "true",
-        enable_github: std::env::var("ENABLE_GITHUB").unwrap_or_else(|_| "true".to_string()) == "true",
-        enable_stackoverflow: std::env::var("ENABLE_STACKOVERFLOW").unwrap_or_else(|_| "true".to_string()) == "true",
-        enable_arxiv: std::env::var("ENABLE_ARXIV").unwrap_or_else(|_| "true".to_string()) == "true",
-        enable_manual: std::env::var("ENABLE_MANUAL").unwrap_or_else(|_| "true".to_string()) == "true",
+        enable_reddit: std::env::var("ENABLE_REDDIT").unwrap_or_else(|_| "true".to_string())
+            == "true",
+        enable_github: std::env::var("ENABLE_GITHUB").unwrap_or_else(|_| "true".to_string())
+            == "true",
+        enable_stackoverflow: std::env::var("ENABLE_STACKOVERFLOW")
+            .unwrap_or_else(|_| "true".to_string())
+            == "true",
+        enable_arxiv: std::env::var("ENABLE_ARXIV").unwrap_or_else(|_| "true".to_string())
+            == "true",
+        enable_manual: std::env::var("ENABLE_MANUAL").unwrap_or_else(|_| "true".to_string())
+            == "true",
         max_retries: 3,
         retry_delay_secs: 60,
     };
@@ -56,13 +64,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Configuration:");
     println!("  Output directory: {}", config.output_dir);
     println!("  Log file: {}", config.log_file);
-    println!("  Collection interval: {} seconds", config.collection_interval.as_secs());
+    println!(
+        "  Collection interval: {} seconds",
+        config.collection_interval.as_secs()
+    );
     println!("  Sources enabled:");
-    println!("    - Reddit: {}", if config.enable_reddit { "✅" } else { "❌" });
-    println!("    - GitHub: {}", if config.enable_github { "✅" } else { "❌" });
-    println!("    - StackOverflow: {}", if config.enable_stackoverflow { "✅" } else { "❌" });
-    println!("    - arXiv: {}", if config.enable_arxiv { "✅" } else { "❌" });
-    println!("    - Manual: {}", if config.enable_manual { "✅" } else { "❌" });
+    println!(
+        "    - Reddit: {}",
+        if config.enable_reddit { "✅" } else { "❌" }
+    );
+    println!(
+        "    - GitHub: {}",
+        if config.enable_github { "✅" } else { "❌" }
+    );
+    println!(
+        "    - StackOverflow: {}",
+        if config.enable_stackoverflow {
+            "✅"
+        } else {
+            "❌"
+        }
+    );
+    println!(
+        "    - arXiv: {}",
+        if config.enable_arxiv { "✅" } else { "❌" }
+    );
+    println!(
+        "    - Manual: {}",
+        if config.enable_manual { "✅" } else { "❌" }
+    );
     println!("  Max retries: {}", config.max_retries);
     println!("  Retry delay: {} seconds\n", config.retry_delay_secs);
 
@@ -89,9 +119,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     println!("✅ Loaded credentials");
-    println!("  Reddit: {}", if credentials.reddit_client_id.is_some() { "✅" } else { "❌" });
-    println!("  GitHub: {}", if credentials.github_token.is_some() { "✅" } else { "❌" });
-    println!("  StackOverflow: {}", if credentials.stackoverflow_api_key.is_some() { "✅" } else { "❌" });
+    println!(
+        "  Reddit: {}",
+        if credentials.reddit_client_id.is_some() {
+            "✅"
+        } else {
+            "❌"
+        }
+    );
+    println!(
+        "  GitHub: {}",
+        if credentials.github_token.is_some() {
+            "✅"
+        } else {
+            "❌"
+        }
+    );
+    println!(
+        "  StackOverflow: {}",
+        if credentials.stackoverflow_api_key.is_some() {
+            "✅"
+        } else {
+            "❌"
+        }
+    );
     println!("  arXiv: ✅ (public API)\n");
 
     // Initialize state
@@ -133,12 +184,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Ok(samples) => {
                     println!("✅ Reddit: {} samples collected", samples);
                     cycle_samples += samples;
-                    state.sources_status.insert("reddit".to_string(), "OK".to_string());
+                    state
+                        .sources_status
+                        .insert("reddit".to_string(), "OK".to_string());
                 }
                 Err(e) => {
                     println!("❌ Reddit: {}", e);
                     cycle_errors += 1;
-                    state.sources_status.insert("reddit".to_string(), format!("ERROR: {}", e));
+                    state
+                        .sources_status
+                        .insert("reddit".to_string(), format!("ERROR: {}", e));
                 }
             }
         }
@@ -149,12 +204,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Ok(samples) => {
                     println!("✅ GitHub: {} samples collected", samples);
                     cycle_samples += samples;
-                    state.sources_status.insert("github".to_string(), "OK".to_string());
+                    state
+                        .sources_status
+                        .insert("github".to_string(), "OK".to_string());
                 }
                 Err(e) => {
                     println!("❌ GitHub: {}", e);
                     cycle_errors += 1;
-                    state.sources_status.insert("github".to_string(), format!("ERROR: {}", e));
+                    state
+                        .sources_status
+                        .insert("github".to_string(), format!("ERROR: {}", e));
                 }
             }
         }
@@ -165,12 +224,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Ok(samples) => {
                     println!("✅ Stack Overflow: {} samples collected", samples);
                     cycle_samples += samples;
-                    state.sources_status.insert("stackoverflow".to_string(), "OK".to_string());
+                    state
+                        .sources_status
+                        .insert("stackoverflow".to_string(), "OK".to_string());
                 }
                 Err(e) => {
                     println!("❌ Stack Overflow: {}", e);
                     cycle_errors += 1;
-                    state.sources_status.insert("stackoverflow".to_string(), format!("ERROR: {}", e));
+                    state
+                        .sources_status
+                        .insert("stackoverflow".to_string(), format!("ERROR: {}", e));
                 }
             }
         }
@@ -181,12 +244,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Ok(samples) => {
                     println!("✅ arXiv: {} samples collected", samples);
                     cycle_samples += samples;
-                    state.sources_status.insert("arxiv".to_string(), "OK".to_string());
+                    state
+                        .sources_status
+                        .insert("arxiv".to_string(), "OK".to_string());
                 }
                 Err(e) => {
                     println!("❌ arXiv: {}", e);
                     cycle_errors += 1;
-                    state.sources_status.insert("arxiv".to_string(), format!("ERROR: {}", e));
+                    state
+                        .sources_status
+                        .insert("arxiv".to_string(), format!("ERROR: {}", e));
                 }
             }
         }
@@ -197,7 +264,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Ok(samples) => {
                     println!("✅ Manual: {} samples collected", samples);
                     cycle_samples += samples;
-                    state.sources_status.insert("manual".to_string(), "OK".to_string());
+                    state
+                        .sources_status
+                        .insert("manual".to_string(), "OK".to_string());
                 }
                 Err(e) => {
                     println!("⚠️  Manual: {}", e);
@@ -219,7 +288,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("\n📈 CYCLE SUMMARY");
         println!("  Samples collected: {}", cycle_samples);
         println!("  Duplicates removed: {}", duplicates_removed);
-        println!("  Net unique samples: {}", cycle_samples - duplicates_removed);
+        println!(
+            "  Net unique samples: {}",
+            cycle_samples - duplicates_removed
+        );
         println!("  Collection errors: {}", cycle_errors);
 
         // Running statistics
@@ -227,15 +299,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("  Total cycles: {}", state.collection_count);
         println!("  Total raw samples: {}", state.total_samples_collected);
         println!("  Total duplicates removed: {}", state.total_duplicates);
-        println!("  Total unique samples: {}", state.total_samples_collected - state.total_duplicates);
-        println!("  Uptime: {} minutes",
-            state.start_time.elapsed().unwrap_or_default().as_secs() / 60);
+        println!(
+            "  Total unique samples: {}",
+            state.total_samples_collected - state.total_duplicates
+        );
+        println!(
+            "  Uptime: {} minutes",
+            state.start_time.elapsed().unwrap_or_default().as_secs() / 60
+        );
 
         // Estimate rates
-        let total_time_hours = state.start_time.elapsed().unwrap_or_default().as_secs_f64() / 3600.0;
-        let rate_per_hour = (state.total_samples_collected - state.total_duplicates) as f64 / total_time_hours.max(1.0);
+        let total_time_hours =
+            state.start_time.elapsed().unwrap_or_default().as_secs_f64() / 3600.0;
+        let rate_per_hour = (state.total_samples_collected - state.total_duplicates) as f64
+            / total_time_hours.max(1.0);
         let rate_per_day = rate_per_hour * 24.0;
-        println!("  Rate: {:.0} samples/hour, {:.0} samples/day", rate_per_hour, rate_per_day);
+        println!(
+            "  Rate: {:.0} samples/hour, {:.0} samples/day",
+            rate_per_hour, rate_per_day
+        );
 
         // Log cycle results
         let log_entry = format!(
@@ -251,13 +333,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Ok(mut file) = std::fs::OpenOptions::new()
             .create(true)
             .append(true)
-            .open(&config.log_file) {
+            .open(&config.log_file)
+        {
             use std::io::Write;
             let _ = writeln!(file, "{}", log_entry);
         }
 
         // Wait for next cycle
-        println!("\n⏱️  Next collection in {} seconds...", config.collection_interval.as_secs());
+        println!(
+            "\n⏱️  Next collection in {} seconds...",
+            config.collection_interval.as_secs()
+        );
         println!("   Press Ctrl+C to stop\n");
 
         std::thread::sleep(config.collection_interval);
@@ -305,7 +391,10 @@ struct DaemonState {
 // COLLECTOR FUNCTIONS (SIMULATED)
 // ============================================================================
 
-fn collect_from_reddit(_credentials: &DaemonCredentials, _config: &DaemonConfig) -> Result<u32, String> {
+fn collect_from_reddit(
+    _credentials: &DaemonCredentials,
+    _config: &DaemonConfig,
+) -> Result<u32, String> {
     // In production, this would:
     // 1. Authenticate with Reddit API
     // 2. Query r/jailbreak subreddit
@@ -317,7 +406,10 @@ fn collect_from_reddit(_credentials: &DaemonCredentials, _config: &DaemonConfig)
     Ok(rand::random::<u32>() % 15 + 15)
 }
 
-fn collect_from_github(_credentials: &DaemonCredentials, _config: &DaemonConfig) -> Result<u32, String> {
+fn collect_from_github(
+    _credentials: &DaemonCredentials,
+    _config: &DaemonConfig,
+) -> Result<u32, String> {
     // In production, this would:
     // 1. Authenticate with GitHub API
     // 2. Search for adversarial prompt repositories
@@ -328,7 +420,10 @@ fn collect_from_github(_credentials: &DaemonCredentials, _config: &DaemonConfig)
     Ok(rand::random::<u32>() % 10 + 10)
 }
 
-fn collect_from_stackoverflow(_credentials: &DaemonCredentials, _config: &DaemonConfig) -> Result<u32, String> {
+fn collect_from_stackoverflow(
+    _credentials: &DaemonCredentials,
+    _config: &DaemonConfig,
+) -> Result<u32, String> {
     // In production, this would:
     // 1. Query Stack Overflow API
     // 2. Search for security-related discussions
