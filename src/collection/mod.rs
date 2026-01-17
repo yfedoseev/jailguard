@@ -31,16 +31,20 @@
 //! ```
 
 pub mod arxiv_collector;
+pub mod deduplication;
 pub mod error;
 pub mod github_collector;
+pub mod labeling;
 pub mod rate_limiter;
 pub mod reddit_collector;
 pub mod stackoverflow_collector;
 pub mod validation;
 
 pub use arxiv_collector::{ArxivCollector, ArxivCollectorConfig};
+pub use deduplication::{DeduplicationConfig, DeduplicationResult, Deduplicator, DuplicateGroup};
 pub use error::{CollectionError, CollectionResult};
 pub use github_collector::{GitHubCollector, GitHubCollectorConfig};
+pub use labeling::{AttackClassifier, AttackType, LabelingConfig, LabelingResult};
 pub use rate_limiter::{RateLimitConfig, RateLimiter};
 pub use reddit_collector::{RedditCollector, RedditCollectorConfig};
 pub use stackoverflow_collector::{StackOverflowCollector, StackOverflowCollectorConfig};
