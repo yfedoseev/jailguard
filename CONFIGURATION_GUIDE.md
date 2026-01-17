@@ -44,8 +44,8 @@ let mut jg = JailGuard::with_config(config);
 ```
 
 **What you get**:
-- ✅ 96-98% accuracy (ensemble voting)
-- ✅ Multiple models agree
+- ✅ 95.9% accuracy on SOTA benchmarks (Phase 9 validation)
+- ✅ Multiple models agree (>95% agreement score)
 - ⚠️ Slightly higher latency (~0.5ms)
 - ✅ Better for critical systems
 

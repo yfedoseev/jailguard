@@ -7,7 +7,6 @@
 //! - Agreement score computation cost
 
 use std::time::Instant;
-use crate::detection::DetectionResult;
 
 /// Profiling data for a single detection operation
 #[derive(Debug, Clone)]
@@ -29,7 +28,9 @@ pub struct DetectionProfile {
 impl DetectionProfile {
     /// Get the maximum individual model latency
     pub fn max_model_latency(&self) -> u64 {
-        self.jailguard_us.max(self.gentelshed_us).max(self.protect_ai_us)
+        self.jailguard_us
+            .max(self.gentelshed_us)
+            .max(self.protect_ai_us)
     }
 
     /// Get overhead of ensemble combination relative to fastest model
@@ -101,7 +102,10 @@ impl EnsembleProfiler {
         if self.profiles.is_empty() {
             0
         } else {
-            self.profiles.iter().map(|p| p.ensemble_combine_us).sum::<u64>()
+            self.profiles
+                .iter()
+                .map(|p| p.ensemble_combine_us)
+                .sum::<u64>()
                 / self.profiles.len() as u64
         }
     }

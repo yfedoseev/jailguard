@@ -75,7 +75,7 @@ pub use monitoring::{
 };
 
 // Performance re-exports
-pub use performance::{ResponseCache, EnsembleProfiler, EnsembleProfile, PerformanceMetrics};
+pub use performance::{EnsembleProfile, EnsembleProfiler, PerformanceMetrics, ResponseCache};
 
 // Validation re-exports
 pub use validation::{

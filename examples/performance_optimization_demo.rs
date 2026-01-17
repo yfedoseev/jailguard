@@ -7,9 +7,8 @@
 //! - Optimization strategies
 
 use jailguard::{
-    EnsembleProfiler, PerformanceMetrics, ResponseCache, DetectionResult,
-    performance::profiler::DetectionProfile,
-    detection::ensemble_detector::EnsembleDetectionResult,
+    detection::ensemble_detector::EnsembleDetectionResult, performance::profiler::DetectionProfile,
+    DetectionResult, EnsembleProfiler, PerformanceMetrics, ResponseCache,
 };
 
 fn main() {
@@ -42,14 +41,38 @@ fn demo_profiler() {
     profiler.print_summary();
 
     println!("Profile Analysis:");
-    println!("  - Average JailGuard latency:     {} µs", profiler.avg_jailguard_us());
-    println!("  - Average GenTel-Shield latency: {} µs", profiler.avg_gentelshed_us());
-    println!("  - Average ProtectAI latency:     {} µs", profiler.avg_protect_ai_us());
-    println!("  - Average combination overhead:  {} µs", profiler.avg_combine_us());
-    println!("  - Total average latency:         {} µs", profiler.avg_total_us());
-    println!("  - P95 latency:                   {} µs", profiler.p95_total_us());
-    println!("  - P99 latency:                   {} µs", profiler.p99_total_us());
-    println!("  - Success rate:                  {:.1}%", profiler.success_rate());
+    println!(
+        "  - Average JailGuard latency:     {} µs",
+        profiler.avg_jailguard_us()
+    );
+    println!(
+        "  - Average GenTel-Shield latency: {} µs",
+        profiler.avg_gentelshed_us()
+    );
+    println!(
+        "  - Average ProtectAI latency:     {} µs",
+        profiler.avg_protect_ai_us()
+    );
+    println!(
+        "  - Average combination overhead:  {} µs",
+        profiler.avg_combine_us()
+    );
+    println!(
+        "  - Total average latency:         {} µs",
+        profiler.avg_total_us()
+    );
+    println!(
+        "  - P95 latency:                   {} µs",
+        profiler.p95_total_us()
+    );
+    println!(
+        "  - P99 latency:                   {} µs",
+        profiler.p99_total_us()
+    );
+    println!(
+        "  - Success rate:                  {:.1}%",
+        profiler.success_rate()
+    );
 }
 
 fn demo_cache() {
@@ -67,7 +90,6 @@ fn demo_cache() {
         "What is the weather today?",
     ];
 
-
     println!("\nSimulating cache hits/misses:");
     println!("Request pattern: each input checked 10 times");
 
@@ -80,16 +102,12 @@ fn demo_cache() {
                 // Cache hit
             } else {
                 // Cache miss - store result
-                let is_injection = input.to_lowercase().contains("ignore") ||
-                                  input.to_lowercase().contains("system prompt");
+                let is_injection = input.to_lowercase().contains("ignore")
+                    || input.to_lowercase().contains("system prompt");
                 let result = DetectionResult::new(
                     is_injection,
                     if is_injection { 0.8 } else { 0.1 },
-                    if is_injection {
-                        [0.8, 0.2]
-                    } else {
-                        [0.9, 0.1]
-                    },
+                    if is_injection { [0.8, 0.2] } else { [0.9, 0.1] },
                 );
                 cache.put(input.to_string(), result);
             }
@@ -106,9 +124,11 @@ fn demo_cache() {
 
     println!("\nOptimization Impact:");
     println!("  - Without cache: {} detections required", total_requests);
-    println!("  - With cache:    {} detections required ({}% reduction)",
-             stats.misses,
-             100 - ((stats.misses as f32 / total_requests as f32) * 100.0) as u32);
+    println!(
+        "  - With cache:    {} detections required ({}% reduction)",
+        stats.misses,
+        100 - ((stats.misses as f32 / total_requests as f32) * 100.0) as u32
+    );
 }
 
 fn demo_metrics() {
@@ -121,15 +141,15 @@ fn demo_metrics() {
     for i in 0..200 {
         let is_injection = i % 5 == 0; // 20% injection rate
         let agreement = if i % 10 == 0 { 0.7 } else { 0.95 }; // Some low-agreement cases
-        let confidence = if is_injection { 0.85 + ((i as f32) % 0.1) } else { 0.15 + ((i as f32) % 0.1) };
+        let confidence = if is_injection {
+            0.85 + ((i as f32) % 0.1)
+        } else {
+            0.15 + ((i as f32) % 0.1)
+        };
         let variance = if agreement > 0.9 { 0.01 } else { 0.08 };
 
         let result = EnsembleDetectionResult {
-            result: DetectionResult::new(
-                is_injection,
-                confidence,
-                [confidence, 1.0 - confidence],
-            ),
+            result: DetectionResult::new(is_injection, confidence, [confidence, 1.0 - confidence]),
             detector_votes: vec![],
             agreement_score: agreement,
             ensemble_confidence: confidence,
@@ -143,8 +163,14 @@ fn demo_metrics() {
 
     let summary = metrics.summary();
     println!("Key Performance Insights:");
-    println!("  - Models agree on {:.1}% of decisions", summary.high_agreement_rate * 100.0);
-    println!("  - Low variance in {:.1}% of cases", summary.low_variance_rate * 100.0);
+    println!(
+        "  - Models agree on {:.1}% of decisions",
+        summary.high_agreement_rate * 100.0
+    );
+    println!(
+        "  - Low variance in {:.1}% of cases",
+        summary.low_variance_rate * 100.0
+    );
     println!("  - Average disagreement: {:.5}", summary.avg_variance);
 
     println!("\nOptimization Recommendations:");

@@ -57,8 +57,7 @@ impl PerformanceMetrics {
         if self.results.is_empty() {
             0.0
         } else {
-            self.results.iter().map(|r| r.agreement_score).sum::<f32>()
-                / self.results.len() as f32
+            self.results.iter().map(|r| r.agreement_score).sum::<f32>() / self.results.len() as f32
         }
     }
 
@@ -67,7 +66,10 @@ impl PerformanceMetrics {
         if self.results.is_empty() {
             0.0
         } else {
-            self.results.iter().map(|r| r.ensemble_confidence).sum::<f32>()
+            self.results
+                .iter()
+                .map(|r| r.ensemble_confidence)
+                .sum::<f32>()
                 / self.results.len() as f32
         }
     }
@@ -77,7 +79,10 @@ impl PerformanceMetrics {
         if self.results.is_empty() {
             0.0
         } else {
-            self.results.iter().map(|r| r.confidence_variance).sum::<f32>()
+            self.results
+                .iter()
+                .map(|r| r.confidence_variance)
+                .sum::<f32>()
                 / self.results.len() as f32
         }
     }
@@ -87,7 +92,11 @@ impl PerformanceMetrics {
         if self.results.is_empty() {
             0.0
         } else {
-            let injections = self.results.iter().filter(|r| r.result.is_injection).count();
+            let injections = self
+                .results
+                .iter()
+                .filter(|r| r.result.is_injection)
+                .count();
             injections as f32 / self.results.len() as f32
         }
     }
@@ -97,7 +106,11 @@ impl PerformanceMetrics {
         if self.results.is_empty() {
             0.0
         } else {
-            let high = self.results.iter().filter(|r| r.agreement_score >= 0.8).count();
+            let high = self
+                .results
+                .iter()
+                .filter(|r| r.agreement_score >= 0.8)
+                .count();
             high as f32 / self.results.len() as f32
         }
     }
@@ -107,7 +120,11 @@ impl PerformanceMetrics {
         if self.results.is_empty() {
             0.0
         } else {
-            let low = self.results.iter().filter(|r| r.confidence_variance < 0.05).count();
+            let low = self
+                .results
+                .iter()
+                .filter(|r| r.confidence_variance < 0.05)
+                .count();
             low as f32 / self.results.len() as f32
         }
     }
@@ -145,14 +162,23 @@ impl PerformanceMetrics {
         let summary = self.summary();
         println!("\n=== Performance Metrics Summary ===");
         println!("Samples:              {}", summary.sample_count);
-        println!("Injection Rate:       {:.1}%", summary.injection_rate * 100.0);
+        println!(
+            "Injection Rate:       {:.1}%",
+            summary.injection_rate * 100.0
+        );
         println!("\nAgreement Metrics:");
         println!("  Avg Agreement:      {:.3}", summary.avg_agreement);
-        println!("  High Agreement:     {:.1}%", summary.high_agreement_rate * 100.0);
+        println!(
+            "  High Agreement:     {:.1}%",
+            summary.high_agreement_rate * 100.0
+        );
         println!("\nConfidence Metrics:");
         println!("  Avg Confidence:     {:.3}", summary.avg_confidence);
         println!("  Avg Variance:       {:.5}", summary.avg_variance);
-        println!("  Low Variance:       {:.1}%", summary.low_variance_rate * 100.0);
+        println!(
+            "  Low Variance:       {:.1}%",
+            summary.low_variance_rate * 100.0
+        );
         println!("====================================\n");
     }
 }
@@ -187,7 +213,12 @@ mod tests {
     use super::*;
     use crate::detection::DetectionResult;
 
-    fn create_ensemble_result(agreement: f32, confidence: f32, variance: f32, is_injection: bool) -> EnsembleDetectionResult {
+    fn create_ensemble_result(
+        agreement: f32,
+        confidence: f32,
+        variance: f32,
+        is_injection: bool,
+    ) -> EnsembleDetectionResult {
         EnsembleDetectionResult {
             result: DetectionResult::new(is_injection, confidence, [confidence, 1.0 - confidence]),
             detector_votes: vec![],
@@ -218,7 +249,7 @@ mod tests {
         metrics.record(create_ensemble_result(0.9, 0.9, 0.01, true));
         metrics.record(create_ensemble_result(0.8, 0.3, 0.05, false));
 
-        assert!((metrics.injection_rate() - 2.0/3.0).abs() < 0.01);
+        assert!((metrics.injection_rate() - 2.0 / 3.0).abs() < 0.01);
     }
 
     #[test]
@@ -229,6 +260,6 @@ mod tests {
         metrics.record(create_ensemble_result(0.75, 0.8, 0.1, true));
 
         assert_eq!(metrics.high_agreement_rate(), 0.5); // 1 out of 2
-        assert_eq!(metrics.low_variance_rate(), 0.5);  // 1 out of 2
+        assert_eq!(metrics.low_variance_rate(), 0.5); // 1 out of 2
     }
 }

@@ -3,9 +3,9 @@
 //! Caches detection results to avoid redundant model invocations.
 //! Useful for repeated checks on the same or similar inputs.
 
-use std::collections::HashMap;
-use std::time::{Instant, Duration};
 use crate::detection::DetectionResult;
+use std::collections::HashMap;
+use std::time::{Duration, Instant};
 
 /// Cache entry with timestamp and TTL
 #[derive(Clone, Debug)]
