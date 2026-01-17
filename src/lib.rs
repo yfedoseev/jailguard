@@ -23,6 +23,7 @@
 //! }
 //! ```
 
+pub mod advanced_ensemble;
 pub mod agent;
 pub mod attention_tracker;
 pub mod dataset;
@@ -44,6 +45,7 @@ pub mod tokenizer;
 pub mod training;
 
 // Re-exports for convenience
+pub use advanced_ensemble::{AdvancedDetectionResult, AdvancedEnsemble, LayerScores};
 pub use attention_tracker::{AttentionTracker, AttentionTrackerConfig, AttentionTrackerResult};
 pub use detection::{DetectionResult, Detector, DetectorConfig, InjectionRisk};
 pub use ensemble::{EnsembleDetectionResult, EnsembleDetector, ModelWeights};
