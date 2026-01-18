@@ -12,6 +12,7 @@ pub mod feedback_learning;
 pub mod multilabel_detector;
 pub mod pretrained_transformer_detector;
 mod result;
+pub mod result_cache;
 pub mod transformer_detector;
 
 pub use calibrated_detector::{CalibratedDetectionResult, CalibratedDetector};
@@ -31,4 +32,5 @@ pub use pretrained_transformer_detector::{
     PretrainedTransformerDetector, PretrainedTransformerDetectorConfig,
 };
 pub use result::{AttackType, DetectionResult, InjectionRisk, MultiTaskDetectionResult};
+pub use result_cache::{CacheConfig, CacheStats, DetectionResultCache};
 pub use transformer_detector::{TransformerDetector, TransformerDetectorConfig};
