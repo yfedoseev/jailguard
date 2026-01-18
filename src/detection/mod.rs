@@ -6,6 +6,7 @@
 pub mod calibrated_detector;
 mod detector;
 pub mod ensemble_detector;
+pub mod ensemble_detector_v2;
 pub mod external_models;
 pub mod feedback_learning;
 pub mod multilabel_detector;
@@ -16,6 +17,9 @@ pub mod transformer_detector;
 pub use calibrated_detector::{CalibratedDetectionResult, CalibratedDetector};
 pub use detector::{Detector, DetectorConfig};
 pub use ensemble_detector::{EnsembleConfig, EnsembleDetectionResult, EnsembleDetector};
+pub use ensemble_detector_v2::{
+    EnsembleDetectionResult as EnsembleDetectionResultV2, EnsembleDetectorV2, VotingStrategy,
+};
 pub use external_models::{
     ExternalModel, ExternalModelConfig, ExternalModelResult, GenTelShieldClient, ProtectAIClient,
 };

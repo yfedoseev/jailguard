@@ -41,7 +41,8 @@ pub use adversarial_training::{
     AugmentationStats,
 };
 pub use buffer::ExperienceBuffer;
-pub use calibration::{CalibrationConfig, CalibrationMetrics, TemperatureScaling};
+pub use calibration::CalibrationConfig;
+pub use calibration::{CalibrationMetrics, CalibrationValidator, TemperatureScaling};
 pub use fine_tune::{FineTuneConfig, FineTuner, TrainingMetrics as FinetuneMetrics};
 pub use metrics::TrainingMetrics;
 pub use multilabel::{MultiLabelLoss, MultiLabelLossConfig};

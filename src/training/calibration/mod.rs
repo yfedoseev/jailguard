@@ -11,9 +11,11 @@
 
 pub mod metrics;
 pub mod temperature_scaling;
+pub mod validator;
 
 pub use metrics::{compute_brier_score, compute_ece, compute_mce, CalibrationMetrics};
 pub use temperature_scaling::{TemperatureScaling, TemperatureScalingConfig};
+pub use validator::CalibrationValidator;
 
 /// Configuration for calibration.
 #[derive(Debug, Clone)]

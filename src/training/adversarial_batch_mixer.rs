@@ -3,10 +3,8 @@
 //! This module mixes regular training samples with adversarial variants
 //! to create robust batches for multi-label training.
 
-use crate::dataset::MultiLabelDatasetLoader;
 use crate::training::adversarial::AdversarialGenerator;
-use crate::training::{MultiLabelTrainingConfig, MultiLabelTrainingSample};
-use std::collections::VecDeque;
+use crate::training::MultiLabelTrainingSample;
 
 /// Configuration for adversarial batch mixing.
 #[derive(Debug, Clone)]
@@ -200,8 +198,6 @@ impl AdversarialBatchMixer {
     /// Apply encoding attack (Base64, URL encoding).
     fn apply_encoding(&self, text: &str) -> String {
         // Base64 encoding
-        use std::fmt::Write;
-
         const BASE64_CHARS: &[u8] =
             b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
