@@ -18,6 +18,7 @@ pub mod adversarial_training;
 mod buffer;
 pub mod calibration;
 pub mod fine_tune;
+pub mod gradient_descent;
 mod metrics;
 pub mod multilabel;
 pub mod multilabel_trainer;
@@ -44,6 +45,7 @@ pub use buffer::ExperienceBuffer;
 pub use calibration::CalibrationConfig;
 pub use calibration::{CalibrationMetrics, CalibrationValidator, TemperatureScaling};
 pub use fine_tune::{FineTuneConfig, FineTuner, TrainingMetrics as FinetuneMetrics};
+pub use gradient_descent::{EpochMetrics, GradientDescentTrainer};
 pub use metrics::TrainingMetrics;
 pub use multilabel::{MultiLabelLoss, MultiLabelLossConfig};
 pub use multilabel_trainer::{
