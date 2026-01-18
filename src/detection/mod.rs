@@ -8,6 +8,7 @@ mod detector;
 pub mod ensemble_detector;
 pub mod external_models;
 pub mod feedback_learning;
+pub mod multilabel_detector;
 pub mod pretrained_transformer_detector;
 mod result;
 pub mod transformer_detector;
@@ -21,6 +22,7 @@ pub use external_models::{
 pub use feedback_learning::{
     ErrorType, FeedbackCollector, FeedbackStatistics, OnlineLearningConfig, UserFeedback,
 };
+pub use multilabel_detector::{MultiLabelDetectionResult, MultiLabelDetector};
 pub use pretrained_transformer_detector::{
     PretrainedTransformerDetector, PretrainedTransformerDetectorConfig,
 };

@@ -142,10 +142,7 @@ impl<B: Backend> DeBERTaEncoder<B> {
             .map(|_| DeBERTaBlock::new(embed_dim, num_heads, ff_dim, dropout_rate, device))
             .collect();
 
-        Self {
-            layers,
-            num_layers,
-        }
+        Self { layers, num_layers }
     }
 
     /// Forward pass through all layers.
@@ -172,11 +169,11 @@ mod tests {
     fn test_deberta_encoder_creation() {
         let device = <NdArray as Backend>::Device::default();
         let encoder = DeBERTaEncoder::<NdArray>::new(
-            384, // embed_dim
-            4,   // num_heads
+            384,  // embed_dim
+            4,    // num_heads
             1536, // ff_dim
-            3,   // num_layers
-            0.1, // dropout
+            3,    // num_layers
+            0.1,  // dropout
             &device,
         );
         assert_eq!(encoder.num_layers, 3);

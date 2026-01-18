@@ -18,6 +18,7 @@ mod buffer;
 pub mod calibration;
 pub mod fine_tune;
 mod metrics;
+pub mod multilabel;
 mod multitask;
 pub mod multitask_learning;
 pub mod multitask_trainer;
@@ -37,6 +38,7 @@ pub use buffer::ExperienceBuffer;
 pub use calibration::{CalibrationConfig, CalibrationMetrics, TemperatureScaling};
 pub use fine_tune::{FineTuneConfig, FineTuner, TrainingMetrics as FinetuneMetrics};
 pub use metrics::TrainingMetrics;
+pub use multilabel::{MultiLabelLoss, MultiLabelLossConfig};
 pub use multitask::MultiTaskLoss;
 pub use multitask_learning::{
     AttackType, MultiTaskConfig, MultiTaskLearner, MultiTaskResult, RiskLevel,

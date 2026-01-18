@@ -6,13 +6,13 @@
 
 mod attention;
 mod config;
+pub mod deberta;
 mod encoder;
 mod feedforward;
-pub mod deberta;
 
 pub use attention::{MultiHeadAttention, MultiHeadAttentionConfig};
 pub use config::TransformerConfig;
-pub use deberta::{DeBERTaEncoder, DeBERTaBlock, DisentangledAttention};
+pub use deberta::{DeBERTaBlock, DeBERTaEncoder, DisentangledAttention};
 pub use encoder::{
     TransformerEncoder, TransformerEncoderBlock, TransformerEncoderBlockConfig,
     TransformerEncoderConfig,
