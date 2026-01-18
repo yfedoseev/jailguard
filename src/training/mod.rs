@@ -12,6 +12,7 @@
 #![allow(clippy::unnecessary_wraps)]
 
 pub mod adversarial;
+pub mod adversarial_batch_mixer;
 pub mod adversarial_trainer;
 pub mod adversarial_training;
 mod buffer;
@@ -25,10 +26,14 @@ pub mod multitask_learning;
 pub mod multitask_trainer;
 pub mod online;
 mod reward;
+pub mod robust_multilabel_trainer;
 
 pub use adversarial::{
     AdversarialConfig, AdversarialGenerator, CharSubstitutionAttack, EncodingAttack,
     ParaphraseAttack,
+};
+pub use adversarial_batch_mixer::{
+    AdversarialBatchConfig, AdversarialBatchMixer, AdversarialBatchStats,
 };
 pub use adversarial_trainer::{AdversarialMetrics, AdversarialTrainer, AdversarialTrainingConfig};
 pub use adversarial_training::{
@@ -54,6 +59,9 @@ pub use online::{
     IncrementalMetrics, IncrementalTrainer, IncrementalTrainingConfig,
 };
 pub use reward::{RewardConfig, RewardShaper};
+pub use robust_multilabel_trainer::{
+    RobustEpochMetrics, RobustMultiLabelTrainer, RobustTrainingConfig, RobustnessMetrics,
+};
 
 use crate::agent::Experience;
 use crate::error::Result;
