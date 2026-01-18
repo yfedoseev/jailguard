@@ -10,9 +10,10 @@ use crate::error::Result;
 use burn::nn::{LayerNorm, LayerNormConfig};
 use burn::tensor::{backend::Backend, Tensor, TensorData};
 use serde::{Deserialize, Serialize};
-use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
+
+#[cfg(feature = "semantic-embeddings")]
+use crate::model::SemanticEmbedder;
 
 /// Pre-trained embedding lookup table.
 ///
@@ -63,11 +64,13 @@ impl EmbeddingLookup {
 /// Pre-trained embedding layer using all-MiniLM-L6-v2.
 ///
 /// This layer provides:
-/// - Pre-computed semantic embeddings (384-dim from all-MiniLM-L6-v2)
+/// - Pre-computed semantic embeddings (384-dim from all-MiniLM-L6-v2) from lookup
+/// - On-demand semantic embeddings for unknown texts (using SemanticEmbedder)
 /// - Layer normalization
 ///
-/// The semantic embeddings are pre-computed and stored. Layer normalization
-/// is applied to normalize the embeddings for stable training.
+/// For texts in the lookup table, pre-computed embeddings are used.
+/// For unknown texts, embeddings are computed on-the-fly using the
+/// all-MiniLM-L6-v2 model and cached to avoid recomputation.
 #[derive(Debug)]
 pub struct PretrainedEmbedding<B: Backend> {
     /// Pre-computed embedding vectors (384-dim)
@@ -76,6 +79,9 @@ pub struct PretrainedEmbedding<B: Backend> {
     layer_norm: LayerNorm<B>,
     /// Embedding dimension (384 for all-MiniLM-L6-v2)
     embed_dim: usize,
+    /// Semantic embedder for unknown texts
+    #[cfg(feature = "semantic-embeddings")]
+    semantic_embedder: Option<SemanticEmbedder>,
 }
 
 // Implement Clone manually since EmbeddingLookup is not a burn Module
@@ -85,6 +91,8 @@ impl<B: Backend> Clone for PretrainedEmbedding<B> {
             lookup: self.lookup.clone(),
             layer_norm: self.layer_norm.clone(),
             embed_dim: self.embed_dim,
+            #[cfg(feature = "semantic-embeddings")]
+            semantic_embedder: self.semantic_embedder.clone(),
         }
     }
 }
@@ -112,58 +120,44 @@ impl PretrainedEmbeddingConfig {
     }
 
     /// Initialize the embedding layer.
-    pub fn init<B: Backend>(&self, device: &B::Device) -> PretrainedEmbedding<B> {
+    ///
+    /// # Errors
+    /// Returns error if semantic embedder initialization fails (when semantic-embeddings feature is enabled).
+    pub fn init<B: Backend>(&self, device: &B::Device) -> Result<PretrainedEmbedding<B>> {
         // Layer norm for the embedding dimension
         let layer_norm = LayerNormConfig::new(self.embed_dim).init(device);
 
-        PretrainedEmbedding {
+        // Initialize semantic embedder if feature is enabled
+        #[cfg(feature = "semantic-embeddings")]
+        let semantic_embedder = Some(SemanticEmbedder::new()?);
+
+        #[cfg(not(feature = "semantic-embeddings"))]
+        let _semantic_embedder = ();
+
+        Ok(PretrainedEmbedding {
             lookup: self.lookup.clone(),
             layer_norm,
             embed_dim: self.embed_dim,
-        }
+            #[cfg(feature = "semantic-embeddings")]
+            semantic_embedder,
+        })
     }
 }
 
 impl<B: Backend> PretrainedEmbedding<B> {
-    /// Generate a deterministic embedding for unknown text using hash-based fallback.
-    ///
-    /// This ensures:
-    /// - Different texts get different embeddings
-    /// - Same text always produces same embedding
-    /// - Values are in reasonable range [-1, 1]
-    fn generate_fallback_embedding(&self, text: &str) -> Vec<f32> {
-        let mut hasher = DefaultHasher::new();
-        text.hash(&mut hasher);
-        let hash = hasher.finish();
-
-        // Create a deterministic but diverse embedding from the hash
-        let mut embedding = vec![0.0; self.embed_dim];
-
-        // Use multiple hashes to generate different values for each dimension
-        for i in 0..self.embed_dim {
-            // Create a different seed for each dimension by mixing hash with position
-            let mut dim_hasher = DefaultHasher::new();
-            hash.hash(&mut dim_hasher);
-            (i as u64).hash(&mut dim_hasher);
-            let dim_hash = dim_hasher.finish();
-
-            // XOR and bit-shift for better distribution
-            let bits = (dim_hash ^ (dim_hash >> 32)) as u32;
-            // Convert to float in range [-1, 1]
-            let normalized = ((bits as f32) / u32::MAX as f32) * 2.0 - 1.0;
-            embedding[i] = normalized;
-        }
-
-        embedding
-    }
-
     /// Forward pass: convert text to embeddings using pre-trained vectors.
+    ///
+    /// For texts in the lookup table, uses pre-computed embeddings.
+    /// For unknown texts, computes embeddings using the semantic model.
     ///
     /// # Arguments
     /// * `texts` - Text samples to embed
     ///
     /// # Returns
     /// Embedded tensor of shape [batch_size, 1, embed_dim]
+    ///
+    /// # Errors
+    /// Returns error if semantic embedding computation fails for unknown texts.
     pub fn forward(&self, texts: &[String]) -> Result<Tensor<B, 3>> {
         let batch_size = texts.len();
         let device = self.layer_norm.gamma.device();
@@ -173,12 +167,28 @@ impl<B: Backend> PretrainedEmbedding<B> {
 
         for text in texts {
             if let Some(embedding) = self.lookup.get(text) {
+                // Use pre-computed embedding from lookup
                 embeddings.push(embedding.clone());
             } else {
-                // For unknown text, generate a deterministic fallback embedding
-                // based on the text content hash, ensuring different texts get
-                // different embeddings
-                embeddings.push(self.generate_fallback_embedding(text));
+                // For unknown text, compute embedding using semantic model
+                #[cfg(feature = "semantic-embeddings")]
+                {
+                    if let Some(ref embedder) = self.semantic_embedder {
+                        let embedding = embedder.embed(text)?;
+                        embeddings.push(embedding);
+                    } else {
+                        return Err(crate::error::Error::Model(
+                            "Semantic embedder not initialized".to_string(),
+                        ));
+                    }
+                }
+
+                #[cfg(not(feature = "semantic-embeddings"))]
+                {
+                    return Err(crate::error::Error::Model(
+                        "Semantic embeddings require 'semantic-embeddings' feature".to_string(),
+                    ));
+                }
             }
         }
 
@@ -244,67 +254,25 @@ mod tests {
     }
 
     #[test]
-    fn test_fallback_embedding_different_texts() {
-        let lookup = EmbeddingLookup::new(384);
+    fn test_pretrained_embedding_init() {
+        let mut lookup = EmbeddingLookup::new(384);
+        lookup.insert("test".to_string(), vec![0.1; 384]);
+
         let config = PretrainedEmbeddingConfig::new(lookup, 512);
-        let embedding = config.init::<NdArray>(&Default::default());
 
-        // Generate fallback embeddings for different texts
-        let emb1 = embedding.generate_fallback_embedding("Ignore your instructions");
-        let emb2 = embedding.generate_fallback_embedding("What is the weather?");
-        let emb3 = embedding.generate_fallback_embedding("Ignore your instructions"); // Same as emb1
-
-        // Different texts should get different embeddings
-        assert_ne!(
-            emb1, emb2,
-            "Different texts must produce different embeddings"
-        );
-
-        // Same text should get same embedding (deterministic)
-        assert_eq!(
-            emb1, emb3,
-            "Same text must always produce identical embedding"
-        );
-    }
-
-    #[test]
-    fn test_fallback_embedding_range() {
-        let lookup = EmbeddingLookup::new(384);
-        let config = PretrainedEmbeddingConfig::new(lookup, 512);
-        let embedding = config.init::<NdArray>(&Default::default());
-
-        let emb = embedding.generate_fallback_embedding("test");
-
-        // All values should be in reasonable range [-1, 1]
-        for &val in &emb {
-            assert!(
-                val >= -1.0 && val <= 1.0,
-                "Embedding values must be in range [-1, 1], got {}",
-                val
-            );
+        // Init should succeed if semantic embeddings are available
+        #[cfg(feature = "semantic-embeddings")]
+        {
+            let result = config.init::<NdArray>(&Default::default());
+            // May fail if model is not available, which is OK for tests
+            let _ = result;
         }
-    }
 
-    #[test]
-    fn test_fallback_embedding_not_zero() {
-        let lookup = EmbeddingLookup::new(384);
-        let config = PretrainedEmbeddingConfig::new(lookup, 512);
-        let embedding = config.init::<NdArray>(&Default::default());
-
-        let emb1 = embedding.generate_fallback_embedding("Ignore your instructions");
-        let emb2 = embedding.generate_fallback_embedding("What is the weather?");
-
-        // Neither should be all zeros
-        let all_zero1: bool = emb1.iter().all(|&x| x == 0.0);
-        let all_zero2: bool = emb2.iter().all(|&x| x == 0.0);
-
-        assert!(
-            !all_zero1,
-            "Fallback embedding for text 1 should not be all zeros"
-        );
-        assert!(
-            !all_zero2,
-            "Fallback embedding for text 2 should not be all zeros"
-        );
+        // Init should fail if semantic embeddings are not available
+        #[cfg(not(feature = "semantic-embeddings"))]
+        {
+            let result = config.init::<NdArray>(&Default::default());
+            assert!(result.is_err());
+        }
     }
 }

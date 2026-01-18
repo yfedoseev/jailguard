@@ -102,7 +102,7 @@ impl PretrainedTransformerDetector {
         // Initialize pre-trained embedding layer
         let embed_config =
             PretrainedEmbeddingConfig::new(config.embedding_lookup.clone(), config.max_length);
-        let embedding = embed_config.init(&device);
+        let embedding = embed_config.init(&device)?;
 
         // Initialize transformer encoder (with 384-dim for all-MiniLM-L6-v2)
         let encoder_config = TransformerEncoderConfig::new(

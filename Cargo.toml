@@ -44,6 +44,15 @@ tokio = { version = "1", features = ["full"], optional = true }
 # CSV parsing
 csv = { version = "1.3", optional = true }
 
+# ONNX Runtime for semantic embeddings (all-MiniLM-L6-v2)
+# Note: For now we'll mock this - in production, use official ONNX Runtime
+# ort = { version = "1.18", features = ["load-dynamic"], optional = true }
+# Temporarily using a mock implementation - see semantic_embedder.rs
+# To enable real ONNX support, install ONNX Runtime system library
+
+# LRU cache for embedding caching
+lru = "0.12"
+
 # Pattern matching for secret detection and injection markers
 regex = "1"
 
@@ -55,13 +64,16 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [features]
-default = ["cpu"]
+default = ["cpu", "semantic-embeddings"]
 cpu = []
 wgpu = ["dep:burn-wgpu", "burn/wgpu"]
 # Use burn-train directly with metrics but not TUI to avoid unicode-width version conflicts
 train = ["dep:burn-train"]
-pretrained = []
+pretrained = ["semantic-embeddings"]
 download = ["dep:reqwest", "dep:tokio", "dep:csv"]
+# Semantic embeddings using all-MiniLM-L6-v2 (enabled by default)
+# Currently uses hash-based embeddings; can integrate ONNX Runtime when available
+semantic-embeddings = []
 
 [[example]]
 name = "train"
