@@ -8,9 +8,9 @@ mod detector;
 pub mod ensemble_detector;
 pub mod external_models;
 pub mod feedback_learning;
+pub mod pretrained_transformer_detector;
 mod result;
 pub mod transformer_detector;
-pub mod pretrained_transformer_detector;
 
 pub use calibrated_detector::{CalibratedDetectionResult, CalibratedDetector};
 pub use detector::{Detector, DetectorConfig};
@@ -21,8 +21,8 @@ pub use external_models::{
 pub use feedback_learning::{
     ErrorType, FeedbackCollector, FeedbackStatistics, OnlineLearningConfig, UserFeedback,
 };
-pub use result::{AttackType, DetectionResult, InjectionRisk, MultiTaskDetectionResult};
-pub use transformer_detector::{TransformerDetector, TransformerDetectorConfig};
 pub use pretrained_transformer_detector::{
     PretrainedTransformerDetector, PretrainedTransformerDetectorConfig,
 };
+pub use result::{AttackType, DetectionResult, InjectionRisk, MultiTaskDetectionResult};
+pub use transformer_detector::{TransformerDetector, TransformerDetectorConfig};

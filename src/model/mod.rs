@@ -18,9 +18,7 @@ mod value;
 pub use classifier::{AttackClassifier, AttackClassifierConfig};
 pub use embedding::{TextEmbedding, TextEmbeddingConfig};
 pub use policy::{PolicyNetwork, PolicyNetworkConfig};
-pub use pretrained_embedding::{
-    EmbeddingLookup, PretrainedEmbedding, PretrainedEmbeddingConfig,
-};
+pub use pretrained_embedding::{EmbeddingLookup, PretrainedEmbedding, PretrainedEmbeddingConfig};
 pub use pretrained_embedding_loader::{EmbeddingLoader, EmbeddingSample};
 pub use semantic_head::{SemanticSimilarityHead, SemanticSimilarityHeadConfig};
 pub use transformer::{TransformerConfig, TransformerEncoder, TransformerEncoderConfig};
