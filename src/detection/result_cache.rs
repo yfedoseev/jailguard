@@ -216,15 +216,10 @@ mod tests {
     use super::*;
 
     fn create_test_result() -> MultiTaskDetectionResult {
-        use crate::detection::{AttackType, DetectionResult, InjectionRisk};
+        use crate::detection::{AttackType, DetectionResult};
 
         MultiTaskDetectionResult {
-            detection: DetectionResult {
-                is_injection: true,
-                confidence: 0.95,
-                risk_level: InjectionRisk::High,
-                action_probabilities: [0.95, 0.05],
-            },
+            detection: DetectionResult::new(true, 0.95, [0.95, 0.05]),
             attack_type: AttackType::RolePlay,
             attack_probs: [0.05, 0.90, 0.02, 0.01, 0.01, 0.01, 0.00],
             semantic_score: 0.85,

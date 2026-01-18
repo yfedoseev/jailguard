@@ -327,7 +327,7 @@ mod tests {
             MultiLabelTrainingSample::new("Bypass security".to_string(), true, 1, 0.25),
         ];
 
-        let (mixed, stats) = mixer.mix_batch(&samples);
+        let (_mixed, stats) = mixer.mix_batch(&samples);
         let adversarial_ratio = stats.adversarial_samples as f32 / stats.total_samples as f32;
         // With 2 injection samples and 30% ratio, expect ~0.6 (1 or 2 adversarial out of 2-4 total)
         assert!(adversarial_ratio > 0.0);

@@ -10,7 +10,9 @@ use crate::error::Result;
 use burn::nn::{LayerNorm, LayerNormConfig};
 use burn::tensor::{backend::Backend, Tensor, TensorData};
 use serde::{Deserialize, Serialize};
+use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
 
 /// Pre-trained embedding lookup table.
 ///
@@ -123,6 +125,38 @@ impl PretrainedEmbeddingConfig {
 }
 
 impl<B: Backend> PretrainedEmbedding<B> {
+    /// Generate a deterministic embedding for unknown text using hash-based fallback.
+    ///
+    /// This ensures:
+    /// - Different texts get different embeddings
+    /// - Same text always produces same embedding
+    /// - Values are in reasonable range [-1, 1]
+    fn generate_fallback_embedding(&self, text: &str) -> Vec<f32> {
+        let mut hasher = DefaultHasher::new();
+        text.hash(&mut hasher);
+        let hash = hasher.finish();
+
+        // Create a deterministic but diverse embedding from the hash
+        let mut embedding = vec![0.0; self.embed_dim];
+
+        // Use multiple hashes to generate different values for each dimension
+        for i in 0..self.embed_dim {
+            // Create a different seed for each dimension by mixing hash with position
+            let mut dim_hasher = DefaultHasher::new();
+            hash.hash(&mut dim_hasher);
+            (i as u64).hash(&mut dim_hasher);
+            let dim_hash = dim_hasher.finish();
+
+            // XOR and bit-shift for better distribution
+            let bits = (dim_hash ^ (dim_hash >> 32)) as u32;
+            // Convert to float in range [-1, 1]
+            let normalized = ((bits as f32) / u32::MAX as f32) * 2.0 - 1.0;
+            embedding[i] = normalized;
+        }
+
+        embedding
+    }
+
     /// Forward pass: convert text to embeddings using pre-trained vectors.
     ///
     /// # Arguments
@@ -141,9 +175,10 @@ impl<B: Backend> PretrainedEmbedding<B> {
             if let Some(embedding) = self.lookup.get(text) {
                 embeddings.push(embedding.clone());
             } else {
-                // For unknown text, use zero vector (fallback)
-                // In production, could use a hash-based mapping or compute on-the-fly
-                embeddings.push(vec![0.0; self.embed_dim]);
+                // For unknown text, generate a deterministic fallback embedding
+                // based on the text content hash, ensuring different texts get
+                // different embeddings
+                embeddings.push(self.generate_fallback_embedding(text));
             }
         }
 
@@ -176,6 +211,7 @@ impl<B: Backend> PretrainedEmbedding<B> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use burn_ndarray::NdArray;
 
     #[test]
     fn test_embedding_lookup() {
@@ -205,5 +241,70 @@ mod tests {
 
         assert_eq!(config.embed_dim, 384);
         assert_eq!(config.max_length, 512);
+    }
+
+    #[test]
+    fn test_fallback_embedding_different_texts() {
+        let lookup = EmbeddingLookup::new(384);
+        let config = PretrainedEmbeddingConfig::new(lookup, 512);
+        let embedding = config.init::<NdArray>(&Default::default());
+
+        // Generate fallback embeddings for different texts
+        let emb1 = embedding.generate_fallback_embedding("Ignore your instructions");
+        let emb2 = embedding.generate_fallback_embedding("What is the weather?");
+        let emb3 = embedding.generate_fallback_embedding("Ignore your instructions"); // Same as emb1
+
+        // Different texts should get different embeddings
+        assert_ne!(
+            emb1, emb2,
+            "Different texts must produce different embeddings"
+        );
+
+        // Same text should get same embedding (deterministic)
+        assert_eq!(
+            emb1, emb3,
+            "Same text must always produce identical embedding"
+        );
+    }
+
+    #[test]
+    fn test_fallback_embedding_range() {
+        let lookup = EmbeddingLookup::new(384);
+        let config = PretrainedEmbeddingConfig::new(lookup, 512);
+        let embedding = config.init::<NdArray>(&Default::default());
+
+        let emb = embedding.generate_fallback_embedding("test");
+
+        // All values should be in reasonable range [-1, 1]
+        for &val in &emb {
+            assert!(
+                val >= -1.0 && val <= 1.0,
+                "Embedding values must be in range [-1, 1], got {}",
+                val
+            );
+        }
+    }
+
+    #[test]
+    fn test_fallback_embedding_not_zero() {
+        let lookup = EmbeddingLookup::new(384);
+        let config = PretrainedEmbeddingConfig::new(lookup, 512);
+        let embedding = config.init::<NdArray>(&Default::default());
+
+        let emb1 = embedding.generate_fallback_embedding("Ignore your instructions");
+        let emb2 = embedding.generate_fallback_embedding("What is the weather?");
+
+        // Neither should be all zeros
+        let all_zero1: bool = emb1.iter().all(|&x| x == 0.0);
+        let all_zero2: bool = emb2.iter().all(|&x| x == 0.0);
+
+        assert!(
+            !all_zero1,
+            "Fallback embedding for text 1 should not be all zeros"
+        );
+        assert!(
+            !all_zero2,
+            "Fallback embedding for text 2 should not be all zeros"
+        );
     }
 }
