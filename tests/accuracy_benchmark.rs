@@ -121,6 +121,50 @@ fn benchmark_multilabel_detector_accuracy() {
         injection_acc
     );
 
+    // Calculate precision, recall, F1
+    // Confusion matrix:
+    // True Positives (TP): injection_correct
+    // False Positives (FP): benign_total - benign_correct
+    // True Negatives (TN): benign_correct
+    // False Negatives (FN): injection_total - injection_correct
+    let tp = injection_correct as f32;
+    let fp = (benign_total - benign_correct) as f32;
+    let tn = benign_correct as f32;
+    let fn_ = (injection_total - injection_correct) as f32;
+
+    let precision = if tp + fp > 0.0 {
+        (tp / (tp + fp)) * 100.0
+    } else {
+        0.0
+    };
+
+    let recall = if tp + fn_ > 0.0 {
+        (tp / (tp + fn_)) * 100.0
+    } else {
+        0.0
+    };
+
+    let f1 = if precision + recall > 0.0 {
+        2.0 * (precision * recall) / (precision + recall)
+    } else {
+        0.0
+    };
+
+    println!("\n=== CLASSIFICATION METRICS ===");
+    println!(
+        "Precision (TP/TP+FP): {:.1}% ({}/{})",
+        precision,
+        tp as usize,
+        (tp + fp) as usize
+    );
+    println!(
+        "Recall (TP/TP+FN):    {:.1}% ({}/{})",
+        recall,
+        tp as usize,
+        (tp + fn_) as usize
+    );
+    println!("F1 Score:             {:.1}%", f1);
+
     // Assessment
     println!("\n=== ASSESSMENT ===");
     if overall_acc >= 95.0 {
