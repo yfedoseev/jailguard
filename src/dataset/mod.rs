@@ -8,6 +8,7 @@ pub mod deduplication;
 mod deepset;
 pub mod external;
 pub mod llm_augmentation;
+pub mod multilabel_loader;
 mod multitask_sample;
 pub mod phase1_pipeline;
 mod synthetic;
@@ -19,6 +20,7 @@ pub use external::{ExpandedDataset, ExternalDatasetConfig};
 pub use llm_augmentation::{
     AttackTypeSpec, LLMAugmentationConfig, LLMAugmentationGenerator, LLMAugmentedSample,
 };
+pub use multilabel_loader::MultiLabelDatasetLoader;
 pub use multitask_sample::MultiTaskSample;
 pub use phase1_pipeline::{ExtendedDataset, Phase1Config, Phase1Pipeline, Phase1Stats};
 pub use synthetic::SyntheticDataset;
