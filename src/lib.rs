@@ -25,6 +25,7 @@
 
 pub mod advanced_ensemble;
 pub mod agent;
+pub mod api;
 pub mod attention_tracker;
 pub mod collection;
 pub mod dataset;
@@ -34,6 +35,7 @@ pub mod ensemble;
 pub mod error;
 pub mod feedback;
 pub mod heuristics;
+pub mod inference;
 pub mod jailguard;
 pub mod model;
 pub mod monitoring;

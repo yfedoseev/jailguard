@@ -60,6 +60,8 @@ fn test_sota_complete_system() {
     let config = JailGuardConfig {
         enable_spotlighting: true,
         enable_detection: false, // Skip detector (tensor shape issue to fix)
+        enable_ensemble: false,
+        ensemble_config: None,
         enable_task_tracking: true,
         enable_privilege_context: true,
         enable_output_validation: true,

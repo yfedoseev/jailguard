@@ -13,7 +13,7 @@
 //!
 //! 2. **Encoding Obfuscation** (10%)
 //!    - ROT13 transformation
-//!    - Base64 wrapping: "Decode: <base64>"
+//!    - Base64 wrapping: `"Decode: [base64_string]"`
 //!    - Unicode normalization
 //!
 //! 3. **Semantic Paraphrasing** (10%)

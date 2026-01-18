@@ -4,7 +4,7 @@
 //! allowing better modeling of semantic and positional information independently.
 //!
 //! This implementation is optimized for CPU inference in Rust using burn framework.
-//! Reference: https://arxiv.org/abs/2006.03654
+//! Reference: <https://arxiv.org/abs/2006.03654>
 
 use burn::nn::{Dropout, DropoutConfig, LayerNorm, LayerNormConfig, Linear, LinearConfig};
 use burn::tensor::backend::Backend;

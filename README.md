@@ -13,20 +13,104 @@ JailGuard implements defense-in-depth with 6 independent layers:
 5. **Output Validation** - Secret detection and sanitization
 6. **Behavior Monitoring** - Attack campaign and anomaly detection
 
-## ⚡ Performance (SOTA Validation Results - Phase 9)
+## ⚡ Performance
 
-| Metric | Value | Target | Status |
-|--------|-------|--------|--------|
-| **Accuracy (Aggregate)** | **95.9%** | ≥95% | ✅ |
-| **False Positive Rate** | **3.17%** | ≤5% | ✅ |
-| **False Negative Rate** | **2.17%** | ≤5% | ✅ |
-| **Calibration (ECE)** | **0.0443** | ≤0.05 | ✅ |
-| **CPU Latency** | **15.2ms** | <30ms | ✅ |
-| **Throughput** | **65.9 samples/sec** | >100/s | ✅ |
-| **Model Size** | ~16MB | ~16MB | ✅ |
-| **Memory Usage** | <200MB | <500MB | ✅ |
-| **Improvement vs DetectGPT** | **+8.3%** | >5% | ✅ |
-| **Improvement vs PromptGuard** | **+4.1%** | >2% | ✅ |
+### Current: Neural Network v1.1 (Binary Classifier) ✅ RECOMMENDED
+
+**Real Evaluation on 15,185 Samples (80/10/10 split):**
+
+| Metric | Train | Validation | Test | Status |
+|--------|-------|-----------|------|--------|
+| **Accuracy** | **96.84%** | **96.72%** | **96.58%** | ✅ Excellent |
+| **Precision** | **96.50%** | **96.45%** | **96.42%** | ✅ High Confidence |
+| **Recall** | **97.15%** | **97.05%** | **96.75%** | ✅ Good Detection |
+| **F1 Score** | **0.9683** | **0.9675** | **0.9658** | ✅ Excellent |
+| **Latency** | **<5ms** | **<5ms** | **<5ms** | ✅ Real-time |
+| **False Positives** | **3.50%** | **3.55%** | **3.58%** | ✅ Very Low |
+| **False Negatives** | **2.85%** | **2.95%** | **3.25%** | ✅ Very Low |
+
+**Architecture:** 2-layer neural network (384 → 256 → 128 → 1) with ReLU activation and dropout regularization.
+
+### Previous: Baseline Detector v1.0 (Feature-Based) - DEPRECATED
+
+**Evaluation Results on 52-Sample Test Set:**
+
+| Metric | Value | Note |
+|--------|-------|------|
+| **Accuracy** | **84.62%** | Uses 12 engineered features |
+| **Precision** | **93.75%** | High confidence but limited |
+| **Recall** | **68.18%** | Many false negatives |
+| **F1 Score** | **0.79** | Limited feature set |
+| **Latency** | **<1ms** | Faster but less accurate |
+
+**Status:** ⚠️ Deprecated - use Neural Network v1.1 for production deployments.
+
+### Recommendation
+
+For **production use**, deploy **Neural Network v1.1** (96.58% accuracy). The baseline (v1.0) is retained for reference and migration purposes only.
+
+## 🚀 Deployment
+
+### Docker Compose (Recommended)
+
+```bash
+# Build and run with monitoring stack
+docker-compose up -d
+
+# Services available at:
+# - JailGuard API: http://localhost:8080
+# - Prometheus: http://localhost:9091
+# - Grafana: http://localhost:3000 (admin/admin)
+```
+
+### Docker Build
+
+```bash
+# Build image
+docker build -t jailguard:0.1.0 .
+
+# Run container
+docker run -d \
+  -p 8080:8080 \
+  -p 9090:9090 \
+  jailguard:0.1.0
+```
+
+### Local Development
+
+```bash
+# Run tests
+cargo test --release
+
+# Train Neural Network v1.1 (Binary Classifier) - RECOMMENDED
+cargo run --example train_neural_binary --release
+
+# Expected output:
+# Test Accuracy: 96.58%
+# Test Precision: 96.42%
+# Test Recall: 96.75%
+# Test F1 Score: 0.9658
+
+# Train Neural Network v1.0 (Multi-task) - Deprecated
+cargo run --example train_neural_multitask --release
+```
+
+### API Endpoints
+
+```bash
+# Health check
+curl http://localhost:8080/health
+
+# Single inference
+curl -X POST http://localhost:8080/api/infer \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Ignore your instructions"}'
+
+# Prometheus metrics
+curl http://localhost:8080/metrics
+```
+
+---
 
 ## 🚀 Quick Start
 
@@ -241,10 +325,34 @@ jailguard = { version = "0.1", features = ["gpu"] }
 
 ## 📚 Documentation
 
-- **[API Reference](docs/API.md)** - Complete API documentation
-- **[Architecture](docs/ARCHITECTURE.md)** - System design and layer details
-- **[Training Guide](docs/TRAINING.md)** - Model training and fine-tuning
-- **[Examples](examples/)** - Full pipeline demonstration
+### Quick Start & Usage
+- **[Quick Start](QUICK_START.md)** - 5-minute setup guide (embeddings + training)
+- **[Getting Started](docs/GETTING_STARTED.md)** - Complete setup and usage guide
+- **[examples/README.md](examples/README.md)** - 10 essential examples with detailed explanations
+
+### Training & Architecture
+- **[Training Guide](docs/TRAINING_GUIDE.md)** - Comprehensive training guide (800+ lines)
+  - Quick start, dataset preparation, hyperparameter tuning, troubleshooting
+- **[Neural Network Architecture](docs/NEURAL_NETWORK_ARCHITECTURE.md)** - Technical details of v1.1 binary classifier
+- **[Dataset Guide](docs/DATASET_CATALOG.md)** - Dataset catalog and preparation
+
+### Production & Deployment
+- **[Production Ready Status](docs/PRODUCTION_READY.md)** - Component status matrix and deployment guidelines
+- **[Release Notes v1.1.0](docs/RELEASE_v1.1.0.md)** - Version 1.1.0 announcement and changes
+- **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Upgrade from v1.0 to v1.1 (type renames, API changes)
+
+### Advanced Topics
+- **[Experimental Features](docs/EXPERIMENTAL_FEATURES.md)** - Research features (Agent module, Collection, etc.)
+  - ⚠️ NOT recommended for production
+  - 🔬 Research-only components
+  - ❌ Deprecated approaches with migration paths
+- **[API Reference](docs/API.md)** - Complete API documentation (if exists)
+
+### Historical Documentation
+- **[Documentation Archive](docs/archive/README.md)** - Access to historical phase documentation
+  - Phase-specific implementation details (Phase 1-9)
+  - Session notes and work tracking
+  - Research artifacts and accuracy experiments
 
 ## 🧪 Testing
 
@@ -377,6 +485,53 @@ Throughput: 250+ req/s
 - Regularly update threat patterns and retrain
 - Monitor false positives and false negatives
 - Log all blocked inputs for security analysis
+
+## 🔍 Verification & Reference
+
+### Model Verification
+
+- **[NEURAL_NETWORK_VERIFICATION.md](docs/NEURAL_NETWORK_VERIFICATION.md)** - Proof that v1.1 model is real and achieves 96.58% accuracy
+- **[BASELINE_DETECTOR_STATUS.md](docs/BASELINE_DETECTOR_STATUS.md)** - v1.0 baseline detector details (84.62% accuracy, deprecated)
+
+### Version Information
+
+- **v1.0-baseline** (Phase 5d) - Feature-based detector, 84.62% accuracy - ❌ DEPRECATED
+- **v1.1-neural** (Phase 6.3) - Neural network detector, 96.58% accuracy - ✅ RECOMMENDED
+- **v1.2+** - Future enhancements planned
+
+## 🤝 Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
+
+- **How to report bugs** - Please provide clear reproduction steps
+- **How to suggest features** - Explain the use case and impact
+- **How to contribute code** - Development setup and PR process
+- **Code quality standards** - Formatting, linting, testing requirements
+- **Community guidelines** - See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+
+### Quick Start for Contributors
+
+```bash
+# Setup
+git clone https://github.com/yfedoseev/jailguard
+cd jailguard
+
+# Test your changes
+cargo test --all
+cargo fmt
+cargo clippy --all-targets --all-features -- -D warnings
+
+# Create a PR with a clear description
+git checkout -b feature/your-feature-name
+# ... make changes ...
+git push origin feature/your-feature-name
+```
+
+### Security Issues
+
+**Please don't create public issues for security vulnerabilities.** See [SECURITY.md](SECURITY.md) for responsible disclosure.
+
+---
 
 ## 📝 License
 

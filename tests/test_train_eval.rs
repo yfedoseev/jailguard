@@ -56,6 +56,8 @@ fn test_train_20_eval_5_samples() {
         strict_mode: false,
         enable_spotlighting: true,
         enable_detection: false, // Skip heavy tensor ops
+        enable_ensemble: false,
+        ensemble_config: None,
         enable_task_tracking: false,
         enable_privilege_context: false,
         enable_output_validation: true,

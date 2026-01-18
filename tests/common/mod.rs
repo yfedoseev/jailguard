@@ -109,6 +109,8 @@ impl ConfigBuilders {
         JailGuardConfig {
             enable_spotlighting: true,
             enable_detection: false,
+            enable_ensemble: false,
+            ensemble_config: None,
             enable_task_tracking: false,
             enable_privilege_context: false,
             enable_output_validation: false,
@@ -123,6 +125,8 @@ impl ConfigBuilders {
         JailGuardConfig {
             enable_spotlighting: false,
             enable_detection: true,
+            enable_ensemble: false,
+            ensemble_config: None,
             enable_task_tracking: false,
             enable_privilege_context: false,
             enable_output_validation: false,
@@ -137,6 +141,8 @@ impl ConfigBuilders {
         JailGuardConfig {
             enable_spotlighting: false,
             enable_detection: false,
+            enable_ensemble: false,
+            ensemble_config: None,
             enable_task_tracking: false,
             enable_privilege_context: false,
             enable_output_validation: true,

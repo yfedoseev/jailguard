@@ -1,0 +1,50 @@
+groups:
+  - name: jailguard_alerts
+    interval: 10s
+    rules:
+      - alert: JailGuardHighErrorRate
+        expr: rate(jailguard_api_errors_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "JailGuard API error rate is high"
+          description: "Error rate is {{ $value | humanizePercentage }} in the last 5 minutes"
+
+      - alert: JailGuardHighLatency
+        expr: histogram_quantile(0.95, jailguard_api_latency_ms) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JailGuard API latency is high"
+          description: "P95 latency is {{ $value }}ms"
+
+      - alert: JailGuardInjectionFlood
+        expr: rate(jailguard_detections_injections_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High injection detection rate detected"
+          description: "Injection rate is {{ $value | humanize }}/sec"
+
+      - alert: JailGuardFalsePositiveRate
+        expr: |
+          (jailguard_detections_false_positives_total) /
+          (jailguard_detections_benign_total) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JailGuard false positive rate is elevated"
+          description: "False positive rate is {{ $value | humanizePercentage }}"
+
+      - alert: JailGuardServiceDown
+        expr: up{job="jailguard-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "JailGuard service is down"
+          description: "JailGuard API has been unavailable for more than 1 minute"

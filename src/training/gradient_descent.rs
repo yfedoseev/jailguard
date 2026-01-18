@@ -8,8 +8,6 @@ use super::multilabel_trainer::MultiLabelTrainingSample;
 use crate::detection::MultiLabelDetector;
 use crate::error::Result;
 use crate::model::EmbeddingLookup;
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
 
 /// Metrics computed during training.
 #[derive(Debug, Clone, Default)]
@@ -274,7 +272,7 @@ mod tests {
 
     #[test]
     fn test_best_val_accuracy() {
-        let mut trainer_metrics = vec![
+        let trainer_metrics = vec![
             EpochMetrics {
                 val_binary_acc: 0.5,
                 ..Default::default()

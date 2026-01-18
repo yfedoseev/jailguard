@@ -28,6 +28,8 @@ fn test_evaluation_on_generated_data() {
         strict_mode: false,
         enable_spotlighting: true,
         enable_detection: false, // Skip to avoid tensor issues
+        enable_ensemble: false,
+        ensemble_config: None,
         enable_task_tracking: false,
         enable_privilege_context: false,
         enable_output_validation: true,

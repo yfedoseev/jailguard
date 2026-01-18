@@ -12,10 +12,10 @@ use serde::{Deserialize, Serialize};
 /// Configuration for external model clients
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExternalModelConfig {
-    /// GenTel-Shield API endpoint (e.g., "https://api.gentelshield.com/detect")
+    /// GenTel-Shield API endpoint (e.g., <https://api.gentelshield.com/detect>)
     pub gentelshed_endpoint: Option<String>,
 
-    /// ProtectAI API endpoint (e.g., "https://api.protectai.com/detect")
+    /// ProtectAI API endpoint (e.g., <https://api.protectai.com/detect>)
     pub protect_ai_endpoint: Option<String>,
 
     /// API authentication token for GenTel-Shield

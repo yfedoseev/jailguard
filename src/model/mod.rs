@@ -14,6 +14,7 @@ mod pretrained_embedding_loader;
 #[cfg(feature = "semantic-embeddings")]
 pub mod semantic_embedder;
 mod semantic_head;
+pub mod serialization;
 pub mod transformer;
 mod value;
 
@@ -25,5 +26,6 @@ pub use pretrained_embedding_loader::{EmbeddingLoader, EmbeddingSample};
 #[cfg(feature = "semantic-embeddings")]
 pub use semantic_embedder::SemanticEmbedder;
 pub use semantic_head::{SemanticSimilarityHead, SemanticSimilarityHeadConfig};
+pub use serialization::{ModelCheckpoint, ModelFormat, ModelMetadata};
 pub use transformer::{TransformerConfig, TransformerEncoder, TransformerEncoderConfig};
 pub use value::{ValueNetwork, ValueNetworkConfig};
