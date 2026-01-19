@@ -14,7 +14,7 @@ pub struct NeuralEmbeddingSample {
     pub embedding: Vec<f32>,
     /// True if sample is an injection
     pub is_injection: bool,
-    /// Attack type index (0-6)
+    /// Attack type index (0-7, unified 8-class taxonomy)
     pub attack_type: usize,
     /// Original text (for reference)
     pub text: String,
@@ -54,15 +54,20 @@ impl NeuralDataLoader {
         let data: Vec<Value> =
             serde_json::from_str(&content).map_err(|e| format!("JSON parse error: {}", e))?;
 
-        // Build attack type mapping
+        // Build unified 8-class attack type mapping (matches Python schema)
         let mut attack_type_map = HashMap::new();
         attack_type_map.insert("Benign".to_string(), 0);
-        attack_type_map.insert("Roleplay".to_string(), 1);
+        attack_type_map.insert("RolePlay".to_string(), 1);
+        attack_type_map.insert("Roleplay".to_string(), 1);  // Legacy alias
         attack_type_map.insert("InstructionOverride".to_string(), 2);
-        attack_type_map.insert("PromptLeaking".to_string(), 3);
-        attack_type_map.insert("Encoding".to_string(), 4);
-        attack_type_map.insert("Combined".to_string(), 5);
-        attack_type_map.insert("Separator".to_string(), 6);
+        attack_type_map.insert("ContextManipulation".to_string(), 3);
+        attack_type_map.insert("Separator".to_string(), 3);  // Legacy: Separator → ContextManipulation
+        attack_type_map.insert("OutputManipulation".to_string(), 4);
+        attack_type_map.insert("EncodingAttack".to_string(), 5);
+        attack_type_map.insert("Encoding".to_string(), 5);  // Legacy alias
+        attack_type_map.insert("JailbreakPattern".to_string(), 6);
+        attack_type_map.insert("Combined".to_string(), 6);  // Legacy: Combined → JailbreakPattern
+        attack_type_map.insert("PromptLeaking".to_string(), 7);
 
         // Parse samples
         let mut samples = Vec::new();
@@ -76,12 +81,12 @@ impl NeuralDataLoader {
                 .ok_or("Missing 'is_injection' field")?;
 
             let attack_type_str = item["attack_type"].as_str().unwrap_or(if is_injection {
-                "Combined"
+                "JailbreakPattern"  // Default injection to JailbreakPattern (index 6)
             } else {
-                "Benign"
+                "Benign"  // Default benign to Benign (index 0)
             });
 
-            let attack_type = *attack_type_map.get(attack_type_str).unwrap_or(&0);
+            let attack_type = *attack_type_map.get(attack_type_str).unwrap_or(&6);  // Default to JailbreakPattern
 
             let embedding = item["embedding"]
                 .as_array()

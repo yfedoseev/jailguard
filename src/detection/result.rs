@@ -2,54 +2,61 @@
 
 use serde::{Deserialize, Serialize};
 
-/// Type of injection attack detected.
+/// Type of injection attack detected (8-class unified taxonomy).
+///
+/// Matches Python schema in scripts/unified_schema.py for consistency
+/// across all data pipelines.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AttackType {
-    /// Role-play or persona injection (e.g., "you are now a hacker")
-    RolePlay = 0,
-    /// Instruction override (e.g., "ignore your instructions")
-    InstructionOverride = 1,
-    /// Context manipulation (e.g., "forget previous context")
-    ContextManipulation = 2,
-    /// Output manipulation (e.g., "output in a different format")
-    OutputManipulation = 3,
-    /// Encoding/obfuscation attacks (base64, ROT13, etc.)
-    EncodingAttack = 4,
-    /// Jailbreak patterns (e.g., "DAN", "STAN")
-    JailbreakPattern = 5,
     /// Benign input (no attack detected)
-    Benign = 6,
+    Benign = 0,
+    /// Role-play or persona injection (e.g., "you are now a hacker")
+    RolePlay = 1,
+    /// Instruction override (e.g., "ignore your instructions")
+    InstructionOverride = 2,
+    /// Context manipulation (e.g., "forget previous context", separators)
+    ContextManipulation = 3,
+    /// Output manipulation (e.g., "output in a different format")
+    OutputManipulation = 4,
+    /// Encoding/obfuscation attacks (base64, ROT13, etc.)
+    EncodingAttack = 5,
+    /// Jailbreak patterns (e.g., "DAN", "STAN", complex multi-technique)
+    JailbreakPattern = 6,
+    /// System prompt leaking (e.g., "reveal your instructions")
+    PromptLeaking = 7,
 }
 
 impl AttackType {
-    /// Get all attack types.
+    /// Get all attack types (in order by index).
     pub fn variants() -> &'static [AttackType] {
         &[
+            AttackType::Benign,
             AttackType::RolePlay,
             AttackType::InstructionOverride,
             AttackType::ContextManipulation,
             AttackType::OutputManipulation,
             AttackType::EncodingAttack,
             AttackType::JailbreakPattern,
-            AttackType::Benign,
+            AttackType::PromptLeaking,
         ]
     }
 
     /// Get the number of attack types.
     pub fn count() -> usize {
-        7
+        8
     }
 
-    /// Convert from index.
+    /// Convert from index (0-7, matches Python schema).
     pub fn from_index(index: usize) -> Option<Self> {
         match index {
-            0 => Some(AttackType::RolePlay),
-            1 => Some(AttackType::InstructionOverride),
-            2 => Some(AttackType::ContextManipulation),
-            3 => Some(AttackType::OutputManipulation),
-            4 => Some(AttackType::EncodingAttack),
-            5 => Some(AttackType::JailbreakPattern),
-            6 => Some(AttackType::Benign),
+            0 => Some(AttackType::Benign),
+            1 => Some(AttackType::RolePlay),
+            2 => Some(AttackType::InstructionOverride),
+            3 => Some(AttackType::ContextManipulation),
+            4 => Some(AttackType::OutputManipulation),
+            5 => Some(AttackType::EncodingAttack),
+            6 => Some(AttackType::JailbreakPattern),
+            7 => Some(AttackType::PromptLeaking),
             _ => None,
         }
     }
@@ -57,13 +64,14 @@ impl AttackType {
     /// Get human-readable description.
     pub fn description(&self) -> &'static str {
         match self {
+            AttackType::Benign => "No attack detected",
             AttackType::RolePlay => "Role-play or persona injection",
             AttackType::InstructionOverride => "Instruction override attempt",
             AttackType::ContextManipulation => "Context manipulation attack",
             AttackType::OutputManipulation => "Output format manipulation",
             AttackType::EncodingAttack => "Encoding/obfuscation attack",
             AttackType::JailbreakPattern => "Known jailbreak pattern",
-            AttackType::Benign => "No attack detected",
+            AttackType::PromptLeaking => "System prompt leaking attempt",
         }
     }
 }
@@ -170,14 +178,16 @@ impl std::fmt::Display for InjectionRisk {
 }
 
 /// Multi-task detection result with attack type classification.
+///
+/// Provides attack type probabilities for all 8 classes (indices 0-7).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MultiTaskDetectionResult {
     /// Base detection result (injection yes/no + confidence)
     pub detection: DetectionResult,
     /// Classified attack type
     pub attack_type: AttackType,
-    /// Probabilities for each attack type (7 classes)
-    pub attack_probs: [f32; 7],
+    /// Probabilities for each attack type (8 classes, indices 0-7)
+    pub attack_probs: [f32; 8],
     /// Semantic similarity score (0.0 to 1.0)
     pub semantic_score: f32,
     /// Embedding vector for downstream use
@@ -192,7 +202,7 @@ impl MultiTaskDetectionResult {
         confidence: f32,
         action_probs: [f32; 2],
         attack_type: AttackType,
-        attack_probs: [f32; 7],
+        attack_probs: [f32; 8],
         semantic_score: f32,
         embedding: Vec<f32>,
     ) -> Self {

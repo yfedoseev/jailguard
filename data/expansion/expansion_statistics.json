@@ -1,0 +1,19 @@
+{
+  "total_input": 15185,
+  "after_exact_dedup": 15139,
+  "exact_duplicates": 46,
+  "after_quality_filter": 11121,
+  "quality_stats": {
+    "too_short": 34,
+    "too_long": 3972,
+    "excessive_whitespace": 12,
+    "mostly_punctuation": 0,
+    "valid": 11121
+  },
+  "by_source": {
+    "existing": 11121,
+    "spml": 0,
+    "jailbreakbench": 0
+  },
+  "injection_rate": 0.08991997122560921
+}

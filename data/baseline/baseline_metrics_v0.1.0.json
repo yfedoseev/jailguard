@@ -1,0 +1,154 @@
+{
+  "timestamp": "1768798485.2258325",
+  "version": "0.1.0",
+  "summary": {
+    "total_samples": 15185,
+    "injection_samples": 1627,
+    "benign_samples": 13558,
+    "injection_rate": 0.10714520908791571,
+    "benign_rate": 0.8928547909120843
+  },
+  "overall_metrics": {
+    "tp": 1571,
+    "fp": 464,
+    "tn": 13094,
+    "fn": 56,
+    "accuracy": 0.9657556799473165,
+    "precision": 0.771990171990172,
+    "recall": 0.9655808236017209,
+    "specificity": 0.9657766632246644,
+    "f1_score": 0.85800109229929
+  },
+  "per_type_metrics": {
+    "Benign": {
+      "count": 13558,
+      "metrics": {
+        "tp": 0,
+        "fp": 464,
+        "tn": 13094,
+        "fn": 0,
+        "accuracy": 0.9657766632246644,
+        "precision": 0.0,
+        "recall": 0.0,
+        "specificity": 0.9657766632246644,
+        "f1_score": 0.0
+      }
+    },
+    "RolePlay": {
+      "count": 0,
+      "metrics": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 0,
+        "accuracy": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "specificity": 0.0,
+        "f1_score": 0.0
+      }
+    },
+    "InstructionOverride": {
+      "count": 263,
+      "metrics": {
+        "tp": 252,
+        "fp": 0,
+        "tn": 0,
+        "fn": 11,
+        "accuracy": 0.9581749049429658,
+        "precision": 1.0,
+        "recall": 0.9581749049429658,
+        "specificity": 0.0,
+        "f1_score": 0.9786407766990292
+      }
+    },
+    "ContextManipulation": {
+      "count": 0,
+      "metrics": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 0,
+        "accuracy": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "specificity": 0.0,
+        "f1_score": 0.0
+      }
+    },
+    "OutputManipulation": {
+      "count": 0,
+      "metrics": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 0,
+        "accuracy": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "specificity": 0.0,
+        "f1_score": 0.0
+      }
+    },
+    "EncodingAttack": {
+      "count": 0,
+      "metrics": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 0,
+        "accuracy": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "specificity": 0.0,
+        "f1_score": 0.0
+      }
+    },
+    "JailbreakPattern": {
+      "count": 1364,
+      "metrics": {
+        "tp": 1319,
+        "fp": 0,
+        "tn": 0,
+        "fn": 45,
+        "accuracy": 0.967008797653959,
+        "precision": 1.0,
+        "recall": 0.967008797653959,
+        "specificity": 0.0,
+        "f1_score": 0.9832277301528141
+      }
+    },
+    "PromptLeaking": {
+      "count": 0,
+      "metrics": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 0,
+        "accuracy": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "specificity": 0.0,
+        "f1_score": 0.0
+      }
+    }
+  },
+  "confidence_distributions": {
+    "injection": {
+      "mean": 0.8832754926401208,
+      "std": 0.09063250953298961,
+      "min": 0.3048812947295519,
+      "max": 0.9899350610959958,
+      "median": 0.893425255380843,
+      "count": 1627
+    },
+    "benign": {
+      "mean": 0.8814294089380657,
+      "std": 0.0928884451306583,
+      "min": 0.30160223913996326,
+      "max": 0.9899974213557363,
+      "median": 0.8917682322115243,
+      "count": 13558
+    }
+  }
+}
