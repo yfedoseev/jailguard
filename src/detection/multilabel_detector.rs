@@ -21,10 +21,10 @@ pub struct MultiLabelDetectionResult {
     /// Binary probabilities [block_prob, allow_prob]
     pub binary_probs: [f32; 2],
 
-    /// Detected attack type (0-6)
+    /// Detected attack type (0-7, unified 8-class taxonomy)
     pub attack_type_idx: usize,
-    /// Probabilities for each attack type (7 values)
-    pub attack_probs: [f32; 7],
+    /// Probabilities for each attack type (8 values: Benign, RolePlay, InstructionOverride, ContextManipulation, OutputManipulation, EncodingAttack, JailbreakPattern, PromptLeaking)
+    pub attack_probs: [f32; 8],
 
     /// Semantic similarity score (0.0-1.0)
     pub semantic_score: f32,
@@ -170,7 +170,7 @@ mod tests {
             binary_confidence: 0.85,
             binary_probs: [0.85, 0.15],
             attack_type_idx: 1,
-            attack_probs: [0.1, 0.7, 0.05, 0.05, 0.05, 0.04, 0.01],
+            attack_probs: [0.1, 0.7, 0.05, 0.05, 0.05, 0.04, 0.01, 0.0],
             semantic_score: 0.75,
             overall_confidence: 0.80,
         };
@@ -192,7 +192,7 @@ mod tests {
             binary_confidence: 0.92,
             binary_probs: [0.08, 0.92],
             attack_type_idx: 6,
-            attack_probs: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.94],
+            attack_probs: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.94, 0.0],
             semantic_score: 0.05,
             overall_confidence: 0.92,
         };
@@ -215,7 +215,7 @@ mod tests {
             binary_confidence: 0.95,
             binary_probs: [0.95, 0.05],
             attack_type_idx: 5,
-            attack_probs: [0.0, 0.0, 0.0, 0.0, 0.0, 0.95, 0.05],
+            attack_probs: [0.0, 0.0, 0.0, 0.0, 0.0, 0.95, 0.05, 0.0],
             semantic_score: 0.9,
             overall_confidence: 0.95,
         };
@@ -227,7 +227,7 @@ mod tests {
             binary_confidence: 0.6,
             binary_probs: [0.6, 0.4],
             attack_type_idx: 2,
-            attack_probs: [0.1, 0.2, 0.3, 0.2, 0.1, 0.05, 0.05],
+            attack_probs: [0.1, 0.2, 0.3, 0.2, 0.1, 0.05, 0.05, 0.0],
             semantic_score: 0.5,
             overall_confidence: 0.6,
         };

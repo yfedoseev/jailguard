@@ -248,7 +248,7 @@ mod tests {
                 ],
             ),
             attack_type: AttackType::RolePlay,
-            attack_probs: [0.2; 7],
+            attack_probs: [0.2; 8],
             semantic_score: 0.5,
             embedding: vec![],
         }

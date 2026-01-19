@@ -155,20 +155,21 @@ impl PretrainedTransformerDetector {
         let block_prob = binary_data.first().copied().unwrap_or(0.5);
         let allow_prob = binary_data.get(1).copied().unwrap_or(0.5);
 
-        // Attack type classification: [1, 7]
+        // Attack type classification: [1, 8] (8 attack types)
         let attack_logits = self.attack_head.forward(pooled.clone());
         let attack_probs = softmax_attack(attack_logits);
         let attack_data = attack_probs.to_data().to_vec::<f32>().unwrap_or_default();
 
-        // Find most likely attack type
+        // Find most likely attack type (unified 8-class taxonomy)
         let attack_probs_array = [
-            attack_data.first().copied().unwrap_or(0.0),
-            attack_data.get(1).copied().unwrap_or(0.0),
-            attack_data.get(2).copied().unwrap_or(0.0),
-            attack_data.get(3).copied().unwrap_or(0.0),
-            attack_data.get(4).copied().unwrap_or(0.0),
-            attack_data.get(5).copied().unwrap_or(0.0),
-            attack_data.get(6).copied().unwrap_or(0.0),
+            attack_data.first().copied().unwrap_or(0.0),      // 0: Benign
+            attack_data.get(1).copied().unwrap_or(0.0),       // 1: RolePlay
+            attack_data.get(2).copied().unwrap_or(0.0),       // 2: InstructionOverride
+            attack_data.get(3).copied().unwrap_or(0.0),       // 3: ContextManipulation
+            attack_data.get(4).copied().unwrap_or(0.0),       // 4: OutputManipulation
+            attack_data.get(5).copied().unwrap_or(0.0),       // 5: EncodingAttack
+            attack_data.get(6).copied().unwrap_or(0.0),       // 6: JailbreakPattern
+            attack_data.get(7).copied().unwrap_or(0.0),       // 7: PromptLeaking (NEW)
         ];
 
         let (attack_idx, _) = attack_probs_array

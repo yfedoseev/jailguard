@@ -33,6 +33,7 @@ pub mod detection;
 pub mod embeddings;
 pub mod ensemble;
 pub mod error;
+pub mod evaluation;
 pub mod feedback;
 pub mod heuristics;
 pub mod inference;
@@ -54,6 +55,10 @@ pub use advanced_ensemble::{AdvancedDetectionResult, AdvancedEnsemble, LayerScor
 pub use attention_tracker::{AttentionTracker, AttentionTrackerConfig, AttentionTrackerResult};
 pub use detection::{DetectionResult, Detector, DetectorConfig, InjectionRisk};
 pub use ensemble::{EnsembleDetectionResult, EnsembleDetector, ModelWeights};
+pub use evaluation::{
+    AdversarialEvaluator, AttackResult, CalibrationBin, CalibrationEvaluator, CalibrationMetrics,
+    ConfusionMatrix, MultiClassEvaluator, PerClassMetrics,
+};
 pub use error::{Error, Result};
 pub use feedback::{FeedbackCollector, FeedbackType};
 pub use heuristics::{HeuristicDetector, HeuristicResult, HeuristicRule, RuleCategory};

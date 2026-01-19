@@ -221,7 +221,7 @@ mod tests {
         MultiTaskDetectionResult {
             detection: DetectionResult::new(true, 0.95, [0.95, 0.05]),
             attack_type: AttackType::RolePlay,
-            attack_probs: [0.05, 0.90, 0.02, 0.01, 0.01, 0.01, 0.00],
+            attack_probs: [0.05, 0.90, 0.02, 0.01, 0.01, 0.01, 0.00, 0.0],
             semantic_score: 0.85,
             embedding: vec![0.1; 384],
         }
