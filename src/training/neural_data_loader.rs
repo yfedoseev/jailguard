@@ -248,20 +248,23 @@ impl NeuralDataLoader {
         println!("Test: {} (10%)", test_size);
 
         // Attack type distribution
-        let mut attack_dist = vec![0; 7];
+        let mut attack_dist = vec![0; 8];
         for sample in &self.train_samples {
-            attack_dist[sample.attack_type] += 1;
+            if sample.attack_type < 8 {
+                attack_dist[sample.attack_type] += 1;
+            }
         }
 
         println!("\nAttack Type Distribution (Train):");
         let attack_names = [
             "Benign",
-            "Roleplay",
+            "RolePlay",
             "InstructionOverride",
+            "ContextManipulation",
+            "OutputManipulation",
+            "EncodingAttack",
+            "JailbreakPattern",
             "PromptLeaking",
-            "Encoding",
-            "Combined",
-            "Separator",
         ];
         for (i, &count) in attack_dist.iter().enumerate() {
             if count > 0 {

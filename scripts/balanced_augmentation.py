@@ -513,8 +513,16 @@ def main():
         paraphrased = para_aug.augment_batch(synthetic[:5000], variations_per_sample=3)
         all_samples.extend(paraphrased)
 
+    # Add attack_type_idx to all samples before saving
+    print(f"\n🔄 Adding attack_type_idx to samples...")
+    for idx, sample in enumerate(all_samples):
+        if "attack_type_idx" not in sample:
+            attack_type = sample.get("attack_type", "JailbreakPattern")
+            sample["attack_type_idx"] = ATTACK_TYPE_TO_IDX.get(attack_type, 6)
+        sample["index"] = idx
+
     # Save output
-    print(f"\n💾 Saving augmented dataset...")
+    print(f"💾 Saving augmented dataset...")
     args.output.parent.mkdir(parents=True, exist_ok=True)
 
     with open(args.output, 'w') as f:
