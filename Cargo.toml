@@ -59,6 +59,9 @@ regex = "1"
 # Lazy static initialization for regex patterns
 once_cell = "1"
 
+# SafeTensors for Hugging Face compatibility
+safetensors = "0.4"
+
 [dev-dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }

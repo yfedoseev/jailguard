@@ -1,9 +1,35 @@
+# Build artifacts
 /target
-Cargo.lock
+*.pyc
+__pycache__/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
 *.swp
 *.swo
-.DS_Store
-.env
 
-# Publication planning documents (confidential, pre-publication)
-docs/publications/
+# OS
+.DS_Store
+Thumbs.db
+
+# Large data files (keep locally for development, don't commit)
+data/*.json
+data/expansion/
+data/training/
+data/baseline/
+data/deepset/
+data/collected_samples/
+!data/README.md
+
+# Large dataset splits (for training, not in version control)
+splits_200k/
+
+# Development
+.env
+.env.local
+
+# Lock files (regenerate from Cargo.toml)
+Cargo.lock
