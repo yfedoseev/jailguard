@@ -33,3 +33,6 @@ splits_200k/
 
 # Lock files (regenerate from Cargo.toml)
 Cargo.lock
+
+# Paper drafts (private until publication)
+docs/paper/
