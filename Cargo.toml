@@ -78,74 +78,81 @@ download = ["dep:reqwest", "dep:tokio", "dep:csv"]
 # Currently uses hash-based embeddings; can integrate ONNX Runtime when available
 semantic-embeddings = []
 
-# Training examples
-[[example]]
+# =============================================================================
+# Training binaries (train/)
+# =============================================================================
+[[bin]]
 name = "train_neural_binary"
-path = "examples/train/train_neural_binary.rs"
-required-features = ["download"]
+path = "train/train_neural_binary.rs"
 
-[[example]]
+[[bin]]
 name = "train_on_expanded_dataset"
-path = "examples/train/train_on_expanded_dataset.rs"
+path = "train/train_on_expanded_dataset.rs"
 
-[[example]]
+[[bin]]
 name = "train_minilm_with_gradients"
-path = "examples/train/train_minilm_with_gradients.rs"
+path = "train/train_minilm_with_gradients.rs"
 
-[[example]]
+[[bin]]
 name = "evaluate_on_test_set"
-path = "examples/train/evaluate_on_test_set.rs"
+path = "train/evaluate_on_test_set.rs"
 
-[[example]]
+[[bin]]
 name = "fast_embedding_generation"
-path = "examples/train/fast_embedding_generation.rs"
+path = "train/fast_embedding_generation.rs"
 
-# Inference examples
-[[example]]
+# =============================================================================
+# Inference binaries (inference/)
+# =============================================================================
+[[bin]]
 name = "load_and_inference"
-path = "examples/inference/load_and_inference.rs"
+path = "inference/load_and_inference.rs"
 
-[[example]]
+[[bin]]
 name = "production_inference"
-path = "examples/inference/production_inference.rs"
+path = "inference/production_inference.rs"
 
-[[example]]
+[[bin]]
 name = "api_server"
-path = "examples/inference/api_server.rs"
+path = "inference/api_server.rs"
 
-[[example]]
+[[bin]]
 name = "verify_json_model"
-path = "examples/inference/verify_json_model.rs"
+path = "inference/verify_json_model.rs"
 
-# Evaluation examples
-[[example]]
+# =============================================================================
+# Evaluation binaries (evaluation/)
+# =============================================================================
+[[bin]]
 name = "evaluate_detector"
-path = "examples/evaluation/evaluate_detector.rs"
+path = "evaluation/evaluate_detector.rs"
 
-[[example]]
+[[bin]]
 name = "comprehensive_evaluation"
-path = "examples/evaluation/comprehensive_evaluation.rs"
+path = "evaluation/comprehensive_evaluation.rs"
 
-[[example]]
+[[bin]]
 name = "phase_9_sota_validation"
-path = "examples/evaluation/phase_9_sota_validation.rs"
+path = "evaluation/phase_9_sota_validation.rs"
 
-[[example]]
+[[bin]]
 name = "compare_embeddings"
-path = "examples/evaluation/compare_embeddings.rs"
+path = "evaluation/compare_embeddings.rs"
 
-# Ensemble examples
+# =============================================================================
+# Demo examples (examples/)
+# =============================================================================
 [[example]]
 name = "ensemble_demo"
-path = "examples/ensemble/ensemble_demo.rs"
+path = "examples/ensemble_demo.rs"
 
 [[example]]
 name = "unified_api_ensemble_demo"
-path = "examples/ensemble/unified_api_ensemble_demo.rs"
+path = "examples/unified_api_ensemble_demo.rs"
 
 [[example]]
 name = "full_pipeline"
-path = "examples/ensemble/full_pipeline.rs"
+path = "examples/full_pipeline.rs"
 
 [lints.rust]
 unsafe_code = "warn"
