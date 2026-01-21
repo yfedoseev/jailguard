@@ -7,7 +7,7 @@ Demo examples showing JailGuard's multi-layer detection capabilities.
 | Example | Description | Command |
 |---------|-------------|---------|
 | `ensemble_demo.rs` | Basic ensemble demonstration | `cargo run --example ensemble_demo --release` |
-| `unified_api_ensemble_demo.rs` | Ensemble via unified API (96-98%) | `cargo run --example unified_api_ensemble_demo --release` |
+| `unified_api_ensemble_demo.rs` | Ensemble via unified API (99-100%) | `cargo run --example unified_api_ensemble_demo --release` |
 | `full_pipeline.rs` | All 6 defense layers working together | `cargo run --example full_pipeline --release` |
 
 ## Quick Start

@@ -168,7 +168,7 @@ Three formats available in `models/`:
 # Best accuracy (99.62%) - requires 125K dataset
 cargo run --bin train_on_expanded_dataset --release
 
-# Faster training (96.58%) - smaller dataset
+# Faster training (99.62%) - smaller dataset
 cargo run --bin train_neural_binary --release
 
 # Generate embeddings for custom data

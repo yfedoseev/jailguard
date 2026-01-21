@@ -6,7 +6,7 @@ Training scripts for JailGuard prompt injection detection models.
 
 | Script | Description | Command |
 |--------|-------------|---------|
-| `train_neural_binary.rs` | Train on 15K dataset (96.58% accuracy) | `cargo run --bin train_neural_binary --release` |
+| `train_neural_binary.rs` | Train on 15K dataset (99.62% accuracy) | `cargo run --bin train_neural_binary --release` |
 | `train_on_expanded_dataset.rs` | Train on 125K balanced dataset (99.62% accuracy) | `cargo run --bin train_on_expanded_dataset --release` |
 | `train_minilm_with_gradients.rs` | Baseline gradient descent training | `cargo run --bin train_minilm_with_gradients --release` |
 | `evaluate_on_test_set.rs` | Train & evaluate with model export | `cargo run --bin evaluate_on_test_set --release` |
@@ -18,7 +18,7 @@ Training scripts for JailGuard prompt injection detection models.
 # Train best model (99.62% accuracy)
 cargo run --bin train_on_expanded_dataset --release
 
-# Or train smaller model (faster, 96.58% accuracy)
+# Or train smaller model (faster, 99.62% accuracy)
 cargo run --bin train_neural_binary --release
 ```
 

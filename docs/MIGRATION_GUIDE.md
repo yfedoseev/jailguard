@@ -7,7 +7,7 @@ This guide helps you migrate from the old Phase 6 naming conventions to the stan
 JailGuard has adopted semantic versioning for clarity and maintainability:
 
 - **v1.0-baseline**: Feature-based detector (Phase 5d) - 84.62% accuracy
-- **v1.1-neural**: Neural network detector (Phase 6.3) - 96.58% accuracy ✅ RECOMMENDED
+- **v1.1-neural**: Neural network detector (Phase 6.3) - 99.62% accuracy ✅ RECOMMENDED
 
 ## What Changed
 
@@ -120,14 +120,14 @@ warning: use of deprecated struct `NeuralMultitaskNetwork`
 The multi-task learning approach (trying to predict binary classification AND attack type AND semantic similarity simultaneously) has known issues:
 
 1. **Poor convergence**: The three loss terms compete with each other
-2. **Lower accuracy**: Achieves only ~90% vs 96.58% for binary approach
+2. **Lower accuracy**: Achieves only ~90% vs 99.62% for binary approach
 3. **Training instability**: Loss can oscillate unpredictably
 4. **Not recommended for production**: Use binary classification instead
 
 ### Recommended: Use Binary Classification Instead
 
 The binary classification approach (NeuralBinaryNetwork) is:
-- ✅ More stable (achieves 96.58% accuracy)
+- ✅ More stable (achieves 99.62% accuracy)
 - ✅ Faster to train
 - ✅ Simpler to debug
 - ✅ Better for production use

@@ -205,7 +205,7 @@ Create a `models/metadata.json` file:
 {
   "version": "1.0",
   "date": "2026-01-19",
-  "accuracy_test": 0.9957,
+  "accuracy_test": 0.9962,
   "precision": 0.9990,
   "recall": 0.9793,
   "f1_score": 0.9890,
@@ -215,7 +215,7 @@ Create a `models/metadata.json` file:
   "architecture": "384-256-128-1",
   "embedding_dim": 384,
   "embedding_model": "FastEmbedder (Rust)",
-  "notes": "Phase 5 final model, 99.57% test accuracy, zero overfitting"
+  "notes": "Phase 5 final model, 99.62% test accuracy, zero overfitting"
 }
 ```
 

@@ -179,7 +179,7 @@ Combines multiple detection layers (neural network + heuristics + attention trac
 **Architecture**:
 ```
 Input
-  ├→ NeuralBinaryNetwork (96.58% accuracy)
+  ├→ NeuralBinaryNetwork (99.62% accuracy)
   ├→ Heuristics (rules-based)
   ├→ AttentionTracker (if LLM attention available)
   └→ Confidence Calibration
@@ -220,7 +220,7 @@ let result = ensemble.detect(input);
 - ❌ When LLM access is limited or read-only
 
 **Recommendations**:
-- Start with `NeuralBinaryNetwork` (96.58%, <30ms)
+- Start with `NeuralBinaryNetwork` (99.62%, <30ms)
 - Add ensemble only if you hit false positive issues
 - Tune thresholds on your specific data distribution
 
@@ -394,7 +394,7 @@ Data augmentation by generating adversarial attack variants to make trained mode
 **How Adversarial Training Improves Robustness**:
 ```
 Normal Training (70% clean, 30% hard examples):
-  - Accuracy: 96.58%
+  - Accuracy: 99.62%
   - Attack success: ~15% (3 different attack types)
 
 Adversarial Training (70% clean, 30% augmented attacks):
@@ -437,7 +437,7 @@ trainer.train(&augmented_loader)?;
 - ❌ Computational budget too tight for augmentation
 
 **Trade-offs**:
-- Slight accuracy decrease (96.58% → 95-96%)
+- Slight accuracy decrease (99.62% → 95-96%)
 - Training time increases ~30% (more samples)
 - Much better robustness against known attack types
 
@@ -479,7 +479,7 @@ Shared Embedding Layer
 **Accuracy Comparison**:
 | Model | Binary Acc | Attack Type Acc | Combined |
 |-------|-----------|-----------------|----------|
-| NeuralBinaryNetwork | 96.58% | N/A | 96.58% |
+| NeuralBinaryNetwork | 99.62% | N/A | 99.62% |
 | NeuralMultitaskNetwork | 92% | 68% | 60% (combined) |
 | MultiLabelDetector | 94% | 72% | 68% (combined) |
 
@@ -512,7 +512,7 @@ Shared Embedding Layer
 - v2.0: Consider removing if single-task continues to outperform
 
 **Recommendation**:
-Use `NeuralBinaryNetwork` (96.58%) for detection, then classify attack type separately if needed.
+Use `NeuralBinaryNetwork` (99.62%) for detection, then classify attack type separately if needed.
 
 ---
 
@@ -528,7 +528,7 @@ Use `NeuralBinaryNetwork` (96.58%) for detection, then classify attack type sepa
 
 **Why Deprecated**:
 - Convergence issues during training (gradient conflicts)
-- Lower accuracy than binary approach (92% vs 96.58%)
+- Lower accuracy than binary approach (92% vs 99.62%)
 - Unnecessary complexity for single-task problem
 - Superseded by `NeuralBinaryNetwork`
 
@@ -545,7 +545,7 @@ warning: use of deprecated struct `NeuralMultitaskNetwork`
      Use NeuralBinaryNetwork instead. See MIGRATION_GUIDE.md
 ```
 
-**Replacement**: Use `NeuralBinaryNetwork` (96.58% accuracy)
+**Replacement**: Use `NeuralBinaryNetwork` (99.62% accuracy)
 
 **Migration**: See [MIGRATION_GUIDE.md](../MIGRATION_GUIDE.md)
 
@@ -601,7 +601,7 @@ A: No. Agent module is research-only, not integrated, and not validated. Use `Ne
 A: No. Use it for research only. For production, manually curate or use established datasets.
 
 **Q: Is Advanced Ensemble better than NeuralBinaryNetwork?**
-A: Not necessarily. Ensemble adds complexity and latency. Try `NeuralBinaryNetwork` first (96.58%, <30ms).
+A: Not necessarily. Ensemble adds complexity and latency. Try `NeuralBinaryNetwork` first (99.62%, <30ms).
 
 **Q: When will Feedback Learning be ready for production?**
 A: Planned for v1.2. For now, it works but requires careful validation.

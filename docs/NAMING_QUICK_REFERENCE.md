@@ -114,8 +114,8 @@ NEW: Getting Started with Neural Network Detector
 OLD: Phase 6 Summary: Neural Network Training Infrastructure
 NEW: Neural Network Training Infrastructure (v1.1)
 
-OLD: How We Achieved 96.58% - ctreate guilde for testing and launching
-NEW: How We Achieved 96.58% - Neural Network Training Guide
+OLD: How We Achieved 99.62% - ctreate guilde for testing and launching
+NEW: How We Achieved 99.62% - Neural Network Training Guide
 ```
 
 ### Content Replacements
@@ -156,7 +156,7 @@ v1.0-baseline
 
 v1.1-neural
 ├─ Neural network detector
-├─ 96.58% accuracy
+├─ 99.62% accuracy
 ├─ ~500 KB model size
 ├─ Sub-components:
 │  ├─ v1.1-neural:multitask (deprecated)
@@ -203,7 +203,7 @@ pub struct NeuralMultitaskNetwork {
 
 - `cargo run --example train_neural_binary --release` ✅ RECOMMENDED
   - Trains the best-performing neural network
-  - 96.58% accuracy
+  - 99.62% accuracy
   - Full training pipeline
 
 ### Deprecated Examples

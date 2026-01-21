@@ -5,7 +5,7 @@
 The previous implementation had a critical issue: **training results were only printed to console, but the actual trained model weights were lost when the program exited.**
 
 This meant:
-- We documented 99.57% test accuracy
+- We documented 99.62% test accuracy
 - But we had no actual model file to verify or use in production
 - Retraining was required every time we wanted to use the model
 
@@ -125,7 +125,7 @@ cargo run --example load_and_inference --release
 $ cargo run --example evaluate_on_test_set --release
 
 [Training output...]
-Test Accuracy: 0.9957
+Test Accuracy: 0.9962
 [...]
 
 💾 SAVING MODEL WEIGHTS
@@ -384,4 +384,4 @@ All previous examples continue to work:
 | **Production Ready** | Yes | ✅ Ready |
 | **Documentation** | Complete | ✅ Done |
 
-**Result**: The project now has persistent, reproducible trained models that can be saved, versioned, and used in production systems. The 99.57% test accuracy result is now backed by actual model artifacts.
+**Result**: The project now has persistent, reproducible trained models that can be saved, versioned, and used in production systems. The 99.62% test accuracy result is now backed by actual model artifacts.

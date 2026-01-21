@@ -279,7 +279,7 @@ card = ModelCard(
     library_name="jailguard",
     tags=["security", "prompt-injection", "detection"],
     metrics=[
-        {"name": "accuracy", "value": 0.9957},
+        {"name": "accuracy", "value": 0.9962},
         {"name": "precision", "value": 0.9990},
         {"name": "recall", "value": 0.9793},
     ]

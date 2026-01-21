@@ -1,7 +1,7 @@
 //! Verify Saved JSON Model - Ensure Accuracy Matches Trained Model
 //!
 //! This example loads the saved JSON model and verifies it produces the same
-//! 99.57% test accuracy as the original trained model.
+//! 99.62% test accuracy as the original trained model.
 //!
 //! Usage:
 //! ```bash
@@ -157,7 +157,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if test_acc > 0.9950 && precision > 0.9980 && recall > 0.9770 {
         println!("🎯 FINAL VERDICT: ✅ JSON MODEL VERIFIED SUCCESSFULLY");
         println!("   The saved JSON model produces identical results!");
-        println!("   Test Accuracy: {:.2}% (Target: 99.57%)", test_acc * 100.0);
+        println!("   Test Accuracy: {:.2}% (Target: 99.62%)", test_acc * 100.0);
     } else {
         println!("🔴 FINAL VERDICT: ❌ VERIFICATION FAILED");
         println!("   Results do not match expected values");

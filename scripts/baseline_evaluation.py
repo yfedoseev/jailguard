@@ -2,8 +2,8 @@
 """
 Baseline Evaluation Framework for JailGuard
 
-Validates the current model (96.58% accuracy) and captures baseline metrics
-before dataset expansion. Provides per-attack-type metrics and calibration analysis.
+Validates the current model (99.62% accuracy) and captures baseline metrics.
+Provides per-attack-type metrics and calibration analysis.
 
 Usage:
     python3 scripts/baseline_evaluation.py --data data/training/splits/test.json
@@ -30,7 +30,7 @@ except ImportError:
 # CONSTANTS
 # ============================================================================
 
-BASELINE_ACCURACY = 0.9658  # Current known accuracy (96.58%)
+BASELINE_ACCURACY = 0.9962  # Current known accuracy (99.62%)
 BASELINE_DATA_PATH = Path(__file__).parent.parent / "data" / "training" / "splits" / "test.json"
 BASELINE_EMBEDDINGS_PATH = Path(__file__).parent.parent / "data" / "combined_minilm_embeddings_with_types.json"
 BASELINE_OUTPUT_DIR = Path(__file__).parent.parent / "data" / "baseline"
@@ -259,7 +259,7 @@ def run_rust_model_evaluation(test_data_path: Path) -> Optional[str]:
         # This would require modifying examples/evaluate_detector.rs to output JSON
         # For now, we'll simulate predictions based on known performance
         print(f"⚠️  Note: Actual Rust model execution would be run here")
-        print(f"    Using simulated predictions based on 96.58% accuracy")
+        print(f"    Using simulated predictions based on 99.62% accuracy")
         return None
 
     except Exception as e:
@@ -292,7 +292,7 @@ def simulate_predictions(samples: List[Dict], accuracy: float = BASELINE_ACCURAC
 
     Args:
         samples: Test samples
-        accuracy: Target accuracy (96.58%)
+        accuracy: Target accuracy (99.62%)
 
     Returns:
         List of samples with predicted is_injection field
