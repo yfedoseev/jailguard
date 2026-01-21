@@ -806,7 +806,7 @@ Trade-off Analysis:
 ### Training Configuration Used
 
 ```rust
-// From examples/train_on_expanded_dataset.rs
+// From train/train_on_expanded_dataset.rs
 let learning_rate = 0.01;
 let num_epochs = 50;
 let batch_size = 128;
@@ -980,8 +980,8 @@ let f1 = 2.0 * (precision * recall) / (precision + recall);
 
 ### Code Examples
 - `examples/fast_embedding_generation.rs` - Rust embedding pipeline (124 lines)
-- `examples/train_on_expanded_dataset.rs` - Main training example (324 lines)
-- `examples/evaluate_on_test_set.rs` - Test set evaluation (233 lines)
+- `train/train_on_expanded_dataset.rs` - Main training example (324 lines)
+- `train/evaluate_on_test_set.rs` - Test set evaluation (233 lines)
 
 ### Documentation
 - `docs/DATASET_GENERATION_GUIDE.md` - 5-step pipeline guide (425 lines)
@@ -1177,8 +1177,8 @@ Dataset Files:
 
 Code Examples:
 ├─ examples/fast_embedding_generation.rs      (124 lines)
-├─ examples/train_on_expanded_dataset.rs      (324 lines)
-└─ examples/evaluate_on_test_set.rs           (233 lines)
+├─ train/train_on_expanded_dataset.rs      (324 lines)
+└─ train/evaluate_on_test_set.rs           (233 lines)
 
 Documentation:
 ├─ docs/FINAL_RESULTS.md             (THIS FILE - comprehensive)

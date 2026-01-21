@@ -18,7 +18,7 @@ phase6_trainer.rs                → neural_trainer.rs
 ```
 OLD                                 NEW
 ────────────────────────────────────────────────────────────
-phase6_binary_train_full.rs      → train_neural_binary.rs
+train_neural_binary.rs      → train_neural_binary.rs
 phase6_train_full.rs             → train_neural_multitask.rs (deprecated)
 ```
 
@@ -201,7 +201,7 @@ pub struct NeuralMultitaskNetwork {
 
 ### Recommended Examples
 
-- `cargo run --example train_neural_binary --release` ✅ RECOMMENDED
+- `cargo run --bin train_neural_binary --release` ✅ RECOMMENDED
   - Trains the best-performing neural network
   - 99.62% accuracy
   - Full training pipeline
@@ -254,7 +254,7 @@ After completing all renamings:
 - [ ] `cargo clippy --all` has no new warnings
 - [ ] `cargo fmt --all` formats correctly
 - [ ] `cargo doc --no-deps` builds documentation
-- [ ] Examples run: `cargo run --example train_neural_binary`
+- [ ] Examples run: `cargo run --bin train_neural_binary`
 - [ ] No references to old names in code: `grep -r "phase6_\|Phase6\|Phase 6" src/`
 - [ ] No references to old names in docs: `grep -r "Phase 6\|phase6_" *.md`
 - [ ] Git history preserved (use `git mv` for file renames)
@@ -281,7 +281,7 @@ grep -r "Phase 6" . --include="*.rs" --include="*.md" | wc -l
 ```bash
 # Use git mv to preserve history
 git mv src/training/phase6_binary_network.rs src/training/neural_binary_network.rs
-git mv examples/phase6_binary_train_full.rs examples/train_neural_binary.rs
+git mv train/train_neural_binary.rs train/train_neural_binary.rs
 ```
 
 ### Build and Test
@@ -294,7 +294,7 @@ cargo fmt --all --check && \
 cargo doc --no-deps
 
 # Run examples
-cargo run --example train_neural_binary --release
+cargo run --bin train_neural_binary --release
 ```
 
 ---

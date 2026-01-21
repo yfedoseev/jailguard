@@ -43,7 +43,7 @@ cargo build --release --features train
 ls data/combined_minilm_embeddings_with_types.json
 
 # Step 2: Train Neural Network v1.1 (30-50 seconds on GPU)
-cargo run --example train_neural_binary --release
+cargo run --bin train_neural_binary --release
 
 # Step 3: Expected output
 # Training Neural Network v1.1...
@@ -224,7 +224,7 @@ decay_rate = 0.95           // Exponential decay rate
 
 **How to run:**
 ```bash
-cargo run --example train_neural_binary --release
+cargo run --bin train_neural_binary --release
 ```
 
 **Full implementation** (see `src/training/neural_binary_network.rs`):
@@ -423,7 +423,7 @@ Simple approach but lower accuracy (84.62%)
 
 **Run baseline training:**
 ```bash
-cargo run --example train_minilm_with_gradients --release
+cargo run --bin train_minilm_with_gradients --release
 ```
 
 **Expected accuracy:** 78.9% - 84.62%
@@ -617,7 +617,7 @@ Performance:
 
 **Run evaluation:**
 ```bash
-cargo run --example evaluate_detector --release
+cargo run --bin evaluate_detector --release
 ```
 
 **Output format:**
@@ -797,7 +797,7 @@ use std::arch::x86_64::*;
 
 **Enable GPU:**
 ```bash
-cargo run --example train_neural_binary --release --features gpu-wgpu
+cargo run --bin train_neural_binary --release --features gpu-wgpu
 ```
 
 **Performance gain:**
@@ -831,11 +831,11 @@ weights.iter_mut().for_each(|w| if w.abs() < threshold { *w = 0.0 });
 
 | Task | Command | Time | Result |
 |------|---------|------|--------|
-| Quick Train | `cargo run --example train_neural_binary --release` | 30s-5m | 99.62% accuracy |
-| Evaluate | `cargo run --example evaluate_detector --release` | 5s | Full metrics |
-| Baseline | `cargo run --example train_minilm_with_gradients --release` | 1m | 84.62% accuracy |
+| Quick Train | `cargo run --bin train_neural_binary --release` | 30s-5m | 99.62% accuracy |
+| Evaluate | `cargo run --bin evaluate_detector --release` | 5s | Full metrics |
+| Baseline | `cargo run --bin train_minilm_with_gradients --release` | 1m | 84.62% accuracy |
 | Full Pipeline | `cargo run --example full_pipeline --release` | 10s | Integration demo |
-| API Server | `cargo run --example api_server --release` | - | REST API ready |
+| API Server | `cargo run --bin api_server --release` | - | REST API ready |
 
 ---
 

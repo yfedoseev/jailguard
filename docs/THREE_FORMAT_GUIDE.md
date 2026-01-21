@@ -477,7 +477,7 @@ save_file(tensors, "model.safetensors")
 ### I'm Learning/Developing
 → **Use JSON**
 ```bash
-cargo run --example evaluate_on_test_set --release
+cargo run --bin evaluate_on_test_set --release
 # Output: models/jailguard_injection_detector.json
 ```
 
@@ -579,7 +579,7 @@ const model = loadModel('model.json');  // Auto-detects format
 
 ```bash
 # 1. Train and save JSON (automatic)
-cargo run --example evaluate_on_test_set --release
+cargo run --bin evaluate_on_test_set --release
 # → models/jailguard_injection_detector.json
 
 # 2. Generate SafeTensors (implement in Rust)

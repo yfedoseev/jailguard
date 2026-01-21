@@ -195,7 +195,7 @@ cargo add jailguard --features wgpu
 
 ### Train the Neural Network v1.1
 ```bash
-cargo run --example train_neural_binary --release
+cargo run --bin train_neural_binary --release
 ```
 
 **Expected output**: ~99.62% accuracy achieved in ~30 epochs
@@ -254,7 +254,7 @@ See [examples/full_pipeline.rs](examples/full_pipeline.rs) for a complete 6-laye
 ### Getting Started
 - [QUICK_START.md](QUICK_START.md) - 5-minute setup
 - [GETTING_STARTED.md](GETTING_STARTED.md) - Complete tutorial
-- [examples/train_neural_binary.rs](examples/train_neural_binary.rs) - Training example
+- [train/train_neural_binary.rs](train/train_neural_binary.rs) - Training example
 
 ### Technical Details
 - [NEURAL_NETWORK_ARCHITECTURE.md](NEURAL_NETWORK_ARCHITECTURE.md) - Detailed architecture
@@ -375,7 +375,7 @@ Development team who achieved 99.62% accuracy and production readiness:
 - [README.md](README.md) - Project overview
 - [GETTING_STARTED.md](GETTING_STARTED.md) - Setup guide
 - [PRODUCTION_READY.md](PRODUCTION_READY.md) - Status matrix
-- [docs/archive/README.md](docs/archive/README.md) - Historical documentation
+- [TRAINING_GUIDE.md](TRAINING_GUIDE.md) - Training guide
 
 ### Issues & Feedback
 - GitHub Issues: https://github.com/yfedoseev/jailguard/issues
@@ -407,7 +407,7 @@ MIT OR Apache-2.0
 Curious about how we achieved 99.62% accuracy?
 
 1. **Read the architecture**: [NEURAL_NETWORK_ARCHITECTURE.md](NEURAL_NETWORK_ARCHITECTURE.md)
-2. **See the training**: [examples/train_neural_binary.rs](examples/train_neural_binary.rs)
+2. **See the training**: [train/train_neural_binary.rs](train/train_neural_binary.rs)
 3. **Review the verification**: [NEURAL_NETWORK_VERIFICATION.md](NEURAL_NETWORK_VERIFICATION.md)
 4. **Explore the code**: Check `src/training/neural_binary_network.rs`
 

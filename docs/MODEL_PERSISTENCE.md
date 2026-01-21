@@ -48,7 +48,7 @@ Output (0.0 to 1.0)
 ### Step 1: Train the Model
 
 ```bash
-cargo run --example evaluate_on_test_set --release
+cargo run --bin evaluate_on_test_set --release
 ```
 
 This will:
@@ -122,7 +122,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Run the Complete Inference Example
 
 ```bash
-cargo run --example load_and_inference --release
+cargo run --bin load_and_inference --release
 ```
 
 This demonstrates:
@@ -328,7 +328,7 @@ Error: "Model file not found at models/jailguard_injection_detector.json"
 
 **Solution**: First train and save the model:
 ```bash
-cargo run --example evaluate_on_test_set --release
+cargo run --bin evaluate_on_test_set --release
 ```
 
 ### JSON Parse Error
@@ -360,7 +360,7 @@ cat models/jailguard_injection_detector.json | jq . > /dev/null
 ### Retraining Procedure
 
 1. Update training data
-2. Run training example: `cargo run --example evaluate_on_test_set --release`
+2. Run training example: `cargo run --bin evaluate_on_test_set --release`
 3. Evaluate metrics and verify improvement
 4. Save new model with version number: `models/jailguard_v2.0.json`
 5. Update metadata file
@@ -383,8 +383,8 @@ cat models/jailguard_injection_detector.json | jq . > /dev/null
 
 | Task | Command |
 |------|---------|
-| Train & Save | `cargo run --example evaluate_on_test_set --release` |
-| Test Inference | `cargo run --example load_and_inference --release` |
+| Train & Save | `cargo run --bin evaluate_on_test_set --release` |
+| Test Inference | `cargo run --bin load_and_inference --release` |
 | Check Model | `ls -lh models/jailguard_injection_detector.json` |
 | Validate JSON | `cat models/jailguard_injection_detector.json \| jq .` |
 

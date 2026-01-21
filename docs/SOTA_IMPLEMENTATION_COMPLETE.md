@@ -325,7 +325,7 @@ let jailguard = JailGuard::with_config(config);
 python3 scripts/precompute_embeddings_minilm.py --data custom.json
 
 # Train and evaluate
-cargo run --example train_minilm_with_gradients --release
+cargo run --bin train_minilm_with_gradients --release
 ```
 
 ---
@@ -424,7 +424,7 @@ cargo test --release -- --nocapture
 
 ### Development
 ```bash
-cargo run --example train_minilm_with_gradients
+cargo run --bin train_minilm_with_gradients
 ```
 
 ### Production

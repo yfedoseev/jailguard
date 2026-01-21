@@ -143,7 +143,7 @@ Test: 1,519 (10%)
 
 ### 5. Real Training Execution ✅
 
-**Command**: `cargo run --example neural_binary_train_full --release`
+**Command**: `cargo run --example train_neural_binary --release`
 
 **Real output** (verified with full 15,185 samples):
 
@@ -294,7 +294,7 @@ Verification:
 src/training/neural_binary_network.rs    340 LOC of real Rust code
 src/training/neural_data.rs              270 LOC of real data loading
 src/training/neural_trainer.rs           295 LOC of real training
-examples/neural_binary_train_full.rs     280 LOC of real example
+train/train_neural_binary.rs     280 LOC of real example
 data/combined_minilm_embeddings_with_types.json  121 MB real data
 ```
 
@@ -302,7 +302,7 @@ data/combined_minilm_embeddings_with_types.json  121 MB real data
 
 ```bash
 # Anyone can verify by running:
-cargo run --example neural_binary_train_full --release
+cargo run --example train_neural_binary --release
 
 # Expected output:
 # ✅ TRAINING COMPLETE
@@ -361,7 +361,7 @@ This gap shows:
 ## Documentation Created
 
 ### 1. RUNNING_GUIDE.md (617 lines)
-- **How to train**: `cargo run --example neural_binary_train_full --release`
+- **How to train**: `cargo run --example train_neural_binary --release`
 - **How to test**: `cargo test --lib training::phase6 --release`
 - **How to interpret results**: Confusion matrix, metrics
 - **How to deploy**: Integration examples
@@ -419,7 +419,7 @@ Multi-task Verification (5):
 ### Integration Test (Full Training on Real Data)
 
 ```
-Test:  examples/neural_binary_train_full --release
+Test:  examples/train_neural_binary --release
 
 Data:  15,185 real samples
        └─ Train: 12,148 (80%)
@@ -480,7 +480,7 @@ cd jailguard
 ls -lh data/combined_minilm_embeddings_with_types.json  # 121 MB
 
 # 3. Run training (6 minutes)
-cargo run --example neural_binary_train_full --release
+cargo run --example train_neural_binary --release
 
 # 4. Run tests (to verify)
 cargo test --lib training::phase6 --release
@@ -495,7 +495,7 @@ cargo test --lib training::phase6 --release
 
 ```bash
 # Lower learning rate (more stable but slower)
-# Edit examples/neural_binary_train_full.rs, line 52:
+# Edit train/train_neural_binary.rs, line 52:
 let learning_rate = 0.005;  # instead of 0.01
 
 # More epochs (might improve accuracy)

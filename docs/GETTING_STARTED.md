@@ -1,4 +1,4 @@
-# Neural Network Neural Network - Running Guide
+# JailGuard - Getting Started Guide
 
 ## Overview
 
@@ -167,7 +167,7 @@ cargo --version
 cd /home/yfedoseev/projects/jailguard
 
 # Run training with release optimizations (6 minutes)
-cargo run --example neural_binary_train_full --release
+cargo run --example train_neural_binary --release
 
 # Output example:
 # ================================================================================
@@ -299,7 +299,7 @@ impl NeuralTrainer {
 }
 ```
 
-### Example Script (`examples/neural_binary_train_full.rs`, 280 LOC)
+### Example Script (`train/train_neural_binary.rs`, 280 LOC)
 - Loads data from JSON
 - Creates and trains network
 - Evaluates on test set
@@ -440,10 +440,10 @@ Solution:
 
 ```bash
 Solution 1: Use release mode (default in our script)
-cargo run --example neural_binary_train_full --release
+cargo run --example train_neural_binary --release
 
 Solution 2: Reduce epochs
-# Edit examples/neural_binary_train_full.rs, line 52:
+# Edit train/train_neural_binary.rs, line 52:
 let num_epochs = 20; // instead of 50
 
 Solution 3: Increase batch size (trades accuracy for speed)
@@ -461,7 +461,7 @@ Possible causes:
 
 Debugging:
 1. Verify embedding model: jq '.[0].embedding | .[0:5]' data/combined_minilm_embeddings_with_types.json
-2. Check data statistics: cargo run --example neural_binary_train_full --release 2>&1 | grep -A 15 "Dataset Statistics"
+2. Check data statistics: cargo run --example train_neural_binary --release 2>&1 | grep -A 15 "Dataset Statistics"
 3. Increase epochs: let num_epochs = 100;
 4. Try learning_rate = 0.005 to 0.02
 ```
@@ -544,7 +544,7 @@ src/training/
 
 ```
 examples/
-└── neural_binary_train_full.rs  (280 LOC) - Complete training pipeline
+└── train_neural_binary.rs  (280 LOC) - Complete training pipeline
 ```
 
 ### Data
@@ -585,7 +585,7 @@ cargo test --lib training::phase6 --release
 
 ### How to Use
 
-1. **Train from scratch**: `cargo run --example neural_binary_train_full --release`
+1. **Train from scratch**: `cargo run --example train_neural_binary --release`
 2. **Run tests**: `cargo test --lib training::phase6 --release`
 3. **Inference**: Use `NeuralBinaryNetwork::forward_eval()` with embeddings
 4. **Deploy**: Integrate into JailGuard as detection backend

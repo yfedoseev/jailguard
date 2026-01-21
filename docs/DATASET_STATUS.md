@@ -30,7 +30,7 @@
 - **Expected completion**: 02:00-06:00 UTC (Jan 16)
 
 ### Phase 3: Model Training 📋 READY
-- **Training script**: `examples/train_minilm_expanded_dataset.rs` ✅
+- **Training script**: `train/train_on_expanded_dataset.rs` ✅
 - **Script status**: Compiles successfully
 - **Architecture**: 384 → 256 (ReLU) → 2 (softmax)
 - **Training approach**: Gradient descent with backpropagation
@@ -111,7 +111,7 @@ top -p $(pgrep -f precompute_embeddings_minilm)
 ./run_expanded_training.sh
 
 # Option 2: Manual run (after embeddings complete)
-cargo run --example train_minilm_expanded_dataset --release
+cargo run --example train_on_expanded_dataset --release
 ```
 
 ---
@@ -126,7 +126,7 @@ data/
 └── ...
 
 examples/
-├── train_minilm_expanded_dataset.rs       (compiled & ready) ✅
+├── train_on_expanded_dataset.rs       (compiled & ready) ✅
 └── ...
 
 scripts/
@@ -149,7 +149,7 @@ scripts/
 ./run_expanded_training.sh
 
 # Or manual
-cargo run --example train_minilm_expanded_dataset --release
+cargo run --example train_on_expanded_dataset --release
 ```
 - Expected time: 30-60 seconds
 - Will print accuracy, loss, and detailed metrics

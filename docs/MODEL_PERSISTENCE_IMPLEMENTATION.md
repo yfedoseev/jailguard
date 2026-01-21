@@ -70,7 +70,7 @@ impl NeuralBinaryNetwork {
 
 ### 3. Updated Training Example to Save Model
 
-**File**: `examples/evaluate_on_test_set.rs`
+**File**: `train/evaluate_on_test_set.rs`
 
 Added model saving after training completes:
 
@@ -101,7 +101,7 @@ println!("📦 Model size: {:.2} MB", file_size_mb);
 
 ### 4. Created Inference Example
 
-**File**: `examples/load_and_inference.rs` (233 lines)
+**File**: `inference/load_and_inference.rs` (233 lines)
 
 Demonstrates complete inference workflow:
 - Loading saved model
@@ -112,7 +112,7 @@ Demonstrates complete inference workflow:
 
 **Run with**:
 ```bash
-cargo run --example load_and_inference --release
+cargo run --bin load_and_inference --release
 ```
 
 ---
@@ -122,7 +122,7 @@ cargo run --example load_and_inference --release
 ### Training Phase
 
 ```bash
-$ cargo run --example evaluate_on_test_set --release
+$ cargo run --bin evaluate_on_test_set --release
 
 [Training output...]
 Test Accuracy: 0.9962
@@ -138,7 +138,7 @@ Test Accuracy: 0.9962
 ### Inference Phase
 
 ```bash
-$ cargo run --example load_and_inference --release
+$ cargo run --bin load_and_inference --release
 
 📂 Loading model from disk...
 ✅ Model loaded successfully!
@@ -212,7 +212,7 @@ cargo build --example load_and_inference --release
 ### Step 2: Verify Model Can Be Saved
 
 ```bash
-cargo run --example evaluate_on_test_set --release
+cargo run --bin evaluate_on_test_set --release
 
 # Check model file exists
 ls -lh models/jailguard_injection_detector.json
@@ -229,7 +229,7 @@ cat models/jailguard_injection_detector.json | jq . | head -20
 ### Step 3: Verify Model Can Be Loaded
 
 ```bash
-cargo run --example load_and_inference --release
+cargo run --bin load_and_inference --release
 ```
 
 **Expected Output**:
@@ -251,13 +251,13 @@ cargo run --example load_and_inference --release
 - ✅ save() method implemented
 - ✅ load() method implemented
 
-### Training Example (`examples/evaluate_on_test_set.rs`)
+### Training Example (`train/evaluate_on_test_set.rs`)
 - ✅ Creates models/ directory
 - ✅ Saves model after training
 - ✅ Prints model file info
 - ✅ Error handling for save failures
 
-### Inference Example (`examples/load_and_inference.rs`)
+### Inference Example (`inference/load_and_inference.rs`)
 - ✅ Loads saved model
 - ✅ Validates model exists
 - ✅ Runs sample predictions
@@ -295,7 +295,7 @@ All previous examples continue to work:
   - Added load() method
 
 ### Created Files (2)
-- `examples/load_and_inference.rs` (233 lines)
+- `inference/load_and_inference.rs` (233 lines)
   - Complete inference workflow
   - Sample predictions
   - Batch processing
@@ -348,12 +348,12 @@ All previous examples continue to work:
 
 1. **Run training**: Generate and save a model
    ```bash
-   cargo run --example evaluate_on_test_set --release
+   cargo run --bin evaluate_on_test_set --release
    ```
 
 2. **Test inference**: Load and use the model
    ```bash
-   cargo run --example load_and_inference --release
+   cargo run --bin load_and_inference --release
    ```
 
 3. **Version control**: Commit model files

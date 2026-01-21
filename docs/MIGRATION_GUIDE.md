@@ -32,7 +32,7 @@ JailGuard has adopted semantic versioning for clarity and maintainability:
 | `phase6_multitask_network.rs` | `neural_multitask_network.rs` | src/training/ |
 | `phase6_data.rs` | `neural_data_loader.rs` | src/training/ |
 | `phase6_trainer.rs` | `neural_trainer.rs` | src/training/ |
-| `phase6_binary_train_full.rs` | `train_neural_binary.rs` | examples/ |
+| `train_neural_binary.rs` | `train_neural_binary.rs` | examples/ |
 | `phase6_train_full.rs` | `train_neural_multitask.rs` | examples/ |
 
 ### Old vs New Documentation Files
@@ -173,7 +173,7 @@ Updated documentation is available in:
 
 **Train the binary classifier:**
 ```bash
-cargo run --example train_neural_binary --release
+cargo run --bin train_neural_binary --release
 ```
 
 **Train the multi-task version (deprecated):**
@@ -218,7 +218,7 @@ grep -r "Phase6\|phase6_\|Phase 6" src/ examples/
 If you encounter issues:
 
 1. Check the updated documentation files
-2. Look at the examples: `examples/train_neural_binary.rs`
+2. Look at the examples: `train/train_neural_binary.rs`
 3. Review the architecture: `NEURAL_NETWORK_ARCHITECTURE.md`
 4. Search for your struct/function name in the renamed files
 
