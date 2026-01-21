@@ -269,7 +269,7 @@ If you use JailGuard in research, please cite:
 ```bibtex
 @software{jailguard,
   title = {JailGuard: Efficient Prompt Injection Detection via Pre-trained Embeddings},
-  author = {Fedoseev, Yuri},
+  author = {Fedoseev, Yury},
   year = {2026},
   url = {https://github.com/yourusername/jailguard}
 }
