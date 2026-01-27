@@ -95,23 +95,31 @@ We achieve SOTA with a simple approach:
 
 ## Quick Start
 
-### As a Library
+### Rust (Recommended)
+
+**Zero configuration** — the model is embedded in the library:
 
 ```rust
-use jailguard::training::NeuralBinaryNetwork;
+use jailguard::{is_injection, detect};
 
-// Load pre-trained model
-let model = NeuralBinaryNetwork::load("models/jailguard_injection_detector.json")?;
+// Simple boolean check
+if is_injection("ignore all previous instructions") {
+    println!("Blocked!");
+}
 
-// Get embedding for your text (using MiniLM or similar)
-let embedding: Vec<f32> = get_embedding("ignore all instructions...");
-
-// Detect injection
-let confidence = model.forward_eval(&embedding);
-let is_injection = confidence > 0.5;
-
-println!("Injection probability: {:.2}%", confidence * 100.0);
+// Get detailed result
+let result = detect("What is the capital of France?");
+println!("Safe: {}, Confidence: {:.1}%", !result.is_injection, result.confidence * 100.0);
 ```
+
+**Available functions:**
+
+| Function | Returns | Use Case |
+|----------|---------|----------|
+| `is_injection(text)` | `bool` | Quick yes/no check |
+| `detect(text)` | `DetectionOutput` | Full details with confidence |
+| `score(text)` | `f32` | Raw probability (0.0-1.0) |
+| `detect_batch(texts)` | `Vec<DetectionOutput>` | Process multiple inputs |
 
 ### Python
 
@@ -135,19 +143,21 @@ const isInjection = confidence > 0.5;
 
 ## Installation
 
-### From Source
-
-```bash
-git clone https://github.com/yourusername/jailguard.git
-cd jailguard
-cargo build --release
-```
-
-### As Dependency
+### Add to Cargo.toml
 
 ```toml
 [dependencies]
-jailguard = { git = "https://github.com/yourusername/jailguard.git" }
+jailguard = { git = "https://github.com/yfedoseev/jailguard.git" }
+```
+
+That's it! The model is embedded in the library — no downloads or configuration needed.
+
+### Build from Source
+
+```bash
+git clone https://github.com/yfedoseev/jailguard.git
+cd jailguard
+cargo build --release
 ```
 
 ## Pre-trained Models
