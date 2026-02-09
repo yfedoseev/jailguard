@@ -236,14 +236,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all("models")?;
 
     // Format 1: JSON (human-readable, git-friendly)
-    let json_path = "models/jailguard_injection_detector.json";
+    let json_path = "models/neural_binary_200k.json";
     network.save(json_path)?;
     let json_size = std::fs::metadata(json_path)?.len() as f64 / 1_000_000.0;
     println!("✅ Format 1 - JSON saved to: {}", json_path);
     println!("   📦 Size: {:.2} MB", json_size);
 
     // Format 2: SafeTensors (fastest loading, Hugging Face standard)
-    let safetensors_path = "models/jailguard_injection_detector.safetensors";
+    let safetensors_path = "models/neural_binary_200k.safetensors";
     match network.save_safetensors(safetensors_path) {
         Ok(_) => {
             let st_size = std::fs::metadata(safetensors_path)?.len() as f64 / 1_000_000.0;
@@ -256,7 +256,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Format 3: ONNX metadata (prepare for ONNX conversion)
-    let onnx_meta_path = "models/jailguard_injection_detector.onnx.metadata.json";
+    let onnx_meta_path = "models/neural_binary_200k.onnx.metadata.json";
     let onnx_meta = network.onnx_metadata();
     let onnx_json = serde_json::to_string_pretty(&onnx_meta)?;
     std::fs::write(onnx_meta_path, onnx_json)?;

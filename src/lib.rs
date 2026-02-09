@@ -1,7 +1,8 @@
-//! # JailGuard - Prompt Injection Detection
+//! # `JailGuard` — Prompt Injection Detection
 //!
 //! Fast, accurate prompt injection detection with a simple API.
-//! The model is embedded in the library - no external files or setup required.
+//! The 200K-trained model (99.07% accuracy) is embedded in the library —
+//! no external files or setup required.
 //!
 //! ## Quick Start
 //!
@@ -20,9 +21,9 @@
 //!
 //! ## Features
 //!
-//! - **Zero Configuration**: Model embedded in binary, works out of the box
-//! - **99.62% Accuracy**: State-of-the-art detection on prompt injection benchmarks
-//! - **Fast**: Sub-millisecond inference on CPU
+//! - **99.07% Accuracy**: Trained on 200K samples from 14 real datasets
+//! - **Real ML**: ONNX embeddings (all-MiniLM-L6-v2) + neural classifier
+//! - **Auto-setup**: ONNX model auto-downloaded on first use (~90 MB, cached)
 //! - **Simple API**: `is_injection()`, `detect()`, `score()`
 //!
 //! ## API Overview
@@ -34,76 +35,127 @@
 //! | `score(text)` | `f32` | Raw probability (0.0-1.0) |
 //! | `detect_batch(texts)` | `Vec<DetectionOutput>` | Process multiple inputs |
 
-pub mod advanced_ensemble;
-pub mod agent;
-pub mod api;
-pub mod attention_tracker;
-pub mod collection;
-pub mod dataset;
-pub mod detection;
+// ============================================================================
+// Core — always compiled
+// ============================================================================
+
 pub mod embedded;
+pub(crate) mod network;
+pub(crate) mod model_manager;
+mod error;
+
+// Primary API at crate root
+pub use embedded::{detect, detect_batch, is_injection, score, DetectionOutput, RiskLevel};
+pub use error::{Error, Result};
+pub use model_manager::ensure_model;
+
+// ============================================================================
+// Feature-gated modules
+// ============================================================================
+
+#[cfg(feature = "full")]
+pub mod advanced_ensemble;
+#[cfg(feature = "full")]
+pub mod agent;
+#[cfg(feature = "full")]
+pub mod api;
+#[cfg(feature = "full")]
+pub mod attention_tracker;
+#[cfg(feature = "full")]
+pub mod collection;
+#[cfg(feature = "full")]
+pub mod dataset;
+#[cfg(feature = "full")]
+pub mod detection;
+#[cfg(feature = "full")]
 pub mod embeddings;
+#[cfg(feature = "full")]
 pub mod ensemble;
-pub mod error;
+#[cfg(feature = "full")]
 pub mod evaluation;
+#[cfg(feature = "full")]
 pub mod feedback;
+#[cfg(feature = "full")]
 pub mod heuristics;
+#[cfg(feature = "full")]
 pub mod inference;
+#[cfg(feature = "full")]
 pub mod jailguard;
+#[cfg(feature = "full")]
 pub mod model;
+#[cfg(feature = "full")]
 pub mod monitoring;
+#[cfg(feature = "full")]
 pub mod output_validation;
+#[cfg(feature = "full")]
 pub mod performance;
+#[cfg(feature = "full")]
 pub mod pretrained;
+#[cfg(feature = "full")]
 pub mod privilege;
+#[cfg(feature = "full")]
 pub mod spotlighting;
+#[cfg(feature = "full")]
 pub mod task_tracking;
+#[cfg(feature = "full")]
 pub mod tokenizer;
+#[cfg(feature = "full")]
 pub mod training;
+#[cfg(feature = "full")]
 pub mod validation;
 
 // ============================================================================
-// Primary API - Simple, zero-config detection
+// Feature-gated re-exports
 // ============================================================================
 
-// Re-export the simple API at crate root for easy access
-pub use embedded::{detect, detect_batch, is_injection, score, DetectionOutput, RiskLevel};
+#[cfg(feature = "full")]
+pub use heuristics::{HeuristicDetector, HeuristicResult, HeuristicRule, RuleCategory};
 
-// Re-exports for convenience
-pub use advanced_ensemble::{AdvancedDetectionResult, AdvancedEnsemble, LayerScores};
-pub use attention_tracker::{AttentionTracker, AttentionTrackerConfig, AttentionTrackerResult};
+#[cfg(feature = "full")]
 pub use detection::{DetectionResult, Detector, DetectorConfig, InjectionRisk};
+
+#[cfg(feature = "full")]
+pub use advanced_ensemble::{AdvancedDetectionResult, AdvancedEnsemble, LayerScores};
+
+#[cfg(feature = "full")]
+pub use attention_tracker::{AttentionTracker, AttentionTrackerConfig, AttentionTrackerResult};
+
+#[cfg(feature = "full")]
 pub use ensemble::{EnsembleDetectionResult, EnsembleDetector, ModelWeights};
+
+#[cfg(feature = "full")]
 pub use evaluation::{
     AdversarialEvaluator, AttackResult, CalibrationBin, CalibrationEvaluator, CalibrationMetrics,
     ConfusionMatrix, MultiClassEvaluator, PerClassMetrics,
 };
-pub use error::{Error, Result};
+
+#[cfg(feature = "full")]
 pub use feedback::{FeedbackCollector, FeedbackType};
-pub use heuristics::{HeuristicDetector, HeuristicResult, HeuristicRule, RuleCategory};
+
+#[cfg(feature = "full")]
 pub use spotlighting::{Spotlighting, SpotlightingConfig};
 
-// Unified API re-exports
+#[cfg(feature = "full")]
 pub use jailguard::{
     InputValidationResult, JailGuard, JailGuardConfig, OutputCheckResult, RequestContext,
     SessionStats,
 };
 
-// Agent re-exports
+#[cfg(feature = "full")]
 pub use agent::{AgentConfig, DQNAgent, DQNConfig, Experience, PPOAgent, PPOConfig};
 
-// Training re-exports
+#[cfg(feature = "full")]
 pub use training::{Trainer, TrainerConfig, TrainingMetrics};
 
-// Monitoring re-exports
+#[cfg(feature = "full")]
 pub use monitoring::{
     AnomalyConfig, AnomalyDetector, AnomalyResult, DetectionEvent, SessionTracker,
 };
 
-// Performance re-exports
+#[cfg(feature = "full")]
 pub use performance::{EnsembleProfile, EnsembleProfiler, PerformanceMetrics, ResponseCache};
 
-// Validation re-exports
+#[cfg(feature = "full")]
 pub use validation::{
     BenchmarkDataset, ModelComparison, SOTAValidator, SecurityAssessment, ValidationMetrics,
     ValidationReport,

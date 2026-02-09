@@ -1,7 +1,7 @@
 //! Verify Saved JSON Model - Ensure Accuracy Matches Trained Model
 //!
 //! This example loads the saved JSON model and verifies it produces the same
-//! 99.62% test accuracy as the original trained model.
+//! 99.07% test accuracy as the original trained model.
 //!
 //! Usage:
 //! ```bash
@@ -17,7 +17,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // === STEP 1: Load the saved model ===
     println!("\n📂 Loading model from JSON file...");
-    let model_path = "models/jailguard_injection_detector.json";
+    let model_path = "models/neural_binary_200k.json";
 
     if !std::path::Path::new(model_path).exists() {
         println!("❌ Error: Model file not found at {}", model_path);
@@ -123,7 +123,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", "-".repeat(80));
 
     // Expected accuracy from training
-    let expected_accuracy = 0.9957;
+    let expected_accuracy = 0.9907;
     let accuracy_match = (test_acc - expected_accuracy).abs();
 
     if accuracy_match < 0.0001 {
@@ -145,19 +145,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Verify all metrics match expected values
     println!("\n📋 DETAILED VERIFICATION:");
-    println!("   Accuracy Match:  {}", if test_acc > 0.9950 { "✅ YES" } else { "❌ NO" });
-    println!("   Precision Match: {}", if precision > 0.9980 { "✅ YES" } else { "❌ NO" });
-    println!("   Recall Match:    {}", if recall > 0.9770 { "✅ YES" } else { "❌ NO" });
-    println!("   Specificity OK:  {}", if specificity > 0.9990 { "✅ YES" } else { "❌ NO" });
-    println!("   F1 Score OK:     {}", if f1 > 0.9880 { "✅ YES" } else { "❌ NO" });
+    println!("   Accuracy Match:  {}", if test_acc > 0.9900 { "✅ YES" } else { "❌ NO" });
+    println!("   Precision Match: {}", if precision > 0.9880 { "✅ YES" } else { "❌ NO" });
+    println!("   Recall Match:    {}", if recall > 0.9900 { "✅ YES" } else { "❌ NO" });
+    println!("   Specificity OK:  {}", if specificity > 0.9850 { "✅ YES" } else { "❌ NO" });
+    println!("   F1 Score OK:     {}", if f1 > 0.9900 { "✅ YES" } else { "❌ NO" });
 
     println!("\n{}", "=".repeat(80));
 
     // Final verdict
-    if test_acc > 0.9950 && precision > 0.9980 && recall > 0.9770 {
+    if test_acc > 0.9900 && precision > 0.9880 && recall > 0.9900 {
         println!("🎯 FINAL VERDICT: ✅ JSON MODEL VERIFIED SUCCESSFULLY");
         println!("   The saved JSON model produces identical results!");
-        println!("   Test Accuracy: {:.2}% (Target: 99.62%)", test_acc * 100.0);
+        println!("   Test Accuracy: {:.2}% (Target: 99.07%)", test_acc * 100.0);
     } else {
         println!("🔴 FINAL VERDICT: ❌ VERIFICATION FAILED");
         println!("   Results do not match expected values");
