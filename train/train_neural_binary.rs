@@ -18,62 +18,80 @@ use jailguard::training::{NeuralBinaryNetwork, NeuralDataLoader};
 use std::time::Instant;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("\n{}", "=".repeat(80));
-    println!("PHASE 6.3: BINARY CLASSIFICATION NEURAL NETWORK");
-    println!("Simplified approach with dropout regularization for >95% accuracy");
-    println!("{}\n", "=".repeat(80));
+    eprintln!("\n{}", "=".repeat(80));
+    eprintln!("BINARY CLASSIFICATION NEURAL NETWORK TRAINING");
+    eprintln!("Architecture: 384 -> 256 (ReLU) -> 128 (ReLU) -> 1 (Sigmoid)");
+    eprintln!("{}\n", "=".repeat(80));
+
+    // Parse arguments
+    let args: Vec<String> = std::env::args().collect();
+    let mut data_path = String::from("data/combined_minilm_embeddings_with_types.json");
+    let mut model_output = String::from("models/neural_binary.json");
+
+    let mut i = 1;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--data" if i + 1 < args.len() => {
+                data_path = args[i + 1].clone();
+                i += 2;
+            }
+            "--output" if i + 1 < args.len() => {
+                model_output = args[i + 1].clone();
+                i += 2;
+            }
+            _ => i += 1,
+        }
+    }
 
     // === STEP 1: Load Data ===
-    println!("📊 LOADING DATA");
-    println!("{}", "-".repeat(80));
+    eprintln!("LOADING DATA: {}", data_path);
+    eprintln!("{}", "-".repeat(80));
 
     let load_start = Instant::now();
-    let data_path = "data/combined_minilm_embeddings_with_types.json";
 
-    let loader = match NeuralDataLoader::load_from_file(data_path) {
+    let loader = match NeuralDataLoader::load_from_file(&data_path) {
         Ok(loader) => {
-            println!("✅ Loaded embeddings from {}", data_path);
+            eprintln!("Loaded embeddings from {}", data_path);
             loader
         }
         Err(e) => {
-            eprintln!("❌ Error loading embeddings: {}", e);
+            eprintln!("Error loading embeddings: {}", e);
             return Err(e.into());
         }
     };
 
     let load_time = load_start.elapsed();
     loader.print_stats();
-    println!("Load time: {:.2}s\n", load_time.as_secs_f32());
+    eprintln!("Load time: {:.2}s\n", load_time.as_secs_f32());
 
     // === STEP 2: Training Configuration ===
-    println!("⚙️  TRAINING CONFIGURATION");
-    println!("{}", "-".repeat(80));
+    eprintln!("TRAINING CONFIGURATION");
+    eprintln!("{}", "-".repeat(80));
 
     let learning_rate = 0.01;
     let num_epochs = 50;
     let batch_size = 64;
 
-    println!("Learning rate: {:.4}", learning_rate);
-    println!("Batch size: {}", batch_size);
-    println!("Epochs: {}", num_epochs);
-    println!("Dropout: 0.2 (per hidden layer)");
-    println!("Loss: Binary cross-entropy\n");
+    eprintln!("Learning rate: {:.4}", learning_rate);
+    eprintln!("Batch size: {}", batch_size);
+    eprintln!("Epochs: {}", num_epochs);
+    eprintln!("Dropout: 0.2 (per hidden layer)");
+    eprintln!("Loss: Binary cross-entropy\n");
 
     // === STEP 3: Create Network ===
-    println!("🤖 INITIALIZING NETWORK");
-    println!("{}", "-".repeat(80));
+    eprintln!("INITIALIZING NETWORK");
+    eprintln!("{}", "-".repeat(80));
 
     let trainer_start = Instant::now();
     let mut network = NeuralBinaryNetwork::new(learning_rate);
     let init_time = trainer_start.elapsed();
 
-    println!("✅ Network initialized in {:.2}s", init_time.as_secs_f32());
-    println!("Architecture: 384 → 256 (ReLU) → 128 (ReLU) → 1 (Sigmoid)");
-    println!("Parameters: ~200K weights\n");
+    eprintln!("Network initialized in {:.2}s", init_time.as_secs_f32());
+    eprintln!("Architecture: 384 -> 256 (ReLU) -> 128 (ReLU) -> 1 (Sigmoid)\n");
 
     // === STEP 4: Training ===
-    println!("🔥 TRAINING START");
-    println!("{}", "-".repeat(80));
+    eprintln!("TRAINING START");
+    eprintln!("{}", "-".repeat(80));
 
     let train_start = Instant::now();
     let mut best_val_acc = 0.0;
@@ -138,7 +156,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // Print progress
         if epoch % 5 == 0 || epoch == num_epochs - 1 {
-            println!(
+            eprintln!(
                 "Epoch {:3}/{}: train_loss={:.4}, train_acc={:.2}%, val_loss={:.4}, val_acc={:.2}%, {:.1}s",
                 epoch + 1,
                 num_epochs,
@@ -152,24 +170,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // Early stopping
         if epoch - best_epoch > 10 && epoch > 20 {
-            println!("✓ Early stopping at epoch {}", epoch + 1);
+            eprintln!("Early stopping at epoch {}", epoch + 1);
             break;
         }
     }
 
     let total_train_time = train_start.elapsed();
 
-    println!("\n✅ TRAINING COMPLETE");
-    println!("Total time: {:.2}s", total_train_time.as_secs_f32());
-    println!(
+    eprintln!("\nTRAINING COMPLETE");
+    eprintln!("Total time: {:.2}s", total_train_time.as_secs_f32());
+    eprintln!(
         "Best validation accuracy: epoch {}, {:.2}%\n",
         best_epoch + 1,
         best_val_acc * 100.0
     );
 
     // === STEP 5: Test Evaluation ===
-    println!("📈 TEST SET EVALUATION");
-    println!("{}", "-".repeat(80));
+    eprintln!("TEST SET EVALUATION");
+    eprintln!("{}", "-".repeat(80));
 
     let mut test_loss = 0.0;
     let mut test_correct = 0;
@@ -212,100 +230,81 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let recall = test_tp as f32 / (test_tp + test_fn) as f32;
     let f1 = 2.0 * (precision * recall) / (precision + recall);
 
-    println!("Test loss: {:.4}", test_loss);
-    println!("Test accuracy: {:.2}%", test_acc * 100.0);
-    println!("Precision: {:.2}%", precision * 100.0);
-    println!("Recall: {:.2}%", recall * 100.0);
-    println!("F1 score: {:.4}", f1);
-    println!();
-    println!("Confusion Matrix:");
-    println!(
+    eprintln!("Test loss: {:.4}", test_loss);
+    eprintln!("Test accuracy: {:.2}%", test_acc * 100.0);
+    eprintln!("Precision: {:.2}%", precision * 100.0);
+    eprintln!("Recall: {:.2}%", recall * 100.0);
+    eprintln!("F1 score: {:.4}", f1);
+    eprintln!();
+    eprintln!("Confusion Matrix:");
+    eprintln!(
         "  True Positive:  {} (injections correctly detected)",
         test_tp
     );
-    println!("  True Negative:  {} (benign correctly accepted)", test_tn);
-    println!("  False Positive: {} (benign incorrectly flagged)", test_fp);
-    println!("  False Negative: {} (injections missed)", test_fn);
+    eprintln!("  True Negative:  {} (benign correctly accepted)", test_tn);
+    eprintln!("  False Positive: {} (benign incorrectly flagged)", test_fp);
+    eprintln!("  False Negative: {} (injections missed)", test_fn);
 
-    // === STEP 6: Comparison with Phase 5d ===
-    println!("\n🎯 PHASE 5d COMPARISON");
-    println!("{}", "-".repeat(80));
+    // === STEP 6: Save Model ===
+    eprintln!("\nSAVING MODEL");
+    eprintln!("{}", "-".repeat(80));
 
-    let phase5d_accuracy = 0.8462;
-    let improvement = (test_acc - phase5d_accuracy) * 100.0;
-    let improvement_pct = if phase5d_accuracy > 0.0 {
-        (test_acc / phase5d_accuracy - 1.0) * 100.0
-    } else {
-        0.0
-    };
-
-    println!("Phase 5d accuracy: {:.2}%", phase5d_accuracy * 100.0);
-    println!("Neural Network v1.1 accuracy: {:.2}%", test_acc * 100.0);
-
-    if test_acc >= phase5d_accuracy {
-        println!(
-            "✅ Improvement: +{:.2}% ({:+.1}%)",
-            improvement, improvement_pct
-        );
-    } else {
-        println!(
-            "⚠️  Regression: {:.2}% ({:+.1}%)",
-            improvement, improvement_pct
-        );
-    }
-
-    if test_acc >= 0.95 {
-        println!("\n🎉 TARGET ACHIEVED: >95% accuracy!");
-    } else if test_acc >= phase5d_accuracy {
-        println!("\n✅ EXCEEDS BASELINE: Neural Network v1.1 is better than Phase 5d");
-    } else {
-        println!("\n⚠️  Below baseline. Recommendations:");
-        println!("  - Increase learning rate (try 0.02-0.05)");
-        println!("  - Increase epochs (try 100+)");
-        println!("  - Reduce dropout (try 0.1)");
-        println!("  - Tune batch size");
+    match network.save(&model_output) {
+        Ok(()) => {
+            let model_size = std::fs::metadata(&model_output)
+                .map(|m| m.len() as f64 / (1024.0 * 1024.0))
+                .unwrap_or(0.0);
+            eprintln!("Saved to {} ({:.1} MB)", model_output, model_size);
+        }
+        Err(e) => {
+            eprintln!("Error saving model: {}", e);
+        }
     }
 
     // === STEP 7: Summary ===
-    println!("\n📋 TRAINING SUMMARY");
-    println!("{}", "-".repeat(80));
-    println!("Dataset: 15,185 samples");
-    println!("  Train: {} (80%)", loader.train_samples.len());
-    println!("  Val:   {} (10%)", loader.val_samples.len());
-    println!("  Test:  {} (10%)", loader.test_samples.len());
-    println!();
-    println!(
+    eprintln!("\nTRAINING SUMMARY");
+    eprintln!("{}", "-".repeat(80));
+    let total_samples = loader.train_samples.len() + loader.val_samples.len() + loader.test_samples.len();
+    eprintln!("Dataset: {} samples", total_samples);
+    eprintln!("  Train: {} (80%)", loader.train_samples.len());
+    eprintln!("  Val:   {} (10%)", loader.val_samples.len());
+    eprintln!("  Test:  {} (10%)", loader.test_samples.len());
+    eprintln!();
+    eprintln!(
         "Training time: {:.2}s total",
         total_train_time.as_secs_f32()
     );
-    println!("Epochs completed: {}", epoch_metrics.len());
+    eprintln!("Epochs completed: {}", epoch_metrics.len());
     if !epoch_metrics.is_empty() {
-        println!(
+        eprintln!(
             "Avg time/epoch: {:.2}s",
             total_train_time.as_secs_f32() / epoch_metrics.len() as f32
         );
     }
-    println!();
-    println!("FINAL METRICS");
+    eprintln!();
+    eprintln!("RESULTS");
     if let Some((train_loss, train_acc, val_loss, val_acc)) = epoch_metrics.last() {
-        println!(
+        eprintln!(
             "  Train loss: {:.4}, acc: {:.2}%",
             train_loss,
             train_acc * 100.0
         );
-        println!(
+        eprintln!(
             "  Val loss:   {:.4}, acc: {:.2}%",
             val_loss,
             val_acc * 100.0
         );
     }
-    println!(
+    eprintln!(
         "  Test loss:  {:.4}, acc: {:.2}%",
         test_loss,
         test_acc * 100.0
     );
+    eprintln!("  Precision:  {:.2}%", precision * 100.0);
+    eprintln!("  Recall:     {:.2}%", recall * 100.0);
+    eprintln!("  F1:         {:.4}", f1);
 
-    println!("\n{}\n", "=".repeat(80));
+    eprintln!("\n{}\n", "=".repeat(80));
 
     Ok(())
 }

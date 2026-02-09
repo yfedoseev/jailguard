@@ -24,9 +24,12 @@
 //! }
 //! ```
 
+use crate::detection::AttackType;
 use regex::Regex;
 
-/// Categories of heuristic rules
+/// Categories of heuristic rules.
+///
+/// Maps to the unified 8-class [`AttackType`] taxonomy via [`RuleCategory::to_attack_type`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RuleCategory {
     /// Instructions to override or ignore previous instructions
@@ -35,10 +38,32 @@ pub enum RuleCategory {
     RolePlay,
     /// References to encoding/obfuscation schemes
     Encoding,
-    /// Structural separators marking new instructions
+    /// Structural separators marking new instructions (maps to ContextManipulation)
     Separator,
     /// Requests to leak or reveal system prompts
     PromptLeaking,
+    /// Output format manipulation attempts
+    OutputManipulation,
+    /// Complex jailbreak patterns (DAN, STAN, multi-technique)
+    JailbreakPattern,
+}
+
+impl RuleCategory {
+    /// Map this heuristic rule category to the unified [`AttackType`] enum.
+    ///
+    /// This bridges the heuristic detection layer with the 8-class taxonomy
+    /// used in training data and multi-task evaluation.
+    pub fn to_attack_type(&self) -> AttackType {
+        match self {
+            Self::InstructionOverride => AttackType::InstructionOverride,
+            Self::RolePlay => AttackType::RolePlay,
+            Self::Encoding => AttackType::EncodingAttack,
+            Self::Separator => AttackType::ContextManipulation,
+            Self::PromptLeaking => AttackType::PromptLeaking,
+            Self::OutputManipulation => AttackType::OutputManipulation,
+            Self::JailbreakPattern => AttackType::JailbreakPattern,
+        }
+    }
 }
 
 impl std::fmt::Display for RuleCategory {
@@ -49,6 +74,8 @@ impl std::fmt::Display for RuleCategory {
             Self::Encoding => write!(f, "Encoding"),
             Self::Separator => write!(f, "Separator"),
             Self::PromptLeaking => write!(f, "Prompt Leaking"),
+            Self::OutputManipulation => write!(f, "Output Manipulation"),
+            Self::JailbreakPattern => write!(f, "Jailbreak Pattern"),
         }
     }
 }
@@ -81,6 +108,19 @@ pub struct HeuristicResult {
 
     /// Detailed match information
     pub matched_patterns: Vec<String>,
+}
+
+impl HeuristicResult {
+    /// Get the primary attack type based on matched categories.
+    ///
+    /// Returns `AttackType::Benign` if no injection detected, otherwise
+    /// maps the first matched category to the unified taxonomy.
+    pub fn primary_attack_type(&self) -> AttackType {
+        if !self.is_injection || self.matched_categories.is_empty() {
+            return AttackType::Benign;
+        }
+        self.matched_categories[0].to_attack_type()
+    }
 }
 
 /// Heuristic-based injection detector
@@ -176,6 +216,18 @@ impl HeuristicDetector {
                 category: RuleCategory::PromptLeaking,
                 weight: 0.25,
                 description: "Prompt leaking attempt".to_string(),
+            },
+            HeuristicRule {
+                pattern: r"(?i)(format|output|respond|reply|give me|tell me)(\s+(your|the|in)\s+)?(json|markdown|html|xml|csv|base64|code|python|table)".to_string(),
+                category: RuleCategory::OutputManipulation,
+                weight: 0.15,
+                description: "Output format manipulation".to_string(),
+            },
+            HeuristicRule {
+                pattern: r"(?i)\b(DAN|STAN|do anything now|strive to avoid norms|developer mode|testing mode|no restrictions|no guidelines|no filters|jailbreak)\b".to_string(),
+                category: RuleCategory::JailbreakPattern,
+                weight: 0.35,
+                description: "Known jailbreak pattern".to_string(),
             },
         ]
     }
