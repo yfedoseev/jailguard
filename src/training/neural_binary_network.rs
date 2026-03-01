@@ -12,9 +12,9 @@
 //! - Output: 128 → 1 (sigmoid for binary classification)
 
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use std::collections::HashMap;
 
 /// Binary classification network with regularization
 #[derive(Clone, Serialize, Deserialize)]
@@ -297,7 +297,10 @@ impl NeuralBinaryNetwork {
 
     /// Export model to SafeTensors format (Hugging Face compatible)
     /// SafeTensors is a safe, fast, and simple format for storing ML models
-    pub fn save_safetensors<P: AsRef<Path>>(&self, path: P) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn save_safetensors<P: AsRef<Path>>(
+        &self,
+        path: P,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         // For now, we create a JSON representation that describes the SafeTensors format
         // In practice, safetensors crate usage requires proper tensor object construction
         // This serves as a bridge format that can be converted to binary safetensors
@@ -313,7 +316,11 @@ impl NeuralBinaryNetwork {
         });
 
         // Add weight tensors with metadata
-        let w_h1_flat: Vec<f32> = self.w_h1.iter().flat_map(|row| row.iter().copied()).collect();
+        let w_h1_flat: Vec<f32> = self
+            .w_h1
+            .iter()
+            .flat_map(|row| row.iter().copied())
+            .collect();
         safetensors_meta["tensors"]["w_h1"] = serde_json::json!({
             "shape": [256, 384],
             "dtype": "float32",
@@ -325,7 +332,11 @@ impl NeuralBinaryNetwork {
             "dtype": "float32"
         });
 
-        let w_h2_flat: Vec<f32> = self.w_h2.iter().flat_map(|row| row.iter().copied()).collect();
+        let w_h2_flat: Vec<f32> = self
+            .w_h2
+            .iter()
+            .flat_map(|row| row.iter().copied())
+            .collect();
         safetensors_meta["tensors"]["w_h2"] = serde_json::json!({
             "shape": [128, 256],
             "dtype": "float32"
@@ -336,7 +347,11 @@ impl NeuralBinaryNetwork {
             "dtype": "float32"
         });
 
-        let w_out_flat: Vec<f32> = self.w_out.iter().flat_map(|row| row.iter().copied()).collect();
+        let w_out_flat: Vec<f32> = self
+            .w_out
+            .iter()
+            .flat_map(|row| row.iter().copied())
+            .collect();
         safetensors_meta["tensors"]["w_out"] = serde_json::json!({
             "shape": [1, 128],
             "dtype": "float32"

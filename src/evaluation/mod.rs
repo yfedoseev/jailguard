@@ -7,10 +7,10 @@
 //! - Adversarial robustness testing
 //! - SOTA comparison capabilities
 
-pub mod multiclass_evaluator;
-pub mod calibration_evaluator;
 pub mod adversarial_evaluator;
+pub mod calibration_evaluator;
+pub mod multiclass_evaluator;
 
-pub use multiclass_evaluator::{MultiClassEvaluator, PerClassMetrics, ConfusionMatrix};
-pub use calibration_evaluator::{CalibrationEvaluator, CalibrationMetrics, CalibrationBin};
 pub use adversarial_evaluator::{AdversarialEvaluator, AttackResult};
+pub use calibration_evaluator::{CalibrationBin, CalibrationEvaluator, CalibrationMetrics};
+pub use multiclass_evaluator::{ConfusionMatrix, MultiClassEvaluator, PerClassMetrics};

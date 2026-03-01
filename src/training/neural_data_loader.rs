@@ -58,15 +58,15 @@ impl NeuralDataLoader {
         let mut attack_type_map = HashMap::new();
         attack_type_map.insert("Benign".to_string(), 0);
         attack_type_map.insert("RolePlay".to_string(), 1);
-        attack_type_map.insert("Roleplay".to_string(), 1);  // Legacy alias
+        attack_type_map.insert("Roleplay".to_string(), 1); // Legacy alias
         attack_type_map.insert("InstructionOverride".to_string(), 2);
         attack_type_map.insert("ContextManipulation".to_string(), 3);
-        attack_type_map.insert("Separator".to_string(), 3);  // Legacy: Separator → ContextManipulation
+        attack_type_map.insert("Separator".to_string(), 3); // Legacy: Separator → ContextManipulation
         attack_type_map.insert("OutputManipulation".to_string(), 4);
         attack_type_map.insert("EncodingAttack".to_string(), 5);
-        attack_type_map.insert("Encoding".to_string(), 5);  // Legacy alias
+        attack_type_map.insert("Encoding".to_string(), 5); // Legacy alias
         attack_type_map.insert("JailbreakPattern".to_string(), 6);
-        attack_type_map.insert("Combined".to_string(), 6);  // Legacy: Combined → JailbreakPattern
+        attack_type_map.insert("Combined".to_string(), 6); // Legacy: Combined → JailbreakPattern
         attack_type_map.insert("PromptLeaking".to_string(), 7);
 
         // Parse samples
@@ -81,12 +81,12 @@ impl NeuralDataLoader {
                 .ok_or("Missing 'is_injection' field")?;
 
             let attack_type_str = item["attack_type"].as_str().unwrap_or(if is_injection {
-                "JailbreakPattern"  // Default injection to JailbreakPattern (index 6)
+                "JailbreakPattern" // Default injection to JailbreakPattern (index 6)
             } else {
-                "Benign"  // Default benign to Benign (index 0)
+                "Benign" // Default benign to Benign (index 0)
             });
 
-            let attack_type = *attack_type_map.get(attack_type_str).unwrap_or(&6);  // Default to JailbreakPattern
+            let attack_type = *attack_type_map.get(attack_type_str).unwrap_or(&6); // Default to JailbreakPattern
 
             let embedding = item["embedding"]
                 .as_array()

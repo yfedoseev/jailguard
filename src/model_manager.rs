@@ -18,7 +18,8 @@ use std::path::PathBuf;
 
 use crate::error::Error;
 
-const ONNX_URL: &str = "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx";
+const ONNX_URL: &str =
+    "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx";
 const ONNX_FILENAME: &str = "all-MiniLM-L6-v2.onnx";
 
 /// Expected file size in bytes (~90 MB). Used for progress reporting.

@@ -40,9 +40,9 @@
 // ============================================================================
 
 pub mod embedded;
-pub(crate) mod network;
-pub(crate) mod model_manager;
 mod error;
+pub(crate) mod model_manager;
+pub(crate) mod network;
 
 // Primary API at crate root
 pub use embedded::{detect, detect_batch, is_injection, score, DetectionOutput, RiskLevel};

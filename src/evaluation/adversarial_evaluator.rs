@@ -163,7 +163,9 @@ impl AdversarialEvaluator {
         for result in &self.results {
             *type_counts.entry(result.attack_type.clone()).or_insert(0) += 1;
             if result.attack_successful {
-                *type_successes.entry(result.attack_type.clone()).or_insert(0) += 1;
+                *type_successes
+                    .entry(result.attack_type.clone())
+                    .or_insert(0) += 1;
             }
         }
 
@@ -207,8 +209,16 @@ impl AdversarialEvaluator {
 
         // Summary
         report.push_str("\n📊 Overall Robustness:\n");
-        report.push_str(&format!("  Overall ASR:          {:.4} ({:.2}%)\n", overall_asr, overall_asr * 100.0));
-        report.push_str(&format!("  Robustness Score:     {:.4} ({:.2}%)\n", robustness, robustness * 100.0));
+        report.push_str(&format!(
+            "  Overall ASR:          {:.4} ({:.2}%)\n",
+            overall_asr,
+            overall_asr * 100.0
+        ));
+        report.push_str(&format!(
+            "  Robustness Score:     {:.4} ({:.2}%)\n",
+            robustness,
+            robustness * 100.0
+        ));
         report.push_str(&format!("  Total Tests:          {}\n", self.results.len()));
 
         // By attack type
@@ -227,14 +237,18 @@ impl AdversarialEvaluator {
                 "❌ Poor"
             };
 
-            report.push_str(&format!("  {:<23} {:.4}     {}\n", attack_type, asr, status));
+            report.push_str(&format!(
+                "  {:<23} {:.4}     {}\n",
+                attack_type, asr, status
+            ));
         }
 
         // Interpretation
         report.push_str("\n📈 Robustness Assessment:\n");
 
         if robustness > 0.95 {
-            report.push_str("  ✅ EXCELLENT: >95% robustness - Highly resistant to perturbations\n");
+            report
+                .push_str("  ✅ EXCELLENT: >95% robustness - Highly resistant to perturbations\n");
         } else if robustness > 0.90 {
             report.push_str("  ✓ GOOD: >90% robustness - Robust to most perturbations\n");
         } else if robustness > 0.85 {

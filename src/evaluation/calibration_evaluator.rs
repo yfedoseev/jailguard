@@ -257,7 +257,10 @@ impl CalibrationEvaluator {
             "  MCE (Maximum Calibration Error):   {:.4}\n",
             metrics.maximum_calibration_error
         ));
-        report.push_str(&format!("  Brier Score:                       {:.4}\n", metrics.brier_score));
+        report.push_str(&format!(
+            "  Brier Score:                       {:.4}\n",
+            metrics.brier_score
+        ));
 
         // Interpretation
         report.push_str("\n📈 Calibration Quality:\n");

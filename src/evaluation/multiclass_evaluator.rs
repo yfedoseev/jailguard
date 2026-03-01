@@ -155,8 +155,14 @@ impl MultiClassEvaluator {
     /// Compute metrics from confusion matrix
     pub fn compute_metrics(&mut self) {
         let class_names = vec![
-            "Benign", "RolePlay", "InstructionOverride", "ContextManipulation",
-            "OutputManipulation", "EncodingAttack", "JailbreakPattern", "PromptLeaking",
+            "Benign",
+            "RolePlay",
+            "InstructionOverride",
+            "ContextManipulation",
+            "OutputManipulation",
+            "EncodingAttack",
+            "JailbreakPattern",
+            "PromptLeaking",
         ];
 
         self.per_class.clear();
@@ -255,7 +261,12 @@ impl MultiClassEvaluator {
 
     /// Get overall accuracy
     pub fn accuracy(&self) -> f32 {
-        let total: usize = self.confusion_matrix.matrix.iter().flat_map(|r| r.iter()).sum();
+        let total: usize = self
+            .confusion_matrix
+            .matrix
+            .iter()
+            .flat_map(|r| r.iter())
+            .sum();
         let correct: usize = (0..8).map(|i| self.confusion_matrix.diagonal(i)).sum();
 
         if total > 0 {
@@ -275,7 +286,11 @@ impl MultiClassEvaluator {
 
         // Overall metrics
         report.push_str("\n📊 Overall Metrics:\n");
-        report.push_str(&format!("  Accuracy:        {:.4} ({:.2}%)\n", self.accuracy(), self.accuracy() * 100.0));
+        report.push_str(&format!(
+            "  Accuracy:        {:.4} ({:.2}%)\n",
+            self.accuracy(),
+            self.accuracy() * 100.0
+        ));
         report.push_str(&format!("  Macro F1:        {:.4}\n", self.macro_f1()));
         report.push_str(&format!("  Weighted F1:     {:.4}\n", self.weighted_f1()));
         report.push_str(&format!("  Micro F1:        {:.4}\n", self.micro_f1()));
@@ -286,8 +301,14 @@ impl MultiClassEvaluator {
         report.push_str(&format!("  {}\n", "-".repeat(76)));
 
         let class_names = vec![
-            "Benign", "RolePlay", "InstructionOverride", "ContextManipulation",
-            "OutputManipulation", "EncodingAttack", "JailbreakPattern", "PromptLeaking",
+            "Benign",
+            "RolePlay",
+            "InstructionOverride",
+            "ContextManipulation",
+            "OutputManipulation",
+            "EncodingAttack",
+            "JailbreakPattern",
+            "PromptLeaking",
         ];
 
         for name in &class_names {
@@ -315,8 +336,8 @@ mod tests {
         assert_eq!(metrics.false_positives, 2);
         assert_eq!(metrics.false_negatives, 3);
         assert_eq!(metrics.support, 13);
-        assert!((metrics.precision - 10.0/12.0).abs() < 0.001);
-        assert!((metrics.recall - 10.0/13.0).abs() < 0.001);
+        assert!((metrics.precision - 10.0 / 12.0).abs() < 0.001);
+        assert!((metrics.recall - 10.0 / 13.0).abs() < 0.001);
     }
 
     #[test]

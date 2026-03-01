@@ -71,16 +71,18 @@ impl OnnxEmbedder {
         } else if dir.join("all-MiniLM-L6-v2-int8.onnx").exists() {
             dir.join("all-MiniLM-L6-v2-int8.onnx")
         } else {
-            return Err(OnnxEmbedderError::ModelNotFound(
-                format!("No .onnx file found in {}", dir.display()),
-            ));
+            return Err(OnnxEmbedderError::ModelNotFound(format!(
+                "No .onnx file found in {}",
+                dir.display()
+            )));
         };
 
         let tokenizer_path = dir.join("tokenizer.json");
         if !tokenizer_path.exists() {
-            return Err(OnnxEmbedderError::ModelNotFound(
-                format!("tokenizer.json not found in {}", dir.display()),
-            ));
+            return Err(OnnxEmbedderError::ModelNotFound(format!(
+                "tokenizer.json not found in {}",
+                dir.display()
+            )));
         }
 
         Self::from_files(&model_path, &tokenizer_path)
@@ -91,8 +93,7 @@ impl OnnxEmbedder {
         model_path: P,
         tokenizer_path: P,
     ) -> Result<Self, OnnxEmbedderError> {
-        let session = Session::builder()?
-            .commit_from_file(model_path.as_ref())?;
+        let session = Session::builder()?.commit_from_file(model_path.as_ref())?;
 
         let tokenizer = tokenizers::Tokenizer::from_file(tokenizer_path.as_ref())
             .map_err(|e| OnnxEmbedderError::Tokenizer(e.to_string()))?;
@@ -149,20 +150,16 @@ impl OnnxEmbedder {
         }
 
         // Create ndarray Arrays (ndarray 0.16, matching ort 2.0.0-rc.9)
-        let input_ids_array = ndarray::Array2::from_shape_vec(
-            (batch_size, max_len),
-            input_ids,
-        ).map_err(|e| OnnxEmbedderError::Shape(e.to_string()))?;
+        let input_ids_array = ndarray::Array2::from_shape_vec((batch_size, max_len), input_ids)
+            .map_err(|e| OnnxEmbedderError::Shape(e.to_string()))?;
 
-        let attention_mask_array = ndarray::Array2::from_shape_vec(
-            (batch_size, max_len),
-            attention_mask_flat.clone(),
-        ).map_err(|e| OnnxEmbedderError::Shape(e.to_string()))?;
+        let attention_mask_array =
+            ndarray::Array2::from_shape_vec((batch_size, max_len), attention_mask_flat.clone())
+                .map_err(|e| OnnxEmbedderError::Shape(e.to_string()))?;
 
-        let token_type_ids_array = ndarray::Array2::from_shape_vec(
-            (batch_size, max_len),
-            token_type_ids,
-        ).map_err(|e| OnnxEmbedderError::Shape(e.to_string()))?;
+        let token_type_ids_array =
+            ndarray::Array2::from_shape_vec((batch_size, max_len), token_type_ids)
+                .map_err(|e| OnnxEmbedderError::Shape(e.to_string()))?;
 
         // Run ONNX inference
         let input_ids_value = Value::from_array(input_ids_array)?;

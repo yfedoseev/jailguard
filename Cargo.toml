@@ -29,6 +29,7 @@ thiserror = "2"
 
 # ONNX inference (default — required for real ML pipeline)
 ort = "=2.0.0-rc.9"
+ort-sys = "=2.0.0-rc.9"
 tokenizers = "0.21"
 ndarray = "0.16"
 ureq = "2"
