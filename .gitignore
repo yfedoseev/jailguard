@@ -11,6 +11,9 @@ venv/
 *.swp
 *.swo
 
+# Claude Code scratch
+.claude/
+
 # OS
 .DS_Store
 Thumbs.db
@@ -36,3 +39,7 @@ Cargo.lock
 
 # Paper drafts (private until publication)
 docs/paper/
+
+# Internal docs: training, dataset curation, historical release notes.
+# Kept locally for reference; not part of the open-source release.
+docs/internal/

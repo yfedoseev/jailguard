@@ -97,7 +97,7 @@ Describe manual testing performed (if applicable):
 ### Checklist for Breaking Changes
 
 - [ ] I've marked breaking changes clearly
-- [ ] I've updated MIGRATION_GUIDE.md
+- [ ] I've noted the break in CHANGELOG.md under the next version
 - [ ] I've added deprecation warnings (if applicable)
 - [ ] I've explained why this breaking change is necessary
 

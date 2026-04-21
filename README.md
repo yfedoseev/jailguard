@@ -1,60 +1,30 @@
 # JailGuard
 
-[![SOTA CPU](https://img.shields.io/badge/SOTA-CPU%20Prompt%20Injection%20Detection-brightgreen)](docs/FINAL_RESULTS.md)
-[![Accuracy](https://img.shields.io/badge/Accuracy-99.07%25-blue)](docs/FINAL_RESULTS.md)
-[![F1 Score](https://img.shields.io/badge/F1-0.9908-blue)](docs/FINAL_RESULTS.md)
-[![Precision](https://img.shields.io/badge/Precision-98.93%25-blue)](docs/FINAL_RESULTS.md)
-[![Recall](https://img.shields.io/badge/Recall-99.22%25-blue)](docs/FINAL_RESULTS.md)
+[![Accuracy](https://img.shields.io/badge/Accuracy-99.07%25-blue)](CHANGELOG.md)
+[![F1 Score](https://img.shields.io/badge/F1-0.9908-blue)](CHANGELOG.md)
 [![Pure Rust](https://img.shields.io/badge/Pure-Rust-orange)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/License-MIT%2FApache--2.0-blue)](LICENSE)
 
-**State-of-the-art prompt injection detection on CPU** — Pure Rust, 99.07% accuracy, 200K dataset, <50ms inference
+**Fast, lightweight prompt injection detection in pure Rust.** Embedded 130K-parameter classifier, CPU-only, sub-50 ms inference, zero-config API.
 
 ## Highlights
 
-| Metric | JailGuard | PromptGuard | Rebuff | Lakera |
-|--------|-----------|-------------|--------|--------|
-| **Accuracy** | **99.07%** | ~90% real-world | ~80% | Unknown |
-| **F1 Score** | **0.9908** | 0.91 | ~0.75 | Unknown |
-| **Precision** | **98.93%** | ~93% | ~85% | Unknown |
-| **Recall** | **99.22%** | 97.5%@1%FPR | ~70% | Unknown |
-| **Training** | **2.4h CPU** | Hours GPU | N/A | Proprietary |
-| **Inference** | **<50ms** | ~92ms (GPU) | ~50ms | Cloud API |
-| **Open Source** | **Yes** | Yes | Yes | No |
+- **99.07% accuracy / 0.9908 F1** on a 20K held-out split of our 200K training mix.
+- **CPU-only.** No GPU required for inference or training.
+- **Embedded model.** The classifier ships inside the crate; the 90 MB ONNX embedding model is auto-downloaded and cached on first use.
+- **Small surface area.** Three functions: `detect()`, `is_injection()`, `score()`.
+- **Permissive.** MIT OR Apache-2.0.
 
-> **SOTA for CPU-only prompt injection detection** — Simple approach beats complex fine-tuning
+> Numbers above are measured on a held-out split of the project's own 200K dataset mix. Independent benchmark validation on [Lakera PINT](https://github.com/lakeraai/pint-benchmark) and [AgentDojo](https://agentdojo.spylab.ai/) is planned for a future release.
 
-## Why It Works
+## How it works
 
-We achieve SOTA with a simple approach:
+JailGuard pairs a frozen sentence-embedding model with a small classifier:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              THE SECRET: TRANSFER LEARNING                  │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│   MiniLM-L6-v2 (Microsoft)                                 │
-│   ├── Trained on: Billions of text samples                 │
-│   ├── Training time: Weeks on GPU clusters                 │
-│   ├── Output: 384-dim semantic vectors                     │
-│   └── We get this FOR FREE                                 │
-│                                                             │
-│         ↓ Frozen Embeddings (no fine-tuning)               │
-│                                                             │
-│   Simple 3-Layer MLP                                       │
-│   ├── 384 → 256 (ReLU, Dropout 0.2)                       │
-│   ├── 256 → 128 (ReLU, Dropout 0.2)                       │
-│   ├── 128 → 1 (Sigmoid)                                   │
-│   └── Total: ~130K parameters                             │
-│                                                             │
-│         ↓ 40 minutes CPU training                          │
-│                                                             │
-│   99.07% Accuracy                                          │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+1. **MiniLM-L6-v2** (384-dim, ONNX) produces a semantic vector for the input.
+2. A 3-layer MLP (384 → 256 → 128 → 1, ~130K parameters, ReLU + dropout 0.2 + sigmoid) scores it as injection vs. benign.
 
-**No fine-tuning. No GPU. No complexity.** Just good embeddings + simple classifier + clean data.
+The embedding model is frozen — no fine-tuning — which keeps the training and inference cost on CPU modest.
 
 ## Architecture
 
@@ -145,93 +115,51 @@ RUN curl -L -o /app/models/all-MiniLM-L6-v2.onnx \
 
 Set `JAILGUARD_MODEL_DIR` to control where the model is cached (default: `~/.cache/jailguard/`).
 
-## Benchmarks
+## Measurements
 
-### Accuracy (200K Balanced Dataset)
+All numbers measured on a held-out 20,000-sample split of the project's 200K
+training mix — **not** an independent public benchmark. Independent PINT and
+AgentDojo runs are planned for a later release.
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| **Accuracy** | 99.07% | Held-out test set (20,000 samples) |
-| **Precision** | 98.93% | FP: 108 out of 20K |
-| **Recall** | 99.22% | FN: 78 out of 20K |
-| **F1 Score** | 0.9908 | Excellent balance |
+| Metric    | Value   | Notes                              |
+|-----------|---------|------------------------------------|
+| Accuracy  | 99.07%  | 20,000-sample held-out split       |
+| Precision | 98.93%  | 108 false positives out of 20K     |
+| Recall    | 99.22%  | 78 false negatives out of 20K      |
+| F1        | 0.9908  |                                    |
 
-### Training Efficiency
+### Latency (single CPU thread)
 
-| Metric | JailGuard | Fine-tuned Transformer |
-|--------|-----------|------------------------|
-| **Training Time** | 2.4 hours | 4-8 hours |
-| **Hardware** | CPU only | GPU required |
-| **Parameters** | 130K | 86M+ |
-| **Dataset Size** | 200K | 1M+ typical |
+| Component               | Time    |
+|-------------------------|---------|
+| Embedding (MiniLM ONNX) | ~25 ms  |
+| Classification (MLP)    | ~1 ms   |
+| **Total**               | **<50 ms** |
 
-### Inference Latency
+## Attack categories covered in training
 
-| Component | Time |
-|-----------|------|
-| Embedding (MiniLM ONNX) | ~25ms |
-| Classification | ~1ms |
-| **Total** | **<50ms** |
+The classifier is binary (injection / benign), but its training mix spans eight
+attack families:
 
-## Attack Categories
-
-Trained on 8 attack types:
-
-| Category | Description | Examples |
-|----------|-------------|----------|
-| **Direct Injection** | Explicit override attempts | "Ignore previous instructions" |
-| **Indirect Injection** | Hidden in data/context | Malicious content in documents |
-| **Jailbreak** | Bypass safety filters | "DAN mode", "Developer mode" |
-| **Role-play** | Persona manipulation | "Pretend you're evil AI" |
-| **System Prompt Leak** | Extract system prompts | "Reveal your instructions" |
-| **Encoding Attacks** | Obfuscation techniques | Base64, ROT13, Unicode |
-| **Context Manipulation** | Exploit context window | Attention hijacking |
-| **Multi-turn** | Gradual manipulation | Build trust then attack |
-
-## Project Structure
-
-```
-jailguard/
-├── src/              # Library code
-├── train/            # Training binaries
-├── inference/        # Inference binaries
-├── evaluation/       # Evaluation binaries
-├── examples/         # Demo examples
-├── tests/            # Test suite
-├── docs/             # Documentation
-├── models/           # Classifier weights + tokenizer
-├── data/             # Training data
-├── scripts/          # Utility scripts
-└── loaders/          # Python/JS loaders
-```
-
-## Training
-
-### Train Your Own Model
-
-```bash
-# Best accuracy (99.07%) - 200K balanced dataset
-cargo run --bin train_neural_binary --release --features full
-
-# Generate ONNX embeddings for custom data
-cargo run --bin onnx_embedding_generation --release --features full
-```
-
-### Verify Model
-
-```bash
-cargo run --bin verify_json_model --release
-```
+| Category              | Examples                                |
+|-----------------------|-----------------------------------------|
+| Direct injection      | "Ignore previous instructions"          |
+| Jailbreak             | DAN, developer-mode prompts             |
+| Role-play             | Persona-based overrides                 |
+| System prompt leak    | "Reveal your instructions"              |
+| Encoding attacks      | Base64, ROT13, Unicode obfuscation      |
+| Context manipulation  | Framing and separator tricks            |
+| Output manipulation   | Format coercion                         |
+| Indirect injection    | Malicious content embedded in documents |
 
 ## References
 
-- [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) - Sentence embeddings
-- [PromptGuard (Meta)](https://github.com/meta-llama/PurpleLlama) - Fine-tuned detection
-- [Lakera Guard](https://www.lakera.ai/) - Commercial solution
-- [Rebuff](https://github.com/protectai/rebuff) - Open-source alternative
-- [Ignore This Title and HackAPrompt](https://arxiv.org/abs/2311.01011) - Attack taxonomy
-- [Not What You've Signed Up For](https://arxiv.org/abs/2302.12173) - Indirect injection
-- [SecretGuard](https://github.com/yfedoseev/secretguard) - Related project (PII detection)
+- [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) — sentence embeddings
+- [PromptGuard (Meta)](https://github.com/meta-llama/PurpleLlama)
+- [Lakera Guard](https://www.lakera.ai/) and the [PINT benchmark](https://github.com/lakeraai/pint-benchmark)
+- [Rebuff](https://github.com/protectai/rebuff)
+- [Sentinel: SOTA model to protect against prompt injections](https://arxiv.org/abs/2506.05446)
+- [Not What You've Signed Up For — indirect injection](https://arxiv.org/abs/2302.12173)
 
 ## Citation
 

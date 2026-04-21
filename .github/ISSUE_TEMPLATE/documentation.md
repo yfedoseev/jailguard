@@ -22,9 +22,10 @@ Which documentation needs improvement?
 
 - [ ] README.md
 - [ ] docs/GETTING_STARTED.md
-- [ ] docs/TRAINING_GUIDE.md
-- [ ] docs/NEURAL_NETWORK_ARCHITECTURE.md
-- [ ] API documentation (code comments)
+- [ ] docs/API.md
+- [ ] docs/ARCHITECTURE.md
+- [ ] docs/INTEGRATION_GUIDE.md
+- [ ] API documentation (rustdoc / code comments)
 - [ ] Examples
 - [ ] Other: (specify file or URL)
 

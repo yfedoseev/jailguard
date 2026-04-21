@@ -141,10 +141,10 @@ Documentation is crucial! You can help by:
 
 ```bash
 # Edit the markdown file
-vim docs/TRAINING_GUIDE.md
+vim docs/GETTING_STARTED.md
 
-# Or for inline code documentation
-vim src/training/neural_binary_network.rs
+# Or inline code documentation
+vim src/embedded.rs
 
 # Build and check
 cargo doc --no-deps --open
@@ -152,14 +152,12 @@ cargo doc --no-deps --open
 
 ### 5. Research Contributions
 
-Interested in research? We have an active research program:
+Interested in research? Relevant areas:
 
-- **Adversarial robustness** - Test and improve attack resilience
-- **New architectures** - Propose and implement new detection approaches
-- **Performance** - Optimize for speed and memory
-- **Evaluation** - Benchmark against new datasets
-
-See [docs/EXPERIMENTAL_FEATURES.md](docs/EXPERIMENTAL_FEATURES.md) for current research areas.
+- **Adversarial robustness** — test and improve attack resilience
+- **New architectures** — propose and implement new detection approaches
+- **Performance** — optimize for speed and memory
+- **Evaluation** — benchmark against PINT, AgentDojo, DataSentinel, etc.
 
 ## Development Guidelines
 
@@ -253,11 +251,11 @@ Contributors are recognized in:
 
 ## Additional Resources
 
-- **Getting Started:** [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)
-- **Training Guide:** [docs/TRAINING_GUIDE.md](docs/TRAINING_GUIDE.md)
-- **Architecture:** [docs/NEURAL_NETWORK_ARCHITECTURE.md](docs/NEURAL_NETWORK_ARCHITECTURE.md)
+- **Getting started:** [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)
+- **API reference:** [docs/API.md](docs/API.md)
+- **Architecture:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **Integration guide:** [docs/INTEGRATION_GUIDE.md](docs/INTEGRATION_GUIDE.md)
 - **Examples:** [examples/README.md](examples/README.md)
-- **Experimental Features:** [docs/EXPERIMENTAL_FEATURES.md](docs/EXPERIMENTAL_FEATURES.md)
 
 ---
 

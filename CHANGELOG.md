@@ -7,265 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.1.0] - 2026-01-18
+## [0.1.0] - 2026-04-21
 
-### ✨ Major Features
+Initial public release.
 
-#### Neural Network v1.1 Binary Classifier (NEW - RECOMMENDED)
-- **Accuracy:** 96.58% on 15,185 sample test set (11.96% improvement over v1.0)
-- **Architecture:** 384 → 256 → 128 → 1 (ReLU + Dropout + Sigmoid)
-- **Performance:** <5ms GPU, <30ms CPU inference latency
-- **Confidence Calibration:** ECE = 0.038 (well-calibrated)
+### Added
 
-#### Confidence Calibration (NEW)
-- Temperature scaling for reliable confidence scores
-- Well-calibrated predictions suitable for threshold-based decision making
-- Prevents overconfident misclassifications
+- **Embedded detector API.** Zero-config entry points at the crate root:
+  - `detect(text) -> DetectionOutput`
+  - `is_injection(text) -> bool`
+  - `score(text) -> f32`
+  - `detect_batch(texts) -> Vec<DetectionOutput>`
+  - `ensure_model() -> Result<PathBuf>` for pre-warming the ONNX cache.
+- **Embedded 200K classifier.** A ~130K-parameter MLP (`384 → 256 → 128 → 1`)
+  trained on 200,000 balanced samples from 14 public datasets. The classifier
+  weights (`models/neural_binary_200k.json`, 1.5 MB) ship inside the crate and
+  load lazily via `once_cell`.
+- **ONNX embedding backend.** Uses `sentence-transformers/all-MiniLM-L6-v2`
+  (384-dim) via the `ort` crate. The 90 MB ONNX file is auto-downloaded to
+  `~/.cache/jailguard/` on first use; override with the `JAILGUARD_MODEL_DIR`
+  environment variable.
+- **Feature flags.**
+  - `default`: embedded detector only (minimal dependency set).
+  - `full`: training, evaluation, ensemble, and experimental modules.
+  - `train`, `wgpu`, `download`: narrower opt-ins for training workflows.
+- **Example.** `examples/quick_start.rs` demonstrates the three-function API.
 
-### 🔧 Improvements
+### Measured
 
-#### Code Quality
-- ✅ Comprehensive test suite: 652 tests passing, 0 failures
-- ✅ Code formatting: All files pass `cargo fmt`
-- ✅ Security linting: Clean `cargo clippy` with -D warnings
-- ✅ Documentation: Complete API documentation with rustdoc
-- ✅ Dependency audit: All dependencies verified with cargo-deny
+On a held-out split of the 200K training mix (20,000 samples):
 
-#### Naming Standardization
-- Renamed Phase-based types to version-based names for clarity:
-  - `Phase6BinaryNetwork` → `NeuralBinaryNetwork`
-  - `Phase6DataLoader` → `NeuralDataLoader`
-  - `Phase6Trainer` → `NeuralTrainer`
-  - `Phase6MultiTaskNetwork` → `NeuralMultitaskNetwork` (deprecated)
-- Renamed documentation files for consistency
-- Deprecated types still compile with warnings for backward compatibility
+| Metric       | Value   |
+|--------------|---------|
+| Accuracy     | 99.07%  |
+| Precision    | 98.93%  |
+| Recall       | 99.22%  |
+| F1           | 0.9908  |
+| CPU latency  | <50 ms  |
 
-#### Documentation
-- ✅ New: PRODUCTION_READY.md (comprehensive component status)
-- ✅ New: NEURAL_NETWORK_VERIFICATION.md (accuracy proof)
-- ✅ New: RELEASE_v0.1.0.md (release notes)
-- ✅ New: docs/TRAINING_GUIDE.md (850+ lines, complete training guide)
-- ✅ New: docs/EXPERIMENTAL_FEATURES.md (research features documentation)
-- ✅ New: MIGRATION_GUIDE.md (v1.0 → v1.1 upgrade instructions)
-- ✅ Reorganized: All documentation files moved to docs/ folder (95% cleaner root)
-- ✅ Examples: Updated all examples to use new v1.1 API
+Note: these figures are on the project's own dataset split, not an independent
+public benchmark. Evaluation on PINT and AgentDojo is planned for a later
+release.
 
-#### Repository Organization
-- Archived 40+ historical phase documentation (docs/archive/phases/)
-- Archived 8 work session notes (docs/archive/sessions/)
-- Archived 10+ research artifacts (docs/archive/research/)
-- Archived 39 redundant examples (examples/archive/)
-- Consolidated 6 redundant dataset files (67% reduction)
-- Result: Clean, professional repository structure
+### Known limitations
 
-### 🐛 Bug Fixes
+- Not yet evaluated on Lakera PINT, AgentDojo, or DataSentinel benchmarks.
+- First call to `detect()` without a cached ONNX model triggers a 90 MB
+  download from HuggingFace. Call `ensure_model()` at startup to avoid this.
+- Indirect injection (tool-output contamination) is not a dedicated category
+  in the current binary classifier.
 
-#### Gradient Flow Issues
-- **Fixed:** Gradient computation in backpropagation layers
-- **Impact:** Enables proper training convergence
-- **Test:** Added gradient flow validation tests
+### Not shipped
 
-#### Overfitting Prevention
-- **Fixed:** Added dropout regularization (0.2 rate)
-- **Improvement:** Test accuracy improved from ~85% to 96.58%
-- **Result:** Better generalization on unseen data
-
-#### Learning Rate Scheduling
-- **Fixed:** Implemented exponential decay with warmup
-- **Improvement:** Smoother convergence, better final accuracy
-- **Result:** Consistent training behavior across runs
-
-#### Early Stopping Implementation
-- **Fixed:** Proper validation-based stopping criteria
-- **Impact:** Prevents divergence and overfitting
-- **Default:** patience=5 epochs without improvement
-
-### 📦 API Stability
-
-#### Deprecated Components (Removal planned for v2.0.0)
-
-1. **Multi-Task Learning Network**
-   - Type: `NeuralMultitaskNetwork`
-   - Reason: Gradient conflicts between tasks, lower accuracy
-   - Replacement: Use `NeuralBinaryNetwork` (96.58% accuracy)
-   - Deprecation marker: `#[deprecated(...)]`
-
-2. **Baseline Detector (v1.0)**
-   - Type: `BaselineDetector`
-   - Accuracy: 84.62% (deprecated)
-   - Replacement: Use `NeuralBinaryNetwork` (96.58% accuracy)
-   - Reference: See PRODUCTION_READY.md for comparison
-
-#### Deprecation Path
-- All deprecated types still compile
-- Compiler warnings point to replacements
-- Clear migration path in MIGRATION_GUIDE.md
-- Full removal in v2.0.0
-
-### 📊 Performance Metrics
-
-| Metric | Value | Target | Status |
-|--------|-------|--------|--------|
-| Accuracy | 96.58% | >95% | ✅ |
-| Precision | 97.12% | >95% | ✅ |
-| Recall | 95.89% | >93% | ✅ |
-| F1 Score | 96.49% | >94% | ✅ |
-| ECE | 0.038 | <0.05 | ✅ |
-| GPU Latency | <5ms | <5ms | ✅ |
-| CPU Latency | <30ms | <30ms | ✅ |
-| Model Size | 16MB | <20MB | ✅ |
-
-### 🔒 Security
-
-- ✅ Passed `cargo audit` - No known vulnerabilities
-- ✅ Passed `cargo deny check` - License compliance verified
-- ✅ Clippy: No critical warnings
-- ✅ Documentation: All public APIs documented
-- ✅ Unsafe code: 4 justified uses, all audited
-
-#### Known Issues (Non-Critical)
-- RUSTSEC-2026-0002: lru IterMut soundness (upgrade planned for v1.1.1)
-- RUSTSEC-2024-0436: paste unmaintained (no security impact)
-- RUSTSEC-2025-0141: bincode unmaintained (no security impact)
-
-### 📚 Documentation
-
-**New Files:**
-- docs/TRAINING_GUIDE.md (850+ lines)
-- docs/EXPERIMENTAL_FEATURES.md (600+ lines)
-- examples/README.md (400+ lines)
-- examples/archive/README.md (350+ lines)
-- docs/archive/README.md (250+ lines)
-- CONTRIBUTING.md
-- CODE_OF_CONDUCT.md
-- SECURITY.md
-
-**Total new documentation:** 3,450+ lines
+Training datasets, dataset-preparation scripts, and training-time documentation
+live outside the published crate.
 
 ---
 
-## [1.0.0] - 2025-12-15
-
-### ✨ Features
-
-- **6-Layer Defense Architecture** - Defense-in-depth protection against prompt injection
-  1. Spotlighting - Input boundary marking
-  2. Detection - Multi-task threat detection (84.62% accuracy)
-  3. Task Tracking - Behavioral drift detection
-  4. Privilege Context - Resource access control
-  5. Output Validation - Secret detection and sanitization
-  6. Behavior Monitoring - Attack campaign detection
-
-- **Baseline Detector** - Feature-based detection (84.62% accuracy)
-  - Rule-based heuristics
-  - Regex patterns
-  - Simple and fast
-
-- **Multi-Task Learning** - Three-task classification
-  - Binary injection detection
-  - Attack type classification
-  - Semantic similarity scoring
-
-- **Confidence Calibration** - Reliable prediction scores
-
-- **Online Learning** - Feedback-based model updates
-
-- **Adversarial Training** - Character, encoding, and paraphrase attacks
-
-- **GPU Support** - WGPU acceleration
-
-### 🔧 Improvements
-
-- Comprehensive test suite (430+ tests)
-- Docker and Docker Compose support
-- API server with REST endpoints
-- Monitoring integration (Prometheus/Grafana)
-- Configuration options (lenient, strict, output-only modes)
-
-### 📦 Dependencies
-
-- Burn 0.16+ (deep learning framework)
-- Serde (serialization)
-- Tokio (async runtime)
-- All dependencies audited and verified
-
----
-
-## Upgrade Guide
-
-### From v1.0.0 to v0.1.0
-
-**Type Renames:**
-```rust
-// Old (v1.0)
-use jailguard::training::Phase6BinaryNetwork;
-let detector = Phase6BinaryNetwork::new();
-
-// New (v1.1)
-use jailguard::training::NeuralBinaryNetwork;
-let detector = NeuralBinaryNetwork::new(0.01);  // learning_rate parameter added
-```
-
-**Recommended Upgrade:**
-```rust
-// Old: 84.62% accuracy
-let detector = BaselineDetector::new();
-
-// New: 96.58% accuracy (11.96% improvement!)
-let detector = NeuralBinaryNetwork::new(0.01);
-```
-
-See [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for complete upgrade instructions.
-
----
-
-## Project History
-
-- **Phase 1** - Pre-trained embedding integration (Dec 2025)
-- **Phase 2** - Backpropagation implementation (Dec 2025)
-- **Phase 3** - Batch training and multi-task learning (Dec 2025)
-- **Phase 4** - Early stopping and optimization (Dec 2025)
-- **Phase 5** - Baseline detector development (84.62%) (Dec 2025)
-- **Phase 6** - Neural network development (96.58%) (Jan 2026)
-- **Phase 7-8** - Fine-tuning and production readiness (Jan 2026)
-- **Phase 9** - SOTA validation (Jan 2026)
-- **v1.0** - Initial release (Dec 2025)
-- **v1.1** - Major improvements and naming standardization (Jan 2026) ← Current
-
----
-
-## Future Roadmap
-
-### v1.2 (Planned)
-- Enhanced adversarial training techniques
-- Production-ready feedback learning
-- Improved attention tracker integration
-- Distributed training support
-
-### v2.0 (Future)
-- Remove deprecated v1.0 components
-- Agent module production readiness (if validation criteria met)
-- Multilingual support
-- Enhanced ensemble methods
-
----
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
-- Reporting bugs
-- Suggesting features
-- Contributing code
-- Documentation improvements
-
-## License
-
-Licensed under either of:
-- MIT License ([LICENSE-MIT](LICENSE-MIT))
-- Apache License 2.0 ([LICENSE-APACHE](LICENSE-APACHE))
-
-at your option.
-
----
-
-**[Full commit history](https://github.com/yfedoseev/jailguard/commits/main)**
+[0.1.0]: https://github.com/yfedoseev/jailguard/releases/tag/v0.1.0
