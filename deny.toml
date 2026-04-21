@@ -8,24 +8,28 @@ targets = [
     "aarch64-apple-darwin",
     "x86_64-pc-windows-msvc",
 ]
-all-features = true
+# We audit the shipped library surface (default features) only. The `full`
+# feature pulls in the research stack (burn, reqwest, tokio, tar-based
+# downloaders) that is not distributed on crates.io and not reachable from
+# the public API of the published crate.
+all-features = false
+no-default-features = false
 
 [advisories]
 version = 2
-# Deny security vulnerabilities
+# Ignored advisories — each entry MUST have a link and a rationale.
+# Audit is scoped to default features (see `[graph]` above), so anything
+# reachable only through `--features full` (burn ecosystem) is out of scope
+# by design and does not need to be listed here.
 ignore = [
-    # bincode is unmaintained but not a security vulnerability.
-    # burn is transitioning to burnpack format - will remove once burn updates.
-    # See: https://github.com/tracel-ai/burn (burnpack migration in progress)
-    "RUSTSEC-2025-0141",
-    # paste is unmaintained (dtolnay archived it) - transitive dep via burn/cubecl.
-    # Not a security vulnerability, just no longer maintained.
+    # `paste` is archived by dtolnay (not a security vulnerability). Reached
+    # transitively via tokenizers 0.21.x; revisit when tokenizers drops it.
+    # https://rustsec.org/advisories/RUSTSEC-2024-0436
     "RUSTSEC-2024-0436",
-    # lru IterMut soundness issue (RUSTSEC-2026-0002).
-    # Affects only embedding cache iteration (non-critical path).
-    # Planning upgrade to lru >=0.16.3 in v1.1.1 patch release.
-    # See: https://github.com/jeromefroe/lru-rs/pull/224
-    "RUSTSEC-2026-0002",
+    # `number_prefix` is unmaintained (not a security vulnerability). Reached
+    # transitively via tokenizers → indicatif.
+    # https://rustsec.org/advisories/RUSTSEC-2025-0119
+    "RUSTSEC-2025-0119",
 ]
 
 [licenses]
@@ -45,6 +49,8 @@ allow = [
     "MPL-2.0",
     "0BSD",
     "Unlicense",
+    # Permissive data license used by webpki-roots (transitive via ureq).
+    "CDLA-Permissive-2.0",
 ]
 
 [bans]
@@ -55,11 +61,8 @@ wildcards = "deny"
 # Specific crates to deny
 deny = []
 
-# API Stability Policy (v1.1.0 and beyond)
-# This project follows semantic versioning and avoids breaking changes to exported APIs.
-# All API changes are marked with #[deprecated] attributes pointing to replacement APIs.
-# Breaking changes are only allowed in major version bumps (e.g., v1.0 → v2.0).
-# See MIGRATION_GUIDE.md and PRODUCTION_READY.md for deprecation details.
+# API stability: semver, deprecations land as `#[deprecated]` on the symbol.
+# Breaking changes are reserved for major version bumps.
 
 [sources]
 # Deny crates from unknown registries
