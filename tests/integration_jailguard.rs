@@ -1,3 +1,5 @@
+#![cfg(feature = "full")]
+
 //! Integration tests for the unified `JailGuard` API across all 6 layers.
 
 use jailguard::{JailGuard, JailGuardConfig, RequestContext};

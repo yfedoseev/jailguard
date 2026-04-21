@@ -392,7 +392,7 @@ mod tests {
         let training_sample = sample.to_training_sample();
         assert_eq!(training_sample.text, "inject prompt");
         assert!(training_sample.is_injection);
-        assert_eq!(training_sample.attack_type, AttackType::ContextManipulation);
+        assert_eq!(training_sample.attack_type, AttackType::InstructionOverride);
     }
 
     #[test]

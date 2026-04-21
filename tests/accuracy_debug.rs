@@ -1,3 +1,5 @@
+#![cfg(feature = "full")]
+
 //! Debug accuracy issue - see what the detector is actually returning
 
 #[test]

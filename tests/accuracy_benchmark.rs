@@ -1,3 +1,5 @@
+#![cfg(feature = "full")]
+
 //! Accuracy benchmark for JailGuard detector on real prompt injection examples
 
 #[test]

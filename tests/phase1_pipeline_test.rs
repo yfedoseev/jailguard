@@ -1,3 +1,5 @@
+#![cfg(feature = "full")]
+
 //! Integration tests for Phase 1 dataset extension pipeline
 
 use jailguard::dataset::{

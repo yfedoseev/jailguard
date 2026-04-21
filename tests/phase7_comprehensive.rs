@@ -1,3 +1,5 @@
+#![cfg(feature = "full")]
+
 //! Phase 7: Comprehensive Testing & Validation Suite
 //!
 //! This test module validates the complete JailGuard system across:

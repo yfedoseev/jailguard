@@ -1,3 +1,5 @@
+#![cfg(feature = "full")]
+
 //! Test to verify that the fallback embedding mechanism works correctly
 //! for unknown texts that aren't in the lookup table.
 //!

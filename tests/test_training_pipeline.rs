@@ -1,3 +1,5 @@
+#![cfg(feature = "full")]
+
 //! Integration tests for the multi-task training pipeline.
 //!
 //! Tests the complete workflow:

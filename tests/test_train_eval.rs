@@ -1,3 +1,5 @@
+#![cfg(feature = "full")]
+
 /// Test training on 20 samples and evaluating on 5 unseen test samples
 use jailguard::{JailGuard, JailGuardConfig, RequestContext};
 use std::fs;

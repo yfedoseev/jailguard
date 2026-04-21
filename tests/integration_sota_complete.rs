@@ -1,3 +1,5 @@
+#![cfg(feature = "full")]
+
 //! Comprehensive integration test for `JailGuard` SOTA 2026 implementation.
 //!
 //! This test validates:

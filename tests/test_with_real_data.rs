@@ -1,3 +1,5 @@
+#![cfg(feature = "full")]
+
 /// Test `JailGuard` with real generated training data
 use jailguard::{JailGuard, JailGuardConfig, RequestContext};
 use std::fs;

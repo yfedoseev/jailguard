@@ -1,3 +1,5 @@
+#![cfg(feature = "full")]
+
 //! Comprehensive integration tests spanning multiple test categories.
 //!
 //! This module organizes all testing categories:

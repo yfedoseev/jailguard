@@ -1,3 +1,6 @@
+#![warn(missing_docs)]
+#![warn(clippy::print_stdout, clippy::print_stderr)]
+
 //! # `JailGuard` — Prompt Injection Detection
 //!
 //! Fast, accurate prompt injection detection with a simple API.

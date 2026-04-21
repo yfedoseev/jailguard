@@ -1,3 +1,5 @@
+#![cfg(feature = "full")]
+
 //! Comprehensive tests for Priority 3: Stage 6 Ensemble Integration
 //!
 //! Tests cover:

@@ -1,3 +1,5 @@
+#![cfg(feature = "full")]
+
 //! Integration test verifying semantic embeddings work with the detector.
 //!
 //! This test ensures that:
