@@ -60,12 +60,33 @@ allow = [
 ]
 
 [bans]
-# Warn on multiple versions of the same crate (complex dependency trees)
-multiple-versions = "warn"
-# Deny wildcard dependencies
+# Any duplicate version pair not explicitly skipped below fails CI.
+# Strict-by-default so a careless upgrade or new dep can't silently double
+# a transitive tree.
+multiple-versions = "deny"
 wildcards = "deny"
-# Specific crates to deny
 deny = []
+
+# Known-duplicate transitive deps we cannot unify because upstream crates
+# pin different major versions. Each entry must cite a path and be
+# revisited when the upstream crate bumps its dep.
+skip = [
+    # `spm_precompiled` (via tokenizers) still uses base64 0.13; `ureq`
+    # uses 0.22. Resolves when tokenizers upgrades spm_precompiled.
+    { crate = "base64@0.13.1" },
+    # `ring` (via ureq → rustls) pins getrandom 0.2; newer crates use 0.3.
+    # Resolves when ring releases with getrandom 0.3.
+    { crate = "getrandom@0.2.16" },
+    # Windows-only build-time shims pulled in via tar → ort-sys build-dep.
+    # Two versions coexist because different crates in that tree pin
+    # different windows-sys majors. Not present at runtime on the Linux
+    # x86_64-unknown-linux-gnu target. Resolves when the older consumer
+    # (errno/console/indicatif) bumps its windows-sys range.
+    { crate = "windows-sys@0.59.0" },
+    { crate = "windows-targets@0.52.6" },
+    { crate = "windows_x86_64_gnu@0.52.6" },
+    { crate = "windows_x86_64_msvc@0.52.6" },
+]
 
 # API stability: semver, deprecations land as `#[deprecated]` on the symbol.
 # Breaking changes are reserved for major version bumps.
