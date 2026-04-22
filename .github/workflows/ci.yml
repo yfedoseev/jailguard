@@ -29,11 +29,26 @@ jobs:
     name: rustfmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
       - run: cargo fmt --all --check
+
+  # -------------------------------------------------------------------------
+  # TOML formatting (taplo). Catches drift in Cargo.toml, deny.toml,
+  # .typos.toml, etc. Sub-second job.
+  # -------------------------------------------------------------------------
+  taplo:
+    name: taplo (TOML fmt)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: taplo-cli
+      - run: taplo fmt --check
 
   # -------------------------------------------------------------------------
   # Typo check — zero-false-positive text linter, sub-second runtime.
@@ -42,7 +57,7 @@ jobs:
     name: typos
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: crate-ci/typos@master
 
   # -------------------------------------------------------------------------
@@ -56,7 +71,7 @@ jobs:
     env:
       RUSTFLAGS: "-D warnings"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -72,7 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -89,34 +104,70 @@ jobs:
     name: msrv
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@v2
+      - uses: actions/checkout@v6
+      - name: Read MSRV from Cargo.toml
+        id: msrv
+        run: |
+          v=$(grep -E '^rust-version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@master
         with:
-          tool: cargo-msrv
+          toolchain: ${{ steps.msrv.outputs.version }}
       - uses: Swatinem/rust-cache@v2
         with:
           key: msrv
-      - run: cargo msrv verify --output-format json
+      - run: cargo build --locked
 
   # -------------------------------------------------------------------------
-  # Unused dependency detection. Fast static analysis, no compile required.
+  # Unused dependency detection. cargo-shear is the successor to
+  # cargo-machete with tighter static analysis.
   # -------------------------------------------------------------------------
-  machete:
-    name: cargo-machete
+  shear:
+    name: cargo-shear (unused deps)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: bnjbvr/cargo-machete@main
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: shear
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-shear
+      - run: cargo shear
 
   # -------------------------------------------------------------------------
-  # Build + test matrix (Linux / macOS / Windows, stable + beta on Linux).
-  # Default-feature build runs with -D warnings; the all-features lane
-  # mirrors real development usage and keeps warnings as warnings.
+  # Feature powerset: builds every combination of the library's features so
+  # a `#[cfg(feature = "foo")]` block that only works with `foo + bar`
+  # (but not `foo` alone) fails here instead of in someone's downstream
+  # build. `--no-dev-deps --lib` keeps the job focused on the published
+  # library surface.
+  # -------------------------------------------------------------------------
+  features-powerset:
+    name: feature powerset (cargo-hack)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: hack
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-hack
+      - run: cargo hack check --feature-powerset --no-dev-deps --lib
+
+  # -------------------------------------------------------------------------
+  # Build + test matrix (Linux / macOS / Windows; stable on each, beta +
+  # nightly on Linux only). Default-feature build runs with -D warnings;
+  # the all-features lane mirrors real development usage and keeps
+  # warnings as warnings. Nightly is `continue-on-error: true` because it
+  # tracks unreleased toolchains; we want the signal without the block.
   # -------------------------------------------------------------------------
   test:
     name: test (${{ matrix.os }} / ${{ matrix.rust }})
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.rust == 'nightly' }}
     strategy:
       fail-fast: false
       matrix:
@@ -125,8 +176,10 @@ jobs:
         include:
           - os: ubuntu-latest
             rust: beta
+          - os: ubuntu-latest
+            rust: nightly
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
@@ -161,12 +214,47 @@ jobs:
     env:
       RUSTDOCFLAGS: "-D warnings"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
           key: docs
       - run: cargo doc --no-deps --locked
+
+  # -------------------------------------------------------------------------
+  # Line coverage on the library. Informational for 0.1.x — we upload to
+  # Codecov (if a token is set) but don't enforce a threshold yet. Set a
+  # `--fail-under-lines` value here once a baseline is established.
+  # -------------------------------------------------------------------------
+  coverage:
+    name: coverage (informational)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: coverage
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/jailguard
+          key: jailguard-onnx-minilm-v1
+      - name: Generate coverage (default features)
+        run: |
+          cargo llvm-cov --lib --tests --lcov --output-path lcov.info
+      - name: Report coverage summary
+        run: cargo llvm-cov report --summary-only
+      - name: Upload to Codecov
+        if: always()
+        uses: codecov/codecov-action@v6
+        with:
+          files: ./lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
   # -------------------------------------------------------------------------
   # API stability check. Only runs on PRs; compares against the base branch.
@@ -176,8 +264,10 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: obi1kenobi/cargo-semver-checks-action@v2
+        with:
+          feature-group: default-features
 
   # -------------------------------------------------------------------------
   # Security: supply-chain advisories, licenses, bans, sources.
@@ -186,7 +276,7 @@ jobs:
     name: cargo-deny
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
           command: check advisories bans licenses sources
@@ -195,7 +285,7 @@ jobs:
     name: cargo-audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions-rust-lang/audit@v1
 
   # -------------------------------------------------------------------------
@@ -206,10 +296,12 @@ jobs:
     if: always()
     needs:
       - fmt
+      - taplo
       - typos
       - clippy
       - msrv
-      - machete
+      - shear
+      - features-powerset
       - test
       - docs
       - deny

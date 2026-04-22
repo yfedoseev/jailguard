@@ -3,10 +3,10 @@
 
 [graph]
 targets = [
-    "x86_64-unknown-linux-gnu",
-    "x86_64-apple-darwin",
-    "aarch64-apple-darwin",
-    "x86_64-pc-windows-msvc",
+  "x86_64-unknown-linux-gnu",
+  "x86_64-apple-darwin",
+  "aarch64-apple-darwin",
+  "x86_64-pc-windows-msvc",
 ]
 # We audit the shipped library surface (default features) only. The `full`
 # feature pulls in the research stack (burn, reqwest, tokio, tar-based
@@ -17,40 +17,46 @@ no-default-features = false
 
 [advisories]
 version = 2
+# Yanked crates are a supply-chain signal; block them hard.
+yanked = "deny"
 # Ignored advisories — each entry MUST have a link and a rationale.
 # Audit is scoped to default features (see `[graph]` above), so anything
 # reachable only through `--features full` (burn ecosystem) is out of scope
 # by design and does not need to be listed here.
 ignore = [
-    # `paste` is archived by dtolnay (not a security vulnerability). Reached
-    # transitively via tokenizers 0.21.x; revisit when tokenizers drops it.
-    # https://rustsec.org/advisories/RUSTSEC-2024-0436
-    "RUSTSEC-2024-0436",
-    # `number_prefix` is unmaintained (not a security vulnerability). Reached
-    # transitively via tokenizers → indicatif.
-    # https://rustsec.org/advisories/RUSTSEC-2025-0119
-    "RUSTSEC-2025-0119",
+  # `paste` is archived by dtolnay (not a security vulnerability). Reached
+  # transitively via tokenizers 0.21.x; revisit when tokenizers drops it.
+  # https://rustsec.org/advisories/RUSTSEC-2024-0436
+  "RUSTSEC-2024-0436",
+  # `number_prefix` is unmaintained (not a security vulnerability). Reached
+  # transitively via tokenizers → indicatif.
+  # https://rustsec.org/advisories/RUSTSEC-2025-0119
+  "RUSTSEC-2025-0119",
 ]
 
 [licenses]
 version = 2
-# Allowed licenses (permissive licenses compatible with MIT/Apache-2.0)
+# Allowed licenses — permissive only, no copyleft (no MPL/GPL/AGPL/SSPL).
+# cargo-deny [licenses] is allow-list only; anything not listed below fails.
+#
+# MPL-2.0 is intentionally excluded. MPL is file-level copyleft, workable
+# in principle but causes friction for some downstream legal teams. If a
+# future feature requires a Mozilla-stack crate, revisit this decision.
 allow = [
-    "MIT",
-    "Apache-2.0",
-    "Apache-2.0 WITH LLVM-exception",
-    "Unicode-3.0",
-    "Zlib",
-    "BSD-2-Clause",
-    "BSD-3-Clause",
-    "ISC",
-    "CC0-1.0",
-    "BSL-1.0",
-    "MPL-2.0",
-    "0BSD",
-    "Unlicense",
-    # Permissive data license used by webpki-roots (transitive via ureq).
-    "CDLA-Permissive-2.0",
+  "MIT",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "Unicode-3.0",
+  "Zlib",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "CC0-1.0",
+  "BSL-1.0",
+  "0BSD",
+  "Unlicense",
+  # Permissive data license used by webpki-roots (transitive via ureq).
+  "CDLA-Permissive-2.0",
 ]
 
 [bans]

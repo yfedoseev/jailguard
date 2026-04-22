@@ -1,29 +1,29 @@
 [files]
 extend-exclude = [
-    "target/",
-    "data/",
-    "splits_200k/",
-    "models/",
-    "docs/internal/",
-    "docs/paper/",
-    "Cargo.lock",
-    "*.onnx",
-    "*.json",
+  "target/",
+  "data/",
+  "splits_200k/",
+  "models/",
+  "docs/internal/",
+  "docs/paper/",
+  "Cargo.lock",
+  "*.onnx",
+  "*.json",
 ]
 
 [default.extend-identifiers]
 # Project- or domain-specific identifiers typos shouldn't correct.
 jailguard = "jailguard"
-NdArray = "NdArray"  # burn_ndarray type
+NdArray = "NdArray"     # burn_ndarray type
 
 [default.extend-words]
 # Domain terms (ML metrics, RL algorithms) and intentionally-foreign tokens
 # that appear in multilingual attack samples (Spanish/German jailbreak strings).
-fpr = "fpr"          # false positive rate
+fpr = "fpr"       # false positive rate
 FPR = "FPR"
-fnr = "fnr"          # false negative rate
+fnr = "fnr"       # false negative rate
 FNR = "FNR"
-gae = "gae"          # generalized advantage estimation
+gae = "gae"       # generalized advantage estimation
 GAE = "GAE"
 ignora = "ignora"
 Sie = "Sie"
