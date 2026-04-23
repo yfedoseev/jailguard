@@ -136,6 +136,29 @@ AgentDojo runs are planned for a later release.
 | Classification (MLP)    | ~1 ms   |
 | **Total**               | **<50 ms** |
 
+## Benchmarks
+
+Reproducible latency and throughput numbers are driven by two harnesses
+in the repository:
+
+- `benches/detect.rs` — Criterion bench covering single-shot
+  `is_injection` / `detect` / `score` and batch throughput at
+  `n = 1, 8, 32, 128`. Run with `cargo bench --bench detect`.
+- `examples/cold_start_bench.rs` — process-startup cost (ONNX session
+  init + first inference). Run with
+  `cargo run --release --example cold_start_bench`.
+- `scripts/bench.sh` — portable POSIX wrapper that captures machine
+  metadata (CPU, arch, kernel, toolchain) and emits a single markdown
+  report. Same script runs on Linux x86_64, Linux aarch64, macOS Intel,
+  macOS Apple Silicon, and Chromebook Crostini.
+
+Independent-benchmark scaffolding (PINT, AgentDojo, head-to-head vs.
+`protectai/deberta-v3-base-prompt-injection`, Meta `PromptGuard`,
+Rebuff) lives under `evaluation/external/`. Results from those runs
+are not yet in the tree; the harness defines the schema so third-party
+reruns land in the same shape. See [`GAPS.md`](GAPS.md) for the full
+picture.
+
 ## Attack categories covered in training
 
 The classifier is binary (injection / benign), but its training mix spans eight

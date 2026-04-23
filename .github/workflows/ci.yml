@@ -171,7 +171,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # Cross-arch coverage:
+        #   ubuntu-latest        → Linux x86_64
+        #   ubuntu-24.04-arm     → Linux aarch64 (Graviton, Raspberry Pi,
+        #                          Chromebook Crostini class devices)
+        #   macos-latest         → macOS aarch64 (Apple Silicon, as of
+        #                          the GitHub runner alias in 2025+)
+        #   macos-13             → macOS x86_64 (Intel generation; keeps
+        #                          the crate honest on that target)
+        #   windows-latest       → Windows x86_64
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-13, windows-latest]
         rust: [stable]
         include:
           - os: ubuntu-latest

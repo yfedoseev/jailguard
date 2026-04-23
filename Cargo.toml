@@ -66,6 +66,7 @@ csv = { version = "1.3", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+criterion = "0.5"
 
 [features]
 default = []
@@ -90,6 +91,14 @@ semantic-embeddings = []
 [[example]]
 name = "quick_start"
 path = "examples/quick_start.rs"
+
+# cold_start_bench is autodiscovered from examples/cold_start_bench.rs —
+# left undeclared so it stays out of the published crate (which only ships
+# the files listed in the top-level `include` field).
+
+[[bench]]
+name = "detect"
+harness = false
 
 [[example]]
 name = "ensemble_demo"
