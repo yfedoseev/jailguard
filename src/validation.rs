@@ -12,6 +12,7 @@
 //! - Robustness to adversarial examples
 //! - Performance metrics (latency, throughput)
 //! - Calibration quality (ECE < 0.05)
+#![allow(missing_docs)]
 
 use serde::{Deserialize, Serialize};
 

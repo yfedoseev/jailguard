@@ -3,6 +3,7 @@
 //! This module provides loaders for prompt injection datasets:
 //! - deepset/prompt-injections (primary dataset)
 //! - Synthetic data generation
+#![allow(missing_docs)]
 
 pub mod deduplication;
 mod deepset;

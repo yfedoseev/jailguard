@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 /// LLM-Based Data Augmentation Pipeline
 ///
 /// This module uses Claude API to generate novel jailbreak attempts

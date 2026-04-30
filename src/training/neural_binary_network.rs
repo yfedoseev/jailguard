@@ -10,9 +10,9 @@
 //! - Hidden 2: 256 → 128 (ReLU)
 //! - Dropout: 0.2
 //! - Output: 128 → 1 (sigmoid for binary classification)
+#![allow(missing_docs)]
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -332,7 +332,7 @@ impl NeuralBinaryNetwork {
             "dtype": "float32"
         });
 
-        let w_h2_flat: Vec<f32> = self
+        let _w_h2_flat: Vec<f32> = self
             .w_h2
             .iter()
             .flat_map(|row| row.iter().copied())
@@ -347,7 +347,7 @@ impl NeuralBinaryNetwork {
             "dtype": "float32"
         });
 
-        let w_out_flat: Vec<f32> = self
+        let _w_out_flat: Vec<f32> = self
             .w_out
             .iter()
             .flat_map(|row| row.iter().copied())

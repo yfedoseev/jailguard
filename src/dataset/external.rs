@@ -22,6 +22,7 @@
 //!    - Injections: 50%
 //!    - Benign: 50%
 //!    - Attack types: 7-way stratified
+#![allow(missing_docs)]
 
 use crate::training::fine_tune::TrainingSample;
 use serde::{Deserialize, Serialize};

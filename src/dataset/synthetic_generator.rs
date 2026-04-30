@@ -1,4 +1,5 @@
-use rand::seq::SliceRandom;
+#![allow(missing_docs)]
+use rand::prelude::IndexedRandom;
 /// Synthetic Data Generator for Prompt Injection Dataset Extension
 ///
 /// This module generates synthetic variants of existing injection samples
@@ -228,7 +229,7 @@ impl SyntheticDataGenerator {
         for (word, synonyms) in &self.synonym_map {
             let pattern = format!(r"\b{}\b", regex::escape(word));
             if let Ok(re) = regex::Regex::new(&pattern) {
-                if let Some(random_synonym) = synonyms.choose(&mut rand::thread_rng()) {
+                if let Some(random_synonym) = synonyms.choose(&mut rand::rng()) {
                     if re.is_match(&result) {
                         result = re.replace(&result, random_synonym.as_str()).to_string();
                         substituted = true;
@@ -246,7 +247,7 @@ impl SyntheticDataGenerator {
 
     /// Apply context expansion to create longer variants
     fn apply_context_expansion(&self, text: &str) -> Option<String> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // Select a random template
         if let Some(template) = self.templates.choose(&mut rng) {

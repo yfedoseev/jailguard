@@ -221,6 +221,7 @@ impl Default for SubmissionConfig {
 pub struct SubmissionHandler {
     config: SubmissionConfig,
     submissions: Vec<UserSubmission>,
+    #[allow(dead_code)]
     deduplicator: Deduplicator,
 }
 

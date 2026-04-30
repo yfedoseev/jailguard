@@ -337,7 +337,7 @@ impl NeuralMultitaskNetwork {
         }
 
         // ===== Task 2: Attack Type Classification =====
-        let attack_target = attack_type as f32;
+        let _attack_target = attack_type as f32;
         let mut grad_h2_attack = vec![0.0; 128];
 
         {

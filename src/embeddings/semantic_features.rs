@@ -11,6 +11,7 @@
 //!
 //! This approach provides deterministic, reproducible embeddings without
 //! external model dependencies while capturing meaningful semantic structure.
+#![allow(missing_docs)]
 
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};

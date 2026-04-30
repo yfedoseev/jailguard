@@ -2,6 +2,7 @@
 //!
 //! Collects jailbreak attempts from Reddit r/jailbreak subreddit.
 //! Implements community-driven collection with quality filtering.
+#![allow(missing_docs)]
 
 use super::error::CollectionResult;
 use super::rate_limiter::{RateLimitConfig, RateLimiter};

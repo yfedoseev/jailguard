@@ -11,6 +11,7 @@
 //! - m_hat_t = m_t / (1 - beta1^t)                      (Bias correction)
 //! - v_hat_t = v_t / (1 - beta2^t)                      (Bias correction)
 //! - theta_t = theta_{t-1} - alpha * m_hat_t / (sqrt(v_hat_t) + epsilon)  (Update)
+#![allow(missing_docs)]
 
 /// Adam optimizer configuration
 #[derive(Debug, Clone)]
