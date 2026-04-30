@@ -66,7 +66,7 @@ pub use multitask_learning::{
     AttackType, MultiTaskConfig, MultiTaskLearner, MultiTaskResult, RiskLevel,
 };
 pub use multitask_trainer::{MultiTaskMetrics, MultiTaskTrainer, MultiTaskTrainingConfig};
-pub use neural_binary_network::NeuralBinaryNetwork;
+pub use neural_binary_network::{AdamState, NeuralBinaryNetwork};
 pub use neural_data_loader::{NeuralDataLoader, NeuralEmbeddingSample};
 #[allow(deprecated)]
 pub use neural_multitask_network::NeuralMultitaskNetwork;

@@ -450,6 +450,147 @@ impl NeuralBinaryNetwork {
     }
 }
 
+// ── Adam optimiser state ──────────────────────────────────────────────────────
+
+/// First- and second-moment accumulators for Adam. Not serialised — only lives
+/// during a training run. Create with `AdamState::new()` and pass to
+/// `NeuralBinaryNetwork::train_step_adam`.
+pub struct AdamState {
+    // First moments
+    pub m_w_h1:  Vec<Vec<f32>>,
+    pub m_b_h1:  Vec<f32>,
+    pub m_w_h2:  Vec<Vec<f32>>,
+    pub m_b_h2:  Vec<f32>,
+    pub m_w_out: Vec<Vec<f32>>,
+    pub m_b_out: Vec<f32>,
+    // Second moments
+    pub v_w_h1:  Vec<Vec<f32>>,
+    pub v_b_h1:  Vec<f32>,
+    pub v_w_h2:  Vec<Vec<f32>>,
+    pub v_b_h2:  Vec<f32>,
+    pub v_w_out: Vec<Vec<f32>>,
+    pub v_b_out: Vec<f32>,
+    /// Global step counter (1-indexed, incremented inside train_step_adam).
+    pub t: usize,
+}
+
+impl AdamState {
+    pub fn new() -> Self {
+        Self {
+            m_w_h1:  vec![vec![0.0; 384]; 256],
+            m_b_h1:  vec![0.0; 256],
+            m_w_h2:  vec![vec![0.0; 256]; 128],
+            m_b_h2:  vec![0.0; 128],
+            m_w_out: vec![vec![0.0; 128]; 1],
+            m_b_out: vec![0.0; 1],
+            v_w_h1:  vec![vec![0.0; 384]; 256],
+            v_b_h1:  vec![0.0; 256],
+            v_w_h2:  vec![vec![0.0; 256]; 128],
+            v_b_h2:  vec![0.0; 128],
+            v_w_out: vec![vec![0.0; 128]; 1],
+            v_b_out: vec![0.0; 1],
+            t: 0,
+        }
+    }
+}
+
+impl NeuralBinaryNetwork {
+    /// Adam optimiser step with optional class weighting.
+    ///
+    /// * `injection_weight` — scale the gradient for injection samples (try 2.0–3.0).
+    ///   Pass `1.0` for unweighted training.
+    ///
+    /// Adam hyper-params: β1=0.9, β2=0.999, ε=1e-8.
+    /// The learning rate comes from `self.learning_rate` (set to 0.001 for Adam).
+    pub fn train_step_adam(
+        &mut self,
+        embedding: &[f32],
+        is_injection: bool,
+        state: &mut AdamState,
+        injection_weight: f32,
+    ) {
+        const B1: f32 = 0.9;
+        const B2: f32 = 0.999;
+        const EPS: f32 = 1e-8;
+
+        state.t += 1;
+        let t = state.t as f32;
+
+        // Forward + dropout
+        let (cache, pred) = self.forward_train(embedding);
+
+        // Weighted gradient: scale injection errors by injection_weight
+        let weight = if is_injection { injection_weight } else { 1.0 };
+        let target = if is_injection { 1.0_f32 } else { 0.0 };
+        // grad w.r.t. pre-sigmoid logit = weight * (pred - target)
+        let grad_logit = weight * (pred - target);
+
+        // ── Output layer ──────────────────────────────────────────────────
+        for j in 0..128 {
+            let g = grad_logit * cache.h2[j];
+            state.m_w_out[0][j] = B1 * state.m_w_out[0][j] + (1.0 - B1) * g;
+            state.v_w_out[0][j] = B2 * state.v_w_out[0][j] + (1.0 - B2) * g * g;
+            let m_hat = state.m_w_out[0][j] / (1.0 - B1.powf(t));
+            let v_hat = state.v_w_out[0][j] / (1.0 - B2.powf(t));
+            self.w_out[0][j] -= self.learning_rate * m_hat / (v_hat.sqrt() + EPS);
+        }
+        {
+            let g = grad_logit;
+            state.m_b_out[0] = B1 * state.m_b_out[0] + (1.0 - B1) * g;
+            state.v_b_out[0] = B2 * state.v_b_out[0] + (1.0 - B2) * g * g;
+            let m_hat = state.m_b_out[0] / (1.0 - B1.powf(t));
+            let v_hat = state.v_b_out[0] / (1.0 - B2.powf(t));
+            self.b_out[0] -= self.learning_rate * m_hat / (v_hat.sqrt() + EPS);
+        }
+
+        // ── h2 layer ─────────────────────────────────────────────────────
+        let mut grad_h2 = vec![0.0_f32; 128];
+        for j in 0..128 {
+            grad_h2[j] = grad_logit * self.w_out[0][j];
+            if cache.h2[j] <= 0.0 || !cache.h2_mask[j] { grad_h2[j] = 0.0; }
+        }
+        for i in 0..128 {
+            for j in 0..256 {
+                let g = grad_h2[i] * cache.h1[j];
+                state.m_w_h2[i][j] = B1 * state.m_w_h2[i][j] + (1.0 - B1) * g;
+                state.v_w_h2[i][j] = B2 * state.v_w_h2[i][j] + (1.0 - B2) * g * g;
+                let m_hat = state.m_w_h2[i][j] / (1.0 - B1.powf(t));
+                let v_hat = state.v_w_h2[i][j] / (1.0 - B2.powf(t));
+                self.w_h2[i][j] -= self.learning_rate * m_hat / (v_hat.sqrt() + EPS);
+            }
+            let g = grad_h2[i];
+            state.m_b_h2[i] = B1 * state.m_b_h2[i] + (1.0 - B1) * g;
+            state.v_b_h2[i] = B2 * state.v_b_h2[i] + (1.0 - B2) * g * g;
+            let m_hat = state.m_b_h2[i] / (1.0 - B1.powf(t));
+            let v_hat = state.v_b_h2[i] / (1.0 - B2.powf(t));
+            self.b_h2[i] -= self.learning_rate * m_hat / (v_hat.sqrt() + EPS);
+        }
+
+        // ── h1 layer ─────────────────────────────────────────────────────
+        let mut grad_h1 = vec![0.0_f32; 256];
+        for j in 0..256 {
+            for i in 0..128 { grad_h1[j] += grad_h2[i] * self.w_h2[i][j]; }
+            if cache.h1[j] <= 0.0 || !cache.h1_mask[j] { grad_h1[j] = 0.0; }
+        }
+        for i in 0..256 {
+            for j in 0..384 {
+                let g = grad_h1[i] * embedding[j];
+                state.m_w_h1[i][j] = B1 * state.m_w_h1[i][j] + (1.0 - B1) * g;
+                state.v_w_h1[i][j] = B2 * state.v_w_h1[i][j] + (1.0 - B2) * g * g;
+                let m_hat = state.m_w_h1[i][j] / (1.0 - B1.powf(t));
+                let v_hat = state.v_w_h1[i][j] / (1.0 - B2.powf(t));
+                self.w_h1[i][j] -= self.learning_rate * m_hat / (v_hat.sqrt() + EPS);
+            }
+            let g = grad_h1[i];
+            state.m_b_h1[i] = B1 * state.m_b_h1[i] + (1.0 - B1) * g;
+            state.v_b_h1[i] = B2 * state.v_b_h1[i] + (1.0 - B2) * g * g;
+            let m_hat = state.m_b_h1[i] / (1.0 - B1.powf(t));
+            let v_hat = state.v_b_h1[i] / (1.0 - B2.powf(t));
+            self.b_h1[i] -= self.learning_rate * m_hat / (v_hat.sqrt() + EPS);
+        }
+    }
+}
+
 // Utility functions
 fn _sigmoid(x: f32) -> f32 {
     1.0 / (1.0 + (-x).exp())
