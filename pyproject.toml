@@ -1,0 +1,42 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "jailguard"
+version = "0.1.0"
+description = "Fast prompt injection detection — Rust-powered, CPU-only, no GPU required"
+readme = "README.md"
+license = { text = "MIT OR Apache-2.0" }
+requires-python = ">=3.8"
+keywords = ["security", "llm", "prompt-injection", "jailbreak", "ai-safety"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: 3",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+# No Python dependencies — the wheel is self-contained.
+# The ONNX embedding model (~90 MB) is downloaded on first use to
+# ~/.cache/jailguard/ and is NOT bundled in the wheel.
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/yfedoseev/jailguard"
+Repository = "https://github.com/yfedoseev/jailguard"
+Documentation = "https://docs.rs/jailguard"
+
+[tool.maturin]
+# Native extension lives at jailguard._jailguard
+module-name = "jailguard._jailguard"
+# Python source package lives in python/
+python-source = "python"
+# Enable the PyO3 bindings feature
+features = ["python"]
+# Build for Python 3.8+ using stable ABI (smaller wheels, wider compatibility)
+# Corresponds to pyo3 abi3-py38 feature

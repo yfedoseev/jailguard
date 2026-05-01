@@ -245,7 +245,6 @@ cargo test --all --verbose
 ## Recognition
 
 Contributors are recognized in:
-- [AUTHORS](AUTHORS) file
 - GitHub contributors page
 - Release notes (for significant contributions)
 

@@ -95,7 +95,7 @@ println!("Safe: {}, Confidence: {:.1}%", !result.is_injection, result.confidence
 | `detect(text)` | `DetectionOutput` | Full details with confidence |
 | `score(text)` | `f32` | Raw probability (0.0-1.0) |
 | `detect_batch(texts)` | `Vec<DetectionOutput>` | Process multiple inputs |
-| `ensure_model()` | `Result<PathBuf>` | Pre-download ONNX model |
+| `download_model()` | `Result<PathBuf>` | Pre-download ONNX model |
 
 ### Production Setup
 
@@ -103,7 +103,7 @@ In production, pre-download the ONNX model to avoid first-request latency:
 
 ```rust
 // Option A: call at app startup
-jailguard::ensure_model().expect("Failed to download ONNX model");
+jailguard::download_model().expect("Failed to download ONNX model");
 ```
 
 ```dockerfile

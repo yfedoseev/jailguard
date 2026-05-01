@@ -51,7 +51,7 @@ pub enum OnnxEmbedderError {
 /// Produces 384-dimensional L2-normalized embeddings using proper
 /// BERT tokenization and mean pooling with attention mask.
 pub struct OnnxEmbedder {
-    session: Session,
+    session: std::sync::Mutex<Session>,
     tokenizer: tokenizers::Tokenizer,
 }
 
@@ -98,7 +98,10 @@ impl OnnxEmbedder {
         let tokenizer = tokenizers::Tokenizer::from_file(tokenizer_path.as_ref())
             .map_err(|e| OnnxEmbedderError::Tokenizer(e.to_string()))?;
 
-        Ok(Self { session, tokenizer })
+        Ok(Self {
+            session: std::sync::Mutex::new(session),
+            tokenizer,
+        })
     }
 
     /// Generate embedding for a single text.
@@ -170,11 +173,12 @@ impl OnnxEmbedder {
             "input_ids" => input_ids_value,
             "attention_mask" => attention_mask_value,
             "token_type_ids" => token_type_ids_value
-        ]?;
-        let outputs = self.session.run(inputs)?;
+        ];
+        let mut session = self.session.lock().expect("session mutex poisoned");
+        let outputs = session.run(inputs)?;
 
-        // Extract output: shape [batch_size, seq_len, 384]
-        let output_tensor = outputs[0].try_extract_tensor::<f32>()?;
+        // Extract output: shape [batch_size, seq_len, 384] — flat &[f32]
+        let (_, output_data) = outputs[0].try_extract_tensor::<f32>()?;
 
         // Mean pooling with attention mask + L2 normalization
         let mut embeddings = Vec::with_capacity(batch_size);
@@ -187,7 +191,7 @@ impl OnnxEmbedder {
                 let mask_val = attention_mask_flat[b * max_len + t] as f32;
                 if mask_val > 0.0 {
                     for d in 0..EMBEDDING_DIM {
-                        pooled[d] += output_tensor[[b, t, d]] * mask_val;
+                        pooled[d] += output_data[b * max_len * EMBEDDING_DIM + t * EMBEDDING_DIM + d] * mask_val;
                     }
                     token_count += mask_val;
                 }

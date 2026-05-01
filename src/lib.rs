@@ -50,11 +50,14 @@ pub(crate) mod network;
 // Primary API at crate root
 pub use embedded::{detect, detect_batch, is_injection, score, DetectionOutput, RiskLevel};
 pub use error::{Error, Result};
-pub use model_manager::ensure_model;
+pub use model_manager::download_model;
 
 // ============================================================================
 // Feature-gated modules
 // ============================================================================
+
+#[cfg(feature = "python")]
+mod python;
 
 #[cfg(feature = "full")]
 pub mod advanced_ensemble;

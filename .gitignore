@@ -20,6 +20,7 @@ Thumbs.db
 
 # Large data files (keep locally for development, don't commit)
 data/*.json
+data/*.csv
 data/expansion/
 data/training/
 data/baseline/
@@ -29,6 +30,11 @@ data/collected_samples/
 
 # Large dataset splits (for training, not in version control)
 splits_200k/
+
+# Models — only the embedded classifier and tokenizer are tracked.
+# Large ONNX model is auto-downloaded at runtime; safetensors live in the dataset repo.
+models/*.onnx
+models/*.safetensors
 
 # Development
 .env

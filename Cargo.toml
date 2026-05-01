@@ -27,6 +27,7 @@ include = [
   "src/error.rs",
   "src/model_manager.rs",
   "src/network.rs",
+  "src/python.rs",
   "models/neural_binary_200k.json",
   "models/tokenizer.json",
   "Cargo.toml",
@@ -34,7 +35,11 @@ include = [
   "README.md",
   "CHANGELOG.md",
   "examples/quick_start.rs",
+  "python/",
 ]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # Core — always present
@@ -44,21 +49,25 @@ once_cell = "1"
 thiserror = "2"
 
 # ONNX inference (default — required for real ML pipeline).
-ort = "=2.0.0-rc.9"
-tokenizers = "0.21"
-ndarray = "0.16"
-ureq = "2"
+ort = "=2.0.0-rc.12"
+tokenizers = "0.23"
+ndarray = "0.17"
+ureq = "3"
+sha2 = "0.11"
+
+# Python bindings (pyo3 + maturin)
+pyo3 = { version = "0.22", features = ["abi3-py38"], optional = true }
 
 # Feature-gated dependencies (only pulled in under `--features full` or friends).
-burn = { version = "0.19", default-features = false, optional = true }
-burn-ndarray = { version = "0.19", default-features = false, optional = true }
+burn = { version = "0.20", default-features = false, optional = true }
+burn-ndarray = { version = "0.20", default-features = false, optional = true }
 parking_lot = { version = "0.12", optional = true }
 tracing = { version = "0.1", optional = true }
 unicode-segmentation = { version = "1.12", optional = true }
-rand = { version = "0.8", optional = true }
+rand = { version = "0.9", optional = true }
 uuid = { version = "1", features = ["v4", "serde"], optional = true }
-dirs = { version = "5.0", optional = true }
-lru = { version = "0.12", optional = true }
+dirs = { version = "6.0", optional = true }
+lru = { version = "0.18", optional = true }
 regex = { version = "1", optional = true }
 reqwest = { version = "0.12", features = ["json", "stream"], optional = true }
 tokio = { version = "1", features = ["full"], optional = true }
@@ -66,10 +75,11 @@ csv = { version = "1.3", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
-criterion = "0.5"
+criterion = "0.8"
 
 [features]
 default = []
+python = ["pyo3"]
 full = [
   "dep:burn",
   "dep:burn-ndarray",
