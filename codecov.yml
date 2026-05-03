@@ -1,0 +1,26 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 1%
+    patch:
+      default:
+        target: 75%
+ignore:
+  # Bindings — covered by language-specific test suites, not Rust ones
+  - "src/python.rs"
+  - "src/wasm.rs"
+  - "src/c_api.rs"
+  - "src/napi.rs"
+  # Generated / re-exported research surface
+  - "src/training/**"
+  - "src/embeddings/**"
+  - "src/dataset/**"
+  - "src/evaluation/**"
+  - "src/agent/**"
+  # Test scaffolding and benches
+  - "tests/**"
+  - "benches/**"
+  - "examples/**"
+  - "train/**"

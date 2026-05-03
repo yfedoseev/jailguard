@@ -1,0 +1,69 @@
+# Pre-commit hooks for JailGuard
+# Install:  pip install pre-commit && pre-commit install
+# Run all:  pre-commit run --all-files
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-toml
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=2000']
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # cargo-deny supply-chain check
+  - repo: https://github.com/EmbarkStudios/cargo-deny
+    rev: 0.19.0
+    hooks:
+      - id: cargo-deny
+        args: ['check']
+
+  # Rust toolchain hooks
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt --all -- --check
+        language: system
+        pass_filenames: false
+        types: [rust]
+
+      - id: cargo-check
+        name: cargo check
+        entry: cargo check --all-targets
+        language: system
+        pass_filenames: false
+        types: [rust]
+
+      - id: cargo-clippy
+        name: cargo clippy (default features)
+        entry: cargo clippy --all-targets --locked -- -D warnings
+        language: system
+        pass_filenames: false
+        types: [rust]
+
+      - id: cargo-clippy-full
+        name: cargo clippy (--features full)
+        entry: cargo clippy --all-targets --locked --features full -- -D warnings
+        language: system
+        pass_filenames: false
+        types: [rust]
+
+  # Python tooling for the python binding
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.5
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  # taplo TOML formatter
+  - repo: https://github.com/ComPWA/taplo-pre-commit
+    rev: v0.9.3
+    hooks:
+      - id: taplo-format
+      - id: taplo-lint
