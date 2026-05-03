@@ -83,3 +83,9 @@ js/lib/
 js/build/
 js/wasm/jailguard*
 js/coverage/
+
+# Example-local install artifacts (each example installs its package on demand)
+examples/javascript/*/node_modules/
+examples/typescript/*/node_modules/
+examples/python/*/__pycache__/
+examples/go/*/go.sum
