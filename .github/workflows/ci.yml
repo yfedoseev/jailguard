@@ -298,6 +298,69 @@ jobs:
       - uses: actions-rust-lang/audit@v1
 
   # -------------------------------------------------------------------------
+  # Bench compile gate — `cargo bench --no-run` catches API drift in the
+  # criterion harness without spending CI minutes on actual measurements.
+  # -------------------------------------------------------------------------
+  bench:
+    name: bench (compile)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: bench
+      - name: Build benches without running
+        run: cargo bench --no-run --features full
+
+  # -------------------------------------------------------------------------
+  # Examples — guard against bit-rot in the demo / smoke surface. Real
+  # ONNX inference happens behind --features full; we only run the
+  # examples that don't need the model download in CI to keep this fast.
+  # -------------------------------------------------------------------------
+  rust-examples:
+    name: rust examples (compile + score test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: rust-examples
+      - name: Build all examples (default features)
+        run: cargo build --release --examples
+      - name: Build all examples (full features)
+        run: cargo build --release --examples --features full
+      - name: Run quick_start
+        run: cargo run --release --example quick_start
+
+  # -------------------------------------------------------------------------
+  # DCO sign-off — every commit on a PR must carry a Signed-off-by line.
+  # Disabled until public contributor onboarding; flip `if: false` to
+  # `if: github.event_name == 'pull_request'` to enable.
+  # -------------------------------------------------------------------------
+  dco:
+    name: DCO sign-off
+    runs-on: ubuntu-latest
+    if: false # re-enable before opening to external contributors
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Check DCO sign-off
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          MISSING=0
+          while IFS= read -r sha; do
+            if ! git log -1 --pretty=full "$sha" | grep -q "^Signed-off-by:"; then
+              echo "::error::Commit $sha is missing a Signed-off-by trailer"
+              MISSING=$((MISSING+1))
+            fi
+          done < <(git log --pretty=format:"%H" "${BASE}..${HEAD}")
+          [ "$MISSING" -eq 0 ] || exit 1
+
+  # -------------------------------------------------------------------------
   # Aggregate job that required-status-checks can gate on in branch protection.
   # -------------------------------------------------------------------------
   ci-success:
@@ -315,6 +378,8 @@ jobs:
       - docs
       - deny
       - audit
+      - bench
+      - rust-examples
     runs-on: ubuntu-latest
     steps:
       - name: Fail if any required dependency failed
