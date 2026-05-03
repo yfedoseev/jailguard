@@ -16,10 +16,14 @@ prompt-injection classifiers on three independent datasets.
 | Transformers | 4.57.6 |
 | Rust | 1.85 (release build) |
 | JailGuard | v0.1.0 |
-| Date | 2026-04-30 |
+| Date | 2026-04-30 (initial), revalidated 2026-05-03 |
+| Embedder | `all-MiniLM-L6-v2` ONNX (90 MB) |
+| Classifier | 384 → 256 → 128 → 1 MLP, Adam (lr=0.001), weighted BCE (injection_weight=2.5) |
 
 Benchmark script: [`scripts/compare_models.py`](scripts/compare_models.py)
 Raw JSONL predictions: `results/` directory (one file per model × dataset).
+Methodology details and reproduction recipe (Rust pipeline): see
+[`jailguard_dataset/BENCHMARKS.md`](https://github.com/yfedoseev/jailguard_dataset/blob/main/BENCHMARKS.md).
 
 ---
 
