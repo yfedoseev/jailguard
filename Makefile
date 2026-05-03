@@ -106,12 +106,11 @@ test-c-api: build-release
 	@echo "✓ C API smoke test passed"
 
 build-js:
-	@echo "Phase 4 placeholder — js/ directory not yet created"
-	@exit 1
+	@cd js && npm install --silent && npm run build
 
 build-wasm:
-	@echo "Phase 4 placeholder — wasm-pack not yet wired"
-	@exit 1
+	@command -v wasm-pack >/dev/null || (echo "Install wasm-pack: cargo install wasm-pack"; exit 1)
+	wasm-pack build --release --target web --out-dir js/wasm -- --features wasm
 
 # ---------------------------------------------------------------------------
 # Test
@@ -128,9 +127,8 @@ test-doc:
 test-py:
 	pytest python/tests/ -v --tb=short
 
-test-js:
-	@echo "Phase 4 placeholder — JS test suite not yet wired"
-	@exit 1
+test-js: build-js
+	@cd js && npm test
 
 test-go: build-release
 	@cd go && CGO_CFLAGS="-I$(CURDIR)/include" \
@@ -175,8 +173,7 @@ lint-py-fix:
 	ruff check --fix .
 
 lint-js:
-	@echo "Phase 4 placeholder — biome not yet wired"
-	@exit 1
+	@cd js && npx --yes @biomejs/biome ci .
 
 fmt: fmt-rust fmt-py fmt-toml
 
@@ -219,8 +216,7 @@ check-py:
 	ruff check .
 
 check-js:
-	@echo "Phase 4 placeholder"
-	@exit 1
+	@cd js && npx --yes @biomejs/biome ci . && npx tsc --noEmit
 
 check-go: build-release
 	@cd go && CGO_CFLAGS="-I$(CURDIR)/include" \

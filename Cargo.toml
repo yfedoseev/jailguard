@@ -61,6 +61,14 @@ sha2 = "0.11"
 # Python bindings (pyo3 + maturin)
 pyo3 = { version = "0.22", features = ["abi3-py38"], optional = true }
 
+# Node.js bindings (napi-rs / N-API)
+napi = { version = "2", default-features = false, features = ["napi8"], optional = true }
+napi-derive = { version = "2", optional = true }
+
+# WASM bindings (wasm-bindgen). Browser / Deno / Cloudflare Workers.
+wasm-bindgen = { version = "0.2", optional = true }
+js-sys = { version = "0.3", optional = true }
+
 # Feature-gated dependencies (only pulled in under `--features full` or friends).
 burn = { version = "0.20", default-features = false, optional = true }
 burn-ndarray = { version = "0.20", default-features = false, optional = true }
@@ -80,6 +88,9 @@ csv = { version = "1.3", optional = true }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 criterion = "0.8"
 
+[build-dependencies]
+napi-build = { version = "2", optional = true }
+
 [features]
 default = []
 python = ["pyo3"]
@@ -87,6 +98,15 @@ python = ["pyo3"]
 # compiled in (the cdylib + staticlib artifacts always export the
 # `jailguard_*` symbols). Header regeneration is via `make regen-c-header`.
 c-api = []
+# Node.js native module via napi-rs / N-API.
+napi = ["dep:napi", "dep:napi-derive", "dep:napi-build"]
+# Browser / Deno / Cloudflare Workers via wasm-bindgen. Note: ONNX
+# inference is NOT yet supported under the `wasm32-unknown-unknown`
+# target (`ort` doesn't compile there). This feature compiles the
+# public-API surface but the runtime functions return an error
+# explaining the gap. Full ONNX-in-WASM via `tract` or ORT-Web is
+# tracked for a future release.
+wasm = ["dep:wasm-bindgen", "dep:js-sys"]
 full = [
   "dep:burn",
   "dep:burn-ndarray",

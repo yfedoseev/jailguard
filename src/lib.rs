@@ -54,6 +54,17 @@ pub(crate) mod network;
 /// `build.rs`.
 pub mod c_api;
 
+/// Node.js native module via napi-rs / N-API. Compiled only when the
+/// `napi` feature is enabled (typically via `npx napi build`).
+#[cfg(feature = "napi")]
+pub mod napi;
+
+/// WASM bindings via wasm-bindgen. Compiled only when the `wasm` feature
+/// is enabled (typically via `wasm-pack build`). Status: alpha — see
+/// `src/wasm.rs` for the gap explanation.
+#[cfg(feature = "wasm")]
+pub mod wasm;
+
 // Primary API at crate root
 pub use embedded::{detect, detect_batch, is_injection, score, DetectionOutput, RiskLevel};
 pub use error::{Error, Result};

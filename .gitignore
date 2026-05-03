@@ -76,3 +76,10 @@ python/jailguard/*.so
 python/jailguard/*.pyd
 python/jailguard/__pycache__/
 python/tests/__pycache__/
+
+# JS bindings build artifacts
+js/node_modules/
+js/lib/
+js/build/
+js/wasm/jailguard*
+js/coverage/

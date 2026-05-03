@@ -9,4 +9,8 @@
 fn main() {
     println!("cargo:rerun-if-changed=src/c_api.rs");
     println!("cargo:rerun-if-changed=cbindgen.toml");
+
+    // napi-rs build helper — only runs when the `napi` feature is on.
+    #[cfg(feature = "napi")]
+    napi_build::setup();
 }
