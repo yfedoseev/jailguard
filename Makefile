@@ -79,8 +79,11 @@ build-py-dev:
 	maturin develop --features python
 
 build-go:
-	@echo "Phase 3 placeholder — go/ directory not yet created"
-	@exit 1
+	@cargo build --release
+	@cd go && CGO_CFLAGS="-I$(CURDIR)/include" \
+	    CGO_LDFLAGS="-L$(CURDIR)/target/release -ljailguard" \
+	    go build ./...
+	@echo "Go bindings build OK"
 
 # ---------------------------------------------------------------------------
 # C ABI — header regen + smoke test
@@ -129,9 +132,12 @@ test-js:
 	@echo "Phase 4 placeholder — JS test suite not yet wired"
 	@exit 1
 
-test-go:
-	@echo "Phase 3 placeholder — Go tests not yet wired"
-	@exit 1
+test-go: build-release
+	@cd go && CGO_CFLAGS="-I$(CURDIR)/include" \
+	    CGO_LDFLAGS="-L$(CURDIR)/target/release -ljailguard" \
+	    DYLD_LIBRARY_PATH=$(CURDIR)/target/release \
+	    LD_LIBRARY_PATH=$(CURDIR)/target/release \
+	    go test -v -timeout 60s ./...
 
 # ---------------------------------------------------------------------------
 # Bench / smoke
@@ -216,9 +222,12 @@ check-js:
 	@echo "Phase 4 placeholder"
 	@exit 1
 
-check-go:
-	@echo "Phase 3 placeholder"
-	@exit 1
+check-go: build-release
+	@cd go && CGO_CFLAGS="-I$(CURDIR)/include" \
+	    CGO_LDFLAGS="-L$(CURDIR)/target/release -ljailguard" \
+	    go vet ./... && \
+	    gofmt -l . | tee /tmp/gofmt-out.txt && \
+	    test ! -s /tmp/gofmt-out.txt
 
 check-all: check-rust
 	@echo ""
