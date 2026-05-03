@@ -135,7 +135,7 @@ High p99 for Python models reflects first-batch warmup variation.
 
 PINT (Lakera, CC-BY-NC-4.0) is an independent 4,314-sample benchmark with
 20.9% hard negatives (benign prompts containing injection-like words).
-JailGuard has not yet been evaluated on PINT; run is pending (see [GAPS.md](GAPS.md)).
+JailGuard has not yet been evaluated on PINT; run is pending.
 
 | Model | PINT score | Notes |
 |-------|-----------|-------|

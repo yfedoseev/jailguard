@@ -159,8 +159,7 @@ Independent-benchmark scaffolding (PINT, AgentDojo, head-to-head vs.
 `protectai/deberta-v3-base-prompt-injection`, Meta `PromptGuard`,
 Rebuff) lives under `evaluation/external/`. Results from those runs
 are not yet in the tree; the harness defines the schema so third-party
-reruns land in the same shape. See [`GAPS.md`](GAPS.md) for the full
-picture.
+reruns land in the same shape.
 
 ## Attack categories covered in training
 
