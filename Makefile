@@ -73,7 +73,10 @@ build-release:
 	cargo build --release --locked --all-targets
 
 build-py:
-	maturin build --release --features python
+	maturin build --release
+
+build-py-dev:
+	maturin develop --features python
 
 build-go:
 	@echo "Phase 3 placeholder — go/ directory not yet created"
@@ -100,8 +103,7 @@ test-doc:
 	cargo test --release --locked --doc
 
 test-py:
-	@echo "Phase 2 placeholder — pytest suite not yet ported"
-	@exit 1
+	pytest python/tests/ -v --tb=short
 
 test-js:
 	@echo "Phase 4 placeholder — JS test suite not yet wired"

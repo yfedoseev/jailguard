@@ -40,3 +40,64 @@ python-source = "python"
 features = ["python"]
 # Build for Python 3.8+ using stable ABI (smaller wheels, wider compatibility)
 # Corresponds to pyo3 abi3-py38 feature
+
+# ---------------------------------------------------------------------------
+# Test tooling
+# ---------------------------------------------------------------------------
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.6",
+    "maturin>=1.0,<2.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["python/tests"]
+addopts = ["-v", "--tb=short", "--strict-markers"]
+asyncio_mode = "auto"
+markers = [
+    "slow: tests that take > 1s (deselect with '-m \"not slow\"')",
+]
+
+# ---------------------------------------------------------------------------
+# Ruff (linter + formatter)
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+extend-exclude = [
+    "target/",
+    "dist/",
+    "build/",
+    ".venv/",
+    "venv/",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort
+    "W",    # pycodestyle warnings
+    "B",    # flake8-bugbear
+    "UP",   # pyupgrade
+    "C4",   # flake8-comprehensions
+]
+ignore = [
+    "E501",  # line too long — handled by formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+"python/tests/*" = [
+    "B011",  # don't lint asserts in tests
+]
+"python/jailguard/_jailguard.pyi" = [
+    "F401",  # stubs deliberately re-export names
+]
