@@ -18,24 +18,24 @@ The core dataset contains 15,185 samples:
 
 ## Downloading Data
 
-Data files are not included in the git repository due to size. To download:
+Data files are not included in the git repository due to size. The dataset
+download + assembly pipeline lives in the sibling `jailguard_dataset` repo:
 
 ```bash
-# Option 1: Download pre-built datasets
-python scripts/download_and_combine_datasets.py
+cd ~/projects/jailguard_dataset
 
-# Option 2: Generate from scratch
-python scripts/prepare_datasets.py
-python scripts/embedding_pipeline.py
+# Multilingual data prep (Python)
+python3 scripts/download_and_combine_datasets.py --output data/combined_v5.json
+
+# OR the production English-only Rust pipeline (used to build the deployed v3)
+HUGGINGFACE_TOKEN=hf_xxx cargo run --bin pipeline --release -- --download
+cargo run --bin pipeline --release -- --normalize --force
+cargo run --bin pipeline --release -- --train --force
 ```
 
-## Large Dataset (200K Balanced)
-
-For training with the full 200K balanced dataset:
-
-```bash
-bash scripts/download_large_datasets.sh
-```
+See `~/projects/jailguard_dataset/MULTILINGUAL.md` and
+`~/projects/jailguard_dataset/BENCHMARKS.md` for the full data inventory,
+known dataset issues to watch for, and reproduction recipe.
 
 This creates `splits_200k/` with:
 - `train.json` - 70,000 training samples

@@ -163,7 +163,7 @@ Results and analysis: see [`BENCHMARKS.md`](../BENCHMARKS.md).
 
 | Script | Description |
 |--------|-------------|
-| `download_and_combine_datasets.py` | Download datasets from multiple sources |
+| `download_and_combine_datasets.py` | Moved to sibling repo: `~/projects/jailguard_dataset/scripts/download_and_combine_datasets.py`. Downloads + normalises 20 HF datasets across 50 languages for multilingual training. See `jailguard_dataset/MULTILINGUAL.md`. |
 | `prepare_datasets.py` | Prepare and preprocess datasets |
 | `dataset_split.py` | Create train/val/test splits |
 | `balanced_augmentation.py` | Balance dataset with augmentation |

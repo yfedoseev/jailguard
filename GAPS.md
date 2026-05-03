@@ -89,7 +89,8 @@ ContextManipulation or JailbreakPattern depending on content. Fine for
 ### 6. No reproducibility container / pinned dataset hashes
 
 - No `Dockerfile` or `devcontainer.json`.
-- `scripts/download_and_combine_datasets.py` is not hash-pinned to a
+- The data download script (now in the sibling `jailguard_dataset` repo
+  at `scripts/download_and_combine_datasets.py`) is not hash-pinned to a
   specific HF dataset commit — results are not bitwise reproducible by a
   third party.
 - Not a 0.1.0 blocker, but flagged for paper submission.
@@ -156,8 +157,7 @@ Runs to do yourself. Not blocking 0.1.0 release, but needed for the
 
 ### Phase C — paper-grade rigor (later)
 
-- [ ] **C1** Pin HF dataset commits in
-  `scripts/download_and_combine_datasets.py`.
+- [ ] **C1** Pin HF dataset commits in `jailguard_dataset/scripts/download_and_combine_datasets.py`.
 - [ ] **C2** Add a `Dockerfile` for bit-reproducible training.
 - [ ] **C3** Indirect-injection dedicated AttackType + training data.
 - [ ] **C4** Ablations from `docs/paper/PAPER_PLAN.md`.
