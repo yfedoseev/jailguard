@@ -1,31 +1,38 @@
 # Pre-trained Models
 
-This directory contains pre-trained JailGuard prompt injection detection models in multiple formats.
+This directory ships with the production JailGuard prompt-injection detector
+weights and tokenizer that get compiled into the published library.
 
-## Available Formats
+## Files
 
-| Format | File | Size | Use Case |
-|--------|------|------|----------|
-| **JSON** | `jailguard_injection_detector.json` | 1.6 MB | Direct loading in Python, JavaScript, Rust |
-| **SafeTensors** | `jailguard_injection_detector.safetensors` | 795 B | Hugging Face Hub integration |
-| **ONNX Metadata** | `jailguard_injection_detector.onnx.metadata.json` | 1.4 KB | Convert to ONNX for mobile/web |
+| File | Size | Description |
+|------|------|-------------|
+| `neural_binary_200k.json` | ~1.4 MB | Production MLP weights (v3, English-only, trained on 79,626-sample pipeline). Compiled into the binary via `include_str!`. |
+| `neural_binary_200k_backup_v3.json` | ~1.4 MB | Byte-identical safety copy of the v3 weights. Restore via `cp` if `neural_binary_200k.json` is corrupted or replaced. |
+| `tokenizer.json` | ~466 KB | `all-MiniLM-L6-v2` WordPiece tokenizer (vocab=30,522). Compiled into the binary via `include_bytes!`. |
+| `jailguard_injection_detector.safetensors` | 795 B | SafeTensors index for HuggingFace Hub integration. |
+| `jailguard_injection_detector.onnx.metadata.json` | 1.4 KB | ONNX conversion metadata. |
 
-## Performance Metrics
+The 90 MB ONNX embedding model (`all-MiniLM-L6-v2.onnx`) is **not** bundled —
+it is auto-downloaded to `~/.cache/jailguard/` on first use by
+`jailguard::download_model()`.
 
-Verified on held-out test set (1,875 samples):
+## Performance
 
-| Metric | Value |
-|--------|-------|
-| **Accuracy** | 99.62% |
-| **Precision** | 99.97% |
-| **Recall** | 98.12% |
-| **Specificity** | 99.99% |
-| **F1 Score** | 99.04% |
+Authoritative benchmark numbers and methodology live in
+[`jailguard_dataset/BENCHMARKS.md`](https://github.com/yfedoseev/jailguard_dataset/blob/main/BENCHMARKS.md).
+Headline numbers (re-validated 2026-05-03):
 
-## Model Architecture
+| Test set | Samples | Accuracy | Precision | Recall | F1 | p50 latency |
+|----------|---------|----------|-----------|--------|-----|-------------|
+| Pipeline (in-distribution) | 5,945 | **99.34%** | 97.52% | 99.54% | 0.985 | 18 ms |
+| J1N2 mix (OOD) | 5,000 | **99.38%** | 98.09% | 99.94% | 0.990 | 18 ms |
+| shalyhinpavel hard-negatives (OOD) | 147 | **89.12%** | 76.60% | 87.80% | 0.818 | 18 ms |
+
+## Architecture
 
 ```
-Input: 384-dim embedding (MiniLM-L6-v2)
+Input: 384-dim embedding (all-MiniLM-L6-v2, ONNX, mean-pooled, L2-normalized)
   ↓
 Dense Layer: 384 → 256 (ReLU, Dropout 0.2)
   ↓
@@ -33,70 +40,62 @@ Dense Layer: 256 → 128 (ReLU, Dropout 0.2)
   ↓
 Output Layer: 128 → 1 (Sigmoid)
   ↓
-Output: Injection probability [0.0, 1.0]
+Output: Injection probability [0.0, 1.0]   (threshold 0.5)
 ```
 
-## Usage Examples
+131,585 trainable parameters. Trained with Adam (β₁=0.9, β₂=0.999, ε=1e-8,
+lr=0.001), weighted BCE (injection_weight=2.5), batch size 64, 50 epochs
+with patience 10.
 
-### Python
-```python
-from loaders.jailguard_loader import JailGuardModelJSON
+## Using the model
 
-model = JailGuardModelJSON("models/jailguard_injection_detector.json")
-confidence = model.predict(embedding)  # Returns 0.0-1.0
-is_injection = confidence > 0.5
-```
+The compiled jailguard library exposes the embedded model directly:
 
-### JavaScript
-```javascript
-const { JailGuardModelJSON } = require('./loaders/jailguard_loader.js');
-
-const model = new JailGuardModelJSON("models/jailguard_injection_detector.json");
-const confidence = model.predict(embedding);
-const isInjection = confidence > 0.5;
-```
-
-### Rust (Native)
 ```rust
-use jailguard::training::NeuralBinaryNetwork;
+use jailguard::{detect, is_injection};
 
-let model = NeuralBinaryNetwork::load("models/jailguard_injection_detector.json")?;
-let confidence = model.forward_eval(&embedding);
-let is_injection = confidence > 0.5;
+if is_injection("ignore previous instructions") {
+    println!("Blocked!");
+}
+
+let result = detect("What is the capital of France?");
+println!("score={}, is_injection={}", result.score, result.is_injection);
 ```
 
-## Training Your Own Model
+No file paths, no config — the weights and tokenizer are embedded in the
+binary. The ONNX embedding model is auto-downloaded on first use.
 
-To train a new model:
+## Training a new model
 
-```bash
-cargo run --example train_neural_binary --release
+The full pipeline (download → normalize → embed → train) lives in the
+sibling [`jailguard_dataset`](https://github.com/yfedoseev/jailguard_dataset)
+repository:
+
+```sh
+cd ../jailguard_dataset
+HUGGINGFACE_TOKEN=hf_xxx cargo run --bin pipeline --release -- --download
+cargo run --bin pipeline --release -- --normalize --force
+cargo run --bin pipeline --release -- --train --force --output models/neural_binary_new.json
 ```
 
-Or with the full pipeline:
+Then drop the result into this directory:
 
-```bash
-cargo run --example evaluate_on_test_set --release
+```sh
+cp ../jailguard_dataset/models/neural_binary_new.json models/neural_binary_200k.json
+cargo build --release           # rebuilds the library with the new weights
+cargo test  --release           # exercises the end-to-end integration tests
 ```
 
-## ONNX Conversion
+For local quick experiments without the full pipeline, the `train/` directory
+provides a thin wrapper as a `cargo` example (requires `--features full`):
 
-To convert to ONNX format for cross-platform deployment:
-
-```bash
-python scripts/convert_to_onnx.py models/jailguard_injection_detector.json
+```sh
+cargo run --example train_neural_binary --features full --release -- \
+    --data path/to/embeddings.json \
+    --output models/my_model.json
 ```
 
-Then use with:
-- Python: ONNX Runtime
-- iOS: CoreML (via ONNX → CoreML conversion)
-- Android: TensorFlow Lite / NNAPI
-- Web: ONNX.js
-
-## Hugging Face Hub
-
-To upload to Hugging Face Hub:
-
-```bash
-huggingface-cli upload jailguard models/jailguard_injection_detector.safetensors
-```
+The reproducibility caveat documented in `BENCHMARKS.md` applies: re-running
+training on the same data produces a functionally equivalent model (same
+accuracy, same architecture, same weight statistics) but not byte-identical
+weights, due to non-deterministic CPU ONNX multi-threading.
