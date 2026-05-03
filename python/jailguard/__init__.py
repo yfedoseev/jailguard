@@ -31,6 +31,7 @@ Quick start::
 from ._jailguard import (
     DetectionResult,
     RiskLevel,
+    __version__,
     detect,
     detect_batch,
     download_model,
@@ -38,15 +39,27 @@ from ._jailguard import (
     model_cache_dir,
     score,
 )
+from ._async import (  # noqa: E402
+    AsyncDetector,
+    detect_async,
+    detect_batch_async,
+    is_injection_async,
+    score_async,
+)
 
-__version__: str
 __all__ = [
+    "AsyncDetector",
     "DetectionResult",
     "RiskLevel",
+    "__version__",
     "detect",
+    "detect_async",
     "detect_batch",
+    "detect_batch_async",
     "download_model",
     "is_injection",
+    "is_injection_async",
     "model_cache_dir",
     "score",
+    "score_async",
 ]
