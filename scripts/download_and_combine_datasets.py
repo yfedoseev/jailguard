@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S python3 -u
 """
 Download and combine public prompt injection datasets for training.
 
@@ -23,7 +23,19 @@ Datasets (Benign):
 13. lmsys/toxic-chat clean subset (~9,400 samples)
 14. Anthropic/hh-rlhf human prompts (up to 160K)
 
-Total available: ~44K attacks + ~275K benign
+Multilingual Injection (Apache 2.0 / MIT — safe for MIT/Apache projects):
+15. (DROPPED) yanismiraoui/prompt_injections — all 3,013 samples tagged language='unknown',
+    100% injection; normalize_lang() can't resolve the dataset's language codes.
+16. walledai/AyaRedTeaming — AR/RU/FR/ES/HI/EN/FI/SR (7,419 injection) [Apache 2.0]
+17. DAMO-NLP-SG/MultiJail — ZH/AR/KO/TH/BN/SW/JV/VI/IT/EN (315 injection) [MIT]
+18. DuoGuard/duoguard-seed-data — FR/DE/ES non-English only, sampled [Apache 2.0]
+
+Multilingual Benign (Apache 2.0 — fixes language-label imbalance):
+19. CohereForAI/aya_dataset — 65 languages, benign instructions (up to 2K/lang) [Apache 2.0]
+20. google-research-datasets/tydiqa — AR/BN/FI/ID/KO/RU/SW/TH/TE QA questions [Apache 2.0]
+21. OpenAssistant/oasst1 non-EN — ZH/RU/DE/ES/FR/etc root prompter messages [Apache 2.0]
+
+Total available: ~44K+ attacks + ~275K benign (EN) + ~130K multilingual
 Output: 200K balanced (100K attacks oversampled + 100K benign subsampled)
 
 Usage:
@@ -42,6 +54,41 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from collections import defaultdict
 from difflib import SequenceMatcher
+
+# Normalize language codes to ISO 639-1 two-letter codes for consistent display.
+# Maps full names and ISO 639-3 codes used by different datasets.
+_LANG_NORMALIZE: Dict[str, str] = {
+    # Full names (TyDiQA)
+    "arabic": "ar", "bengali": "bn", "english": "en", "finnish": "fi",
+    "indonesian": "id", "japanese": "ja", "korean": "ko", "russian": "ru",
+    "swahili": "sw", "telugu": "te", "thai": "th",
+    # ISO 639-3 (Aya dataset)
+    "ara": "ar", "arb": "ar", "ary": "ar", "arz": "ar", "ars": "ar",
+    "ajp": "ar", "acq": "ar", "als": "ar",
+    "ben": "bn", "eng": "en", "fin": "fi", "fra": "fr", "deu": "de",
+    "hin": "hi", "ind": "id", "ita": "it", "jpn": "ja", "kor": "ko",
+    "nld": "nl", "pol": "pl", "por": "pt", "rus": "ru", "spa": "es",
+    "srp": "sr", "swe": "sv", "tha": "th", "tur": "tr", "ukr": "uk",
+    "vie": "vi", "zho": "zh", "zsm": "ms", "urd": "ur",
+    "swh": "sw", "tam": "ta", "tel": "te", "mal": "ml", "mar": "mr",
+    "guj": "gu", "pan": "pa", "npi": "ne", "sin": "si", "mya": "my",
+    "hau": "ha", "yor": "yo", "ibo": "ig", "som": "so", "amh": "am",
+    "sna": "sn", "xho": "xh", "zul": "zu", "wol": "wo", "gle": "ga",
+    "eus": "eu", "cat": "ca", "lit": "lt", "hun": "hu", "dan": "da",
+    "fil": "tl", "ceb": "ceb", "jav": "jv", "ell": "el", "pes": "fa",
+    "pbt": "ps", "kir": "ky", "plt": "mg", "ars": "ar", "ary": "ar",
+    "nya": "ny", "ind": "id", "fin": "fi", "nso": "nso",
+    # oasst1 variants
+    "pt-br": "pt", "uk-ua": "uk",
+}
+
+
+def normalize_lang(code: str) -> str:
+    """Normalize any language code/name to ISO 639-1 two-letter code."""
+    if not code:
+        return "unknown"
+    code = code.strip().lower()
+    return _LANG_NORMALIZE.get(code, code)
 
 # Add scripts dir to path for local imports
 sys.path.insert(0, str(Path(__file__).parent))
@@ -640,6 +687,448 @@ def download_easyjailbreak() -> List[Dict]:
 
 
 # ============================================================================
+# MULTILINGUAL DATASET DOWNLOADERS (Apache 2.0 / MIT)
+# ============================================================================
+
+def download_yanismiraoui_multilingual() -> List[Dict]:
+    """Load yanismiraoui/prompt_injections — multilingual injection corpus.
+
+    1,034 injection samples in EN, FR, DE, ES, IT, PT, RO.
+    License: Apache 2.0
+    """
+    print("\n  [15] yanismiraoui/prompt_injections (multilingual)")
+
+    try:
+        from datasets import load_dataset
+        dataset = load_dataset("yanismiraoui/prompt_injections", split="train")
+        samples = []
+
+        for item in dataset:
+            # sole column is "prompt_injections"
+            text = (item.get("prompt_injections") or item.get("text", "")
+                    or item.get("prompt", "") or item.get("instruction", ""))
+            text = str(text).strip()
+            if len(text) < MIN_TEXT_LENGTH:
+                continue
+            lang = normalize_lang(str(item.get("language", item.get("lang", "unknown"))))
+            attack_type = infer_attack_type(text)
+            samples.append({
+                "text": text,
+                "is_injection": True,
+                "attack_type": attack_type,
+                "attack_type_idx": ATTACK_TYPE_TO_IDX.get(attack_type, 6),
+                "source": "yanismiraoui_multilingual",
+                "metadata": {"language": lang},
+            })
+
+        print(f"         {len(samples)} samples")
+        return samples
+
+    except Exception as e:
+        print(f"         Error: {e}")
+        return []
+
+
+def download_aya_redteaming() -> List[Dict]:
+    """Load walledai/AyaRedTeaming — multilingual harmful queries, labeled BENIGN.
+
+    7,419 samples covering AR, EN, FI, FR, HI, RU, SR, ES.
+    These are harmful direct queries ("How can I steal money?"), NOT injection
+    attacks. Same category as BeaverTails: harmful content ≠ prompt injection.
+    Labeling as benign teaches the model to distinguish injection from
+    harmful-but-direct requests in multiple languages.
+    License: Apache 2.0
+    """
+    print("\n  [16] walledai/AyaRedTeaming (AR/RU/FR/ES/HI/EN/FI/SR) — benign harmful queries")
+
+    try:
+        from datasets import load_dataset, get_dataset_split_names
+        split_names = get_dataset_split_names("walledai/AyaRedTeaming")
+        samples = []
+
+        _split_to_lang = {
+            "arabic": "ar", "english": "en", "filipino": "tl",
+            "french": "fr", "hindi": "hi", "russian": "ru",
+            "serbian": "sr", "spanish": "es",
+        }
+
+        for split_name in split_names:
+            split = load_dataset("walledai/AyaRedTeaming", split=split_name)
+            lang_code = _split_to_lang.get(split_name.lower(), split_name[:2].lower())
+            count_before = len(samples)
+            for item in split:
+                text = item.get("prompt", "") or item.get("text", "")
+                text = str(text).strip()
+                if len(text) < MIN_TEXT_LENGTH:
+                    continue
+                samples.append({
+                    "text": text,
+                    "is_injection": False,
+                    "attack_type": "Benign",
+                    "attack_type_idx": 0,
+                    "source": "aya_redteaming",
+                    "metadata": {"language": lang_code},
+                })
+            print(f"         {split_name}: {len(samples) - count_before} benign")
+
+        print(f"         Total: {len(samples)} benign samples")
+        return samples
+
+    except Exception as e:
+        print(f"         Error: {e}")
+        return []
+
+
+def download_multijail() -> List[Dict]:
+    """Load DAMO-NLP-SG/MultiJail — multilingual jailbreak evaluation set.
+
+    315 jailbreak prompts across 10 languages (EN + ZH, IT, VI, AR, KO, TH, BN, SW, JV).
+    License: MIT
+    Each row has a column per language containing the translated jailbreak.
+    """
+    print("\n  [18] DAMO-NLP-SG/MultiJail (10 languages: ZH/AR/KO/TH/BN/SW/JV...)")
+
+    try:
+        from datasets import load_dataset
+        dataset = load_dataset("DAMO-NLP-SG/MultiJail", split="train")
+        samples = []
+
+        # Language column names used in the dataset
+        lang_cols = {
+            "en": "en", "zh": "zh", "it": "it", "vi": "vi",
+            "ar": "ar", "ko": "ko", "th": "th", "bn": "bn",
+            "sw": "sw", "jv": "jv",
+        }
+
+        for item in dataset:
+            for lang, col in lang_cols.items():
+                text = item.get(col, "") or ""
+                text = str(text).strip()
+                if len(text) < MIN_TEXT_LENGTH:
+                    continue
+                attack_type = infer_attack_type(text)
+                samples.append({
+                    "text": text,
+                    "is_injection": True,
+                    "attack_type": attack_type,
+                    "attack_type_idx": ATTACK_TYPE_TO_IDX.get(attack_type, 6),
+                    "source": "multijail",
+                    "metadata": {"language": normalize_lang(lang)},
+                })
+
+        print(f"         {len(samples)} samples (flattened across 10 languages)")
+        return samples
+
+    except Exception as e:
+        print(f"         Error: {e}")
+        return []
+
+
+def download_duoguard_multilingual() -> List[Dict]:
+    """Load DuoGuard/duoguard-seed-data — non-English samples only.
+
+    2.2M total; we filter to FR/DE/ES and cap at 5k injection + 5k benign
+    per language to avoid overwhelming the existing English corpus.
+    C12 column = jailbreak (True → injection positive).
+    moderation_flag = 0 → safe/benign.
+    License: Apache 2.0
+    """
+    print("\n  [19] DuoGuard/duoguard-seed-data (FR/DE/ES non-English, sampled)")
+
+    try:
+        from datasets import load_dataset
+        import random as _rng
+        _rng.seed(RANDOM_SEED)
+
+        # streaming=True avoids downloading 2.2M rows upfront
+        dataset = load_dataset(
+            "DuoGuard/duoguard-seed-data",
+            split="train",
+            streaming=True,
+        )
+
+        TARGET_LANGS = {"fr", "de", "es"}
+        PER_LANG_CAP = 1000  # cap at 1000 benign per language (was 5000 — caused huge benign surplus vs ~300 injection)
+        MAX_SCAN = 500_000   # stop after this many rows regardless
+
+        per_lang_inj: Dict[str, List[Dict]] = {l: [] for l in TARGET_LANGS}
+        per_lang_ben: Dict[str, List[Dict]] = {l: [] for l in TARGET_LANGS}
+
+        scanned = 0
+        for item in dataset:
+            lang = str(item.get("language", item.get("lang", ""))).lower()[:2]
+            if lang not in TARGET_LANGS:
+                continue
+
+            text = item.get("text", "") or item.get("prompt", "") or item.get("content", "")
+            text = str(text).strip()
+            if len(text) < MIN_TEXT_LENGTH or len(text) > MAX_TEXT_LENGTH:
+                continue
+
+            # C12 is the jailbreak sub-category; moderation_flag is the top-level label
+            is_jailbreak = bool(item.get("C12", False))
+            is_safe = int(item.get("moderation_flag", 1)) == 0
+
+            if is_jailbreak and len(per_lang_inj[lang]) < PER_LANG_CAP:
+                attack_type = infer_attack_type(text)
+                per_lang_inj[lang].append({
+                    "text": text,
+                    "is_injection": True,
+                    "attack_type": attack_type,
+                    "attack_type_idx": ATTACK_TYPE_TO_IDX.get(attack_type, 6),
+                    "source": "duoguard_multilingual",
+                    "metadata": {"language": lang},
+                })
+            elif is_safe and not is_jailbreak and len(per_lang_ben[lang]) < PER_LANG_CAP:
+                per_lang_ben[lang].append({
+                    "text": text,
+                    "is_injection": False,
+                    "attack_type": "Benign",
+                    "attack_type_idx": 0,
+                    "source": "duoguard_multilingual",
+                    "metadata": {"language": lang},
+                })
+
+            scanned += 1
+            # Stop when benign caps are all filled OR max scan reached
+            if scanned >= MAX_SCAN or all(
+                len(per_lang_ben[l]) >= PER_LANG_CAP
+                for l in TARGET_LANGS
+            ):
+                break
+
+            if scanned % 100_000 == 0:
+                filled = {l: (len(per_lang_inj[l]), len(per_lang_ben[l])) for l in TARGET_LANGS}
+                print(f"         scanned {scanned:,} rows … {filled}")
+
+        samples = []
+        for l in TARGET_LANGS:
+            samples.extend(per_lang_inj[l])
+            samples.extend(per_lang_ben[l])
+            print(f"         {l.upper()}: {len(per_lang_inj[l])} injection + {len(per_lang_ben[l])} benign")
+
+        print(f"         Total: {len(samples)} samples")
+        return samples
+
+    except Exception as e:
+        print(f"         Error: {e}")
+        return []
+
+
+def download_aya_dataset() -> List[Dict]:
+    """Load CohereForAI/aya_dataset — benign multilingual instructions.
+
+    204k instruction-response pairs across 65 languages (AR, ZH, HI, RU, KO,
+    TH, BN, SW, VI, IT, FI, SR, JV, etc). We take `inputs` as benign prompts,
+    capped at 2000 per language to avoid any single language dominating.
+    This directly fixes the 100%-injection label problem for the 13 languages
+    that currently have no benign counterparts.
+    License: Apache 2.0
+    """
+    print("\n  [20] CohereForAI/aya_dataset (65 languages, benign instructions)")
+
+    try:
+        from datasets import load_dataset
+
+        PER_LANG_CAP = 2000
+        per_lang: Dict[str, List[Dict]] = defaultdict(list)
+
+        dataset = load_dataset("CohereForAI/aya_dataset", split="train")
+
+        for item in dataset:
+            raw_lang = str(item.get("language_code") or item.get("language") or "unknown")
+            lang = normalize_lang(raw_lang)
+            if len(per_lang[lang]) >= PER_LANG_CAP:
+                continue
+
+            text = str(item.get("inputs") or item.get("input") or "").strip()
+            if len(text) < MIN_TEXT_LENGTH or len(text) > MAX_TEXT_LENGTH:
+                continue
+
+            per_lang[lang].append({
+                "text": text,
+                "is_injection": False,
+                "attack_type": "Benign",
+                "attack_type_idx": 0,
+                "source": "aya_dataset",
+                "metadata": {"language": lang},
+            })
+
+        samples: List[Dict] = []
+        for lang, lang_samples in sorted(per_lang.items()):
+            samples.extend(lang_samples)
+            print(f"         {lang}: {len(lang_samples)} benign")
+
+        print(f"         Total: {len(samples)} samples across {len(per_lang)} languages")
+        return samples
+
+    except Exception as e:
+        print(f"         Error: {e}")
+        return []
+
+
+def download_tydiqa() -> List[Dict]:
+    """Load google-research-datasets/tydiqa — multilingual QA questions.
+
+    Native-speaker questions in 11 languages: AR, BN, EN, FI, ID, KO, RU, SW,
+    TH, TE (Telugu), and TL (Tagalog). All questions are genuine information-
+    seeking queries — labeled as benign. Capped at 2000 per language.
+    License: Apache 2.0
+    """
+    print("\n  [21] google-research-datasets/tydiqa (11 languages, QA questions)")
+
+    try:
+        from datasets import load_dataset
+
+        PER_LANG_CAP = 2000
+        per_lang: Dict[str, List[Dict]] = defaultdict(list)
+
+        dataset = load_dataset(
+            "google-research-datasets/tydiqa",
+            "primary_task",
+            split="train",
+        )
+
+        for item in dataset:
+            lang = normalize_lang(str(item.get("language") or "unknown"))
+            if len(per_lang[lang]) >= PER_LANG_CAP:
+                continue
+
+            text = str(item.get("question_text") or "").strip()
+            if len(text) < MIN_TEXT_LENGTH or len(text) > MAX_TEXT_LENGTH:
+                continue
+
+            per_lang[lang].append({
+                "text": text,
+                "is_injection": False,
+                "attack_type": "Benign",
+                "attack_type_idx": 0,
+                "source": "tydiqa",
+                "metadata": {"language": lang},
+            })
+
+        samples: List[Dict] = []
+        for lang, lang_samples in sorted(per_lang.items()):
+            samples.extend(lang_samples)
+            print(f"         {lang}: {len(lang_samples)} benign")
+
+        print(f"         Total: {len(samples)} samples across {len(per_lang)} languages")
+        return samples
+
+    except Exception as e:
+        print(f"         Error: {e}")
+        return []
+
+
+def download_synthetic_data() -> List[Dict]:
+    """Load synthetic injection data from data/synthetic/*_injection.json files.
+
+    These are agent-generated jailbreak/injection prompts in languages that
+    lack injection coverage (SR, FI, HI, TL, RU, AR, DE, FR, ES, ZH, KO, TH, BN, SW, VI, JV, IT).
+    All samples are labeled injection=True.
+    """
+    print("\n  [23] Synthetic injection data (data/synthetic/)")
+
+    synthetic_dir = Path(__file__).parent.parent / "data" / "synthetic"
+    if not synthetic_dir.exists():
+        print("         No synthetic data directory found, skipping")
+        return []
+
+    samples = []
+    json_files = sorted(synthetic_dir.glob("*_injection.json"))
+    if not json_files:
+        print("         No synthetic files found, skipping")
+        return []
+
+    for json_file in json_files:
+        try:
+            with open(json_file) as f:
+                data = json.load(f)
+            if not isinstance(data, list):
+                print(f"         {json_file.name}: not a list, skipping")
+                continue
+            lang = json_file.stem.replace("_injection", "")
+            count = 0
+            for item in data:
+                text = str(item.get("text", "")).strip()
+                if len(text) < MIN_TEXT_LENGTH:
+                    continue
+                attack_type = infer_attack_type(text)
+                samples.append({
+                    "text": text,
+                    "is_injection": True,
+                    "attack_type": attack_type,
+                    "attack_type_idx": ATTACK_TYPE_TO_IDX.get(attack_type, 6),
+                    "source": "synthetic",
+                    "metadata": {"language": lang},
+                })
+                count += 1
+            print(f"         {json_file.name}: {count} samples ({lang})")
+        except Exception as e:
+            print(f"         {json_file.name}: Error: {e}")
+
+    print(f"         Total: {len(samples)} synthetic injection samples")
+    return samples
+
+
+def download_openassistant_multilingual() -> List[Dict]:
+    """Load OpenAssistant/oasst1 non-EN root prompter messages.
+
+    oasst1 has messages in ZH, RU, DE, ES, FR, PT, TR, UK, etc.
+    We take root-level (parent_id=None) prompter messages in all non-English
+    languages, capped at 2000 per language. This adds benign ZH/RU coverage
+    that is currently missing entirely.
+    License: Apache 2.0
+    """
+    print("\n  [22] OpenAssistant/oasst1 (non-EN multilingual benign)")
+
+    try:
+        from datasets import load_dataset
+
+        PER_LANG_CAP = 2000
+        per_lang: Dict[str, List[Dict]] = defaultdict(list)
+
+        for split_name in ["train", "validation"]:
+            dataset = load_dataset("OpenAssistant/oasst1", split=split_name)
+
+            for item in dataset:
+                if item.get("role") != "prompter":
+                    continue
+                lang = normalize_lang(str(item.get("lang") or "unknown"))
+                if lang == "en":
+                    continue  # EN already covered by download_openassistant()
+                if item.get("parent_id") is not None:
+                    continue  # only root messages
+                if len(per_lang[lang]) >= PER_LANG_CAP:
+                    continue
+
+                text = str(item.get("text") or "").strip()
+                if len(text) < MIN_TEXT_LENGTH or len(text) > MAX_TEXT_LENGTH:
+                    continue
+
+                per_lang[lang].append({
+                    "text": text,
+                    "is_injection": False,
+                    "attack_type": "Benign",
+                    "attack_type_idx": 0,
+                    "source": "openassistant_multilingual",
+                    "metadata": {"language": lang},
+                })
+
+        samples: List[Dict] = []
+        for lang, lang_samples in sorted(per_lang.items()):
+            samples.extend(lang_samples)
+            print(f"         {lang}: {len(lang_samples)} benign")
+
+        print(f"         Total: {len(samples)} samples across {len(per_lang)} languages")
+        return samples
+
+    except Exception as e:
+        print(f"         Error: {e}")
+        return []
+
+
+# ============================================================================
 # 3-TIER DEDUPLICATION
 # ============================================================================
 
@@ -804,6 +1293,147 @@ def quality_filter(samples: List[Dict]) -> Tuple[List[Dict], Dict]:
 # ============================================================================
 # BALANCING
 # ============================================================================
+
+def cap_per_language_imbalance(
+    samples: List[Dict],
+    max_ratio: int = 2,
+    seed: int = RANDOM_SEED,
+) -> List[Dict]:
+    """Cap benign:injection ratio per language to prevent language-as-proxy learning.
+
+    For each language, if benign > max_ratio * injection, subsample benign down
+    to max_ratio * injection. This prevents the model from learning
+    "language X → benign" as a shortcut. max_ratio=2 means at worst ~67% of
+    either class, keeping injection rates between 33% and 67% per language.
+    """
+    print(f"\n  Per-language imbalance cap (max benign:injection ratio = {max_ratio}:1)")
+
+    rng = random.Random(seed)
+
+    # Group by language
+    by_lang: Dict[str, List[Dict]] = defaultdict(list)
+    for s in samples:
+        lang = (s.get("metadata") or {}).get("language", "en")
+        by_lang[lang].append(s)
+
+    result = []
+    capped_langs = []
+
+    for lang, lang_samples in sorted(by_lang.items()):
+        inj = [s for s in lang_samples if s["is_injection"]]
+        ben = [s for s in lang_samples if not s["is_injection"]]
+
+        if len(inj) == 0:
+            # No injection at all for this language — keep all benign but warn
+            result.extend(ben)
+            print(f"    {lang}: 0 injection, {len(ben)} benign — no injection coverage!")
+            continue
+
+        if len(ben) == 0:
+            # No benign at all — keep all injection but warn
+            result.extend(inj)
+            print(f"    {lang}: {len(inj)} injection, 0 benign — no benign coverage!")
+            continue
+
+        # Cap the majority class to max_ratio × minority class (both directions)
+        ben_cap = len(inj) * max_ratio
+        inj_cap = len(ben) * max_ratio
+        if len(ben) > ben_cap:
+            rng.shuffle(ben)
+            ben = ben[:ben_cap]
+            capped_langs.append(f"{lang}(ben→{len(ben)})")
+        if len(inj) > inj_cap:
+            rng.shuffle(inj)
+            inj = inj[:inj_cap]
+            capped_langs.append(f"{lang}(inj→{len(inj)})")
+
+        result.extend(inj)
+        result.extend(ben)
+
+    if capped_langs:
+        print(f"    Capped benign in: {', '.join(capped_langs)}")
+
+    inj_total = sum(1 for s in result if s["is_injection"])
+    ben_total = len(result) - inj_total
+    print(f"    After cap: {len(result):,} samples ({inj_total:,} injection, {ben_total:,} benign)")
+
+    return result
+
+
+def filter_language_minority_only(
+    samples: List[Dict],
+    min_injection_rate: float = 0.1,
+    min_samples: int = 200,
+) -> List[Dict]:
+    """Drop all samples for languages that have no meaningful injection coverage.
+
+    Languages with >min_samples total but <min_injection_rate injection rate
+    are excluded entirely.  Without injection examples, the model learns
+    "this language → always benign" as a shortcut, which is harmful for
+    multilingual generalisation.
+
+    Args:
+        samples:             Combined sample list (post-cap).
+        min_injection_rate:  Minimum fraction of samples that must be injection
+                             for the language to be retained (default 0.10 = 10%).
+        min_samples:         Only apply the filter to languages with at least
+                             this many samples (small languages are kept as-is
+                             to avoid throwing away rare data unnecessarily).
+
+    Returns:
+        Filtered sample list with zero-injection languages removed.
+    """
+    print(
+        f"\n  Per-language minority-only filter "
+        f"(min_injection_rate={min_injection_rate:.0%}, min_samples={min_samples})"
+    )
+
+    # Tally per language
+    by_lang: Dict[str, Dict[str, int]] = defaultdict(lambda: {"total": 0, "injection": 0})
+    for s in samples:
+        lang = (s.get("metadata") or {}).get("language", "en")
+        by_lang[lang]["total"] += 1
+        if s["is_injection"]:
+            by_lang[lang]["injection"] += 1
+
+    # Decide which languages to drop
+    dropped_langs: Dict[str, str] = {}  # lang → reason string
+    kept_langs: set = set()
+
+    for lang, counts in sorted(by_lang.items()):
+        total = counts["total"]
+        inj = counts["injection"]
+        rate = inj / total if total > 0 else 0.0
+
+        if total > min_samples and rate < min_injection_rate:
+            dropped_langs[lang] = (
+                f"{total} samples, {inj} injection ({rate:.1%} < {min_injection_rate:.0%} threshold)"
+            )
+        else:
+            kept_langs.add(lang)
+
+    if dropped_langs:
+        print(f"    Dropping {len(dropped_langs)} language(s) with no injection coverage:")
+        for lang, reason in sorted(dropped_langs.items()):
+            print(f"      {lang}: {reason}")
+    else:
+        print("    No languages dropped (all meet the injection-rate threshold).")
+
+    # Filter
+    result = [
+        s for s in samples
+        if (s.get("metadata") or {}).get("language", "en") not in dropped_langs
+    ]
+
+    removed = len(samples) - len(result)
+    inj_total = sum(1 for s in result if s["is_injection"])
+    ben_total = len(result) - inj_total
+    print(
+        f"    Removed {removed:,} samples from dropped languages. "
+        f"Remaining: {len(result):,} ({inj_total:,} injection, {ben_total:,} benign)"
+    )
+    return result
+
 
 def balance_dataset(
     samples: List[Dict],
@@ -976,6 +1606,34 @@ def print_statistics(samples: List[Dict]):
         pct = count / total * 100
         print(f"    {atype:<25} {count:>8} ({pct:>5.1f}%)")
 
+    # Language breakdown (only shown when multilingual data is present)
+    by_lang = defaultdict(int)
+    for s in samples:
+        lang = (s.get("metadata") or {}).get("language", "en")
+        by_lang[lang] += 1
+
+    if len(by_lang) > 1:
+        # Per-language injection vs benign counts
+        by_lang_inj: Dict[str, int] = defaultdict(int)
+        by_lang_ben: Dict[str, int] = defaultdict(int)
+        for s in samples:
+            lang = (s.get("metadata") or {}).get("language", "en")
+            if s.get("is_injection", False):
+                by_lang_inj[lang] += 1
+            else:
+                by_lang_ben[lang] += 1
+
+        print(f"\n  By Language (inj% = injection/(injection+benign)):")
+        print(f"    {'Lang':<6} {'Total':>8} {'Injection':>10} {'Benign':>8} {'Inj%':>6}")
+        print(f"    {'-' * 44}")
+        for lang in sorted(by_lang.keys(), key=lambda l: -by_lang[l]):
+            count = by_lang[lang]
+            inj_c = by_lang_inj[lang]
+            ben_c = by_lang_ben[lang]
+            inj_pct = inj_c / count * 100 if count > 0 else 0
+            flag = " !" if inj_pct == 100.0 or inj_pct == 0.0 else ""
+            print(f"    {lang:<6} {count:>8} {inj_c:>10} {ben_c:>8} {inj_pct:>5.1f}%{flag}")
+
 
 def save_dataset(samples: List[Dict], output_path: Path):
     """Save combined dataset to JSON."""
@@ -1031,8 +1689,8 @@ def main():
     args = parser.parse_args()
 
     print("\n" + "=" * 70)
-    print("  JailGuard Dataset Download & Combination Pipeline v2")
-    print("  14 Real Public Datasets | 3-Tier Dedup | 200K Balanced Output")
+    print("  JailGuard Dataset Download & Combination Pipeline v5")
+    print("  22 Datasets (14 EN + 8 Multilingual) + Synthetic | 3-Tier Dedup | 200K Output")
     print("=" * 70)
 
     start_time = time.time()
@@ -1085,6 +1743,25 @@ def main():
     if samples:
         all_samples.extend(samples)
 
+    # Multilingual sources (Apache 2.0 / MIT — safe for MIT/Apache projects)
+    # NOTE: yanismiraoui_multilingual excluded — 3,013 samples all tagged
+    # language='unknown' and 100% injection (normalize_lang() can't resolve the
+    # language codes in that dataset), causing a pure injection-rate artefact.
+    for downloader in [
+        download_aya_redteaming,
+        download_multijail,
+        download_duoguard_multilingual,
+        # Benign multilingual — fixes 100%-injection label for 13 languages
+        download_aya_dataset,
+        download_tydiqa,
+        download_openassistant_multilingual,
+        # Synthetic injection — agent-generated for SR/FI/HI/TL/RU/AR/ZH/KO/etc
+        download_synthetic_data,
+    ]:
+        samples = downloader()
+        if samples:
+            all_samples.extend(samples)
+
     inj = sum(1 for s in all_samples if s["is_injection"])
     ben = len(all_samples) - inj
     print(f"\n  Raw total: {len(all_samples):,} samples ({inj:,} attacks, {ben:,} benign)")
@@ -1104,9 +1781,20 @@ def main():
     print(f"\n  After dedup+filter: {len(all_samples):,} ({inj:,} attacks, {ben:,} benign)")
 
     # ====================================================================
-    # STEP 3: Balance to target size
+    # STEP 3: Per-language imbalance cap, then global 50/50 balance
     # ====================================================================
     if not args.no_balance:
+        # First: cap per-language benign:injection ratio to 2:1 (no language
+        # can be more than ~67% of either class).
+        all_samples = cap_per_language_imbalance(all_samples, max_ratio=2)
+        # Second: drop languages that still have <10% injection (i.e. zero or
+        # near-zero injection coverage) to prevent the model learning language
+        # identity as a proxy for benign.  Only applied to languages with >200
+        # samples (small/rare languages are kept as-is).
+        all_samples = filter_language_minority_only(
+            all_samples, min_injection_rate=0.1, min_samples=200
+        )
+        # Then: global 50/50 balance with oversampling/subsampling
         all_samples = balance_dataset(all_samples, target_size=args.target_size)
 
     # ====================================================================
