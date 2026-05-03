@@ -1,0 +1,237 @@
+name: Python Bindings CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+# Cancel any in-progress run on the same branch when a new one starts.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Pytest matrix — every supported (OS, Python) combination installs the
+  # wheel via maturin develop and runs the 26-test suite. Catches breaking
+  # changes in PyO3, the model loader, or the test fixtures themselves.
+  # ---------------------------------------------------------------------------
+  test:
+    name: pytest (Python ${{ matrix.python-version }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+
+    steps:
+      - name: Free disk space (Ubuntu)
+        if: runner.os == 'Linux'
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          key: python-${{ matrix.python-version }}-${{ matrix.os }}
+
+      - name: Install maturin + pytest
+        run: pip install maturin pytest pytest-asyncio
+
+      - name: Build + install jailguard wheel (editable)
+        run: maturin develop --features python --release
+
+      - name: Smoke import
+        run: python -c "import jailguard; print('version:', jailguard.__version__)"
+
+      - name: Run pytest suite
+        run: pytest python/tests/ -v --tb=short
+        env:
+          # Tests pre-download the ONNX model in conftest.py — give them a
+          # generous timeout so the first runner of the day doesn't flake.
+          PYTEST_TIMEOUT: "300"
+
+  # ---------------------------------------------------------------------------
+  # Lint job — runs ruff and validates the .pyi stubs match runtime.
+  # ---------------------------------------------------------------------------
+  lint:
+    name: ruff + stubs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: ruff format --check
+        run: ruff format --check .
+
+      - name: ruff lint
+        run: ruff check . --output-format=github
+
+  # ---------------------------------------------------------------------------
+  # Linux wheel matrix — manylinux + musllinux, x86_64 + aarch64.
+  # Uses PyO3/maturin-action which cross-compiles via Docker + zig.
+  # manylinux_2_28 = RHEL 8 / Ubuntu 20.04 / Debian 11 / Amazon Linux 2023.
+  # ---------------------------------------------------------------------------
+  build-wheels-linux:
+    name: wheel (linux ${{ matrix.target }} ${{ matrix.manylinux }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64
+            manylinux: manylinux_2_28
+          - target: aarch64
+            manylinux: manylinux_2_28
+          - target: x86_64
+            manylinux: musllinux_1_2
+          - target: aarch64
+            manylinux: musllinux_1_2
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          manylinux: ${{ matrix.manylinux }}
+          args: --release --features python --out dist
+      - name: Upload wheels as artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: wheels-linux-${{ matrix.target }}-${{ matrix.manylinux }}
+          path: dist/*.whl
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # macOS wheels (Intel + Apple Silicon)
+  # ---------------------------------------------------------------------------
+  build-wheels-macos:
+    name: wheel (macos ${{ matrix.target }})
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [x86_64, aarch64]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --features python --out dist
+      - name: Upload wheels as artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: wheels-macos-${{ matrix.target }}
+          path: dist/*.whl
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Windows wheels (x64 + arm64)
+  # ---------------------------------------------------------------------------
+  build-wheels-windows:
+    name: wheel (windows ${{ matrix.target }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [x64, aarch64]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+          architecture: x64
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --features python --out dist
+      - name: Upload wheels as artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: wheels-windows-${{ matrix.target }}
+          path: dist/*.whl
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Source distribution — universal fallback for any Rust-capable platform.
+  # ---------------------------------------------------------------------------
+  build-sdist:
+    name: sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+      - name: Upload sdist as artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Aggregate gate — branch protection requires this job, which only passes
+  # if every wheel job + sdist + tests + lint succeed.
+  # ---------------------------------------------------------------------------
+  python-success:
+    name: python success
+    if: always()
+    needs:
+      - test
+      - lint
+      - build-wheels-linux
+      - build-wheels-macos
+      - build-wheels-windows
+      - build-sdist
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any required dependency failed
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+      - run: echo "All Python jobs passed"
