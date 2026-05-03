@@ -47,6 +47,13 @@ mod error;
 pub(crate) mod model_manager;
 pub(crate) mod network;
 
+/// C ABI surface — Go (cgo) and Node.js (napi-rs) bindings link against
+/// these `extern "C"` functions. Compiled unconditionally so the
+/// `cdylib` / `staticlib` artifact always exposes the symbols; the
+/// `c-api` feature only gates the cbindgen header regeneration in
+/// `build.rs`.
+pub mod c_api;
+
 // Primary API at crate root
 pub use embedded::{detect, detect_batch, is_injection, score, DetectionOutput, RiskLevel};
 pub use error::{Error, Result};

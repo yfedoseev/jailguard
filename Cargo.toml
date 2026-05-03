@@ -28,9 +28,12 @@ include = [
   "src/model_manager.rs",
   "src/network.rs",
   "src/python.rs",
+  "src/c_api.rs",
   "models/neural_binary_200k.json",
   "models/tokenizer.json",
   "Cargo.toml",
+  "build.rs",
+  "cbindgen.toml",
   "LICENSE",
   "README.md",
   "CHANGELOG.md",
@@ -39,7 +42,7 @@ include = [
 ]
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib", "rlib", "staticlib"]
 
 [dependencies]
 # Core — always present
@@ -80,6 +83,10 @@ criterion = "0.8"
 [features]
 default = []
 python = ["pyo3"]
+# Reserved for future use — currently a no-op since the C ABI is always
+# compiled in (the cdylib + staticlib artifacts always export the
+# `jailguard_*` symbols). Header regeneration is via `make regen-c-header`.
+c-api = []
 full = [
   "dep:burn",
   "dep:burn-ndarray",

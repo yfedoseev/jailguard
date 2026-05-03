@@ -82,6 +82,26 @@ build-go:
 	@echo "Phase 3 placeholder — go/ directory not yet created"
 	@exit 1
 
+# ---------------------------------------------------------------------------
+# C ABI — header regen + smoke test
+# ---------------------------------------------------------------------------
+
+# Regenerate include/jailguard.h from src/c_api.rs.
+# Requires `cargo install cbindgen`.
+regen-c-header:
+	@command -v cbindgen >/dev/null || (echo "Install cbindgen: cargo install cbindgen"; exit 1)
+	cbindgen --crate jailguard --config cbindgen.toml --output include/jailguard.h
+	@echo "Wrote include/jailguard.h ($$(wc -l < include/jailguard.h) lines)"
+
+# Compile a tiny C program against the cdylib to verify the ABI is sane.
+test-c-api: build-release
+	@cc tests/c/smoke.c -I include -L target/release -ljailguard \
+	    -o target/release/c_api_smoke
+	@echo "Running C API smoke test..."
+	@DYLD_LIBRARY_PATH=target/release LD_LIBRARY_PATH=target/release \
+	    target/release/c_api_smoke
+	@echo "✓ C API smoke test passed"
+
 build-js:
 	@echo "Phase 4 placeholder — js/ directory not yet created"
 	@exit 1

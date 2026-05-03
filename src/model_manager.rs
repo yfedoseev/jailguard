@@ -58,6 +58,16 @@ fn cache_dir() -> Result<PathBuf, Error> {
     Ok(PathBuf::from(home).join(".cache").join("jailguard"))
 }
 
+/// Public-API variant — returns the cache directory as a `String`.
+///
+/// Used by the C API and Python bindings.
+pub fn cache_dir_string() -> Result<String, Error> {
+    let p = cache_dir()?;
+    p.into_os_string()
+        .into_string()
+        .map_err(|_| Error::Config("cache directory contains non-UTF-8 bytes".into()))
+}
+
 /// Ensure the ONNX model is available locally, downloading it if necessary.
 ///
 /// Returns the path to the ONNX model file on disk.
