@@ -1,0 +1,192 @@
+name: JS Bindings CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Lint + type-check on Linux (single platform, fast).
+  # ---------------------------------------------------------------------------
+  lint:
+    name: biome + tsc
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: js/package-lock.json
+
+      - name: npm install
+        working-directory: js
+        run: npm ci --ignore-scripts
+
+      - name: biome check
+        working-directory: js
+        run: npx --yes @biomejs/biome ci .
+
+      - name: TypeScript type-check
+        working-directory: js
+        run: npx tsc -p tsconfig.json --noEmit
+
+  # ---------------------------------------------------------------------------
+  # Build the napi-rs Node addon for each (OS, Node) combination then run
+  # vitest. Three OSes, three Node versions = 9 cells.
+  # ---------------------------------------------------------------------------
+  test:
+    name: vitest (Node ${{ matrix.node }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['18', '20', '22']
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
+          cache-dependency-path: js/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          key: js-test-${{ matrix.os }}-${{ matrix.node }}
+
+      - name: npm install
+        working-directory: js
+        run: npm ci
+
+      - name: Build native addon (cargo + tsc)
+        working-directory: js
+        run: npm run build
+
+      - name: Run vitest
+        working-directory: js
+        run: npm test
+
+  # ---------------------------------------------------------------------------
+  # Cross-platform native module build matrix — produces release artifacts
+  # for each napi-rs target triple. Phase 5.1 will ship these to npm.
+  # ---------------------------------------------------------------------------
+  build-native:
+    name: addon (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          key: native-${{ matrix.target }}
+
+      - name: Install cross-compilation toolchain (Linux aarch64)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build native addon for ${{ matrix.target }}
+        shell: bash
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+        run: cargo build --release --features napi --target ${{ matrix.target }}
+
+      - name: Stage addon artifact
+        shell: bash
+        run: |
+          mkdir -p js/build
+          case "${{ matrix.target }}" in
+            *-linux-*)
+              cp target/${{ matrix.target }}/release/libjailguard.so \
+                  js/build/jailguard.${{ matrix.target }}.node
+              ;;
+            *-apple-darwin)
+              cp target/${{ matrix.target }}/release/libjailguard.dylib \
+                  js/build/jailguard.${{ matrix.target }}.node
+              ;;
+            *-pc-windows-msvc)
+              cp target/${{ matrix.target }}/release/jailguard.dll \
+                  js/build/jailguard.${{ matrix.target }}.node
+              ;;
+          esac
+          ls -la js/build/
+
+      - name: Upload addon artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: addon-${{ matrix.target }}
+          path: js/build/jailguard.${{ matrix.target }}.node
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # WASM build (informational — runtime is alpha, see js/README.md).
+  # ---------------------------------------------------------------------------
+  wasm:
+    name: wasm-pack build (alpha)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          key: wasm
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --locked
+      - name: Build WASM module
+        run: |
+          wasm-pack build --release --target web --out-dir js/wasm -- --features wasm || \
+              echo "::warning::WASM build failed — ort doesn't yet target wasm32-unknown-unknown. See src/wasm.rs."
+
+  # ---------------------------------------------------------------------------
+  # Aggregate gate.
+  # ---------------------------------------------------------------------------
+  js-success:
+    name: js success
+    if: always()
+    needs: [lint, test, build-native]
+    runs-on: ubuntu-latest
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+      - run: echo "All JS jobs passed"
