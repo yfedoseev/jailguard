@@ -1,35 +1,60 @@
 # Training
 
-Training scripts for JailGuard prompt injection detection models.
+Standalone training binaries for the JailGuard MLP classifier. The
+**production** training pipeline lives in the sibling
+[`jailguard_dataset`](https://github.com/yfedoseev/jailguard_dataset) repo
+(`cargo run --bin pipeline -- --download/--normalize/--train`); the binaries
+here are thin wrappers for ad-hoc experiments on pre-computed embeddings.
 
-## Scripts
+All examples require `--features full`.
 
-| Script | Description | Command |
-|--------|-------------|---------|
-| `train_neural_binary.rs` | Train on 15K dataset (99.62% accuracy) | `cargo run --bin train_neural_binary --release` |
-| `train_on_expanded_dataset.rs` | Train on 125K balanced dataset (99.62% accuracy) | `cargo run --bin train_on_expanded_dataset --release` |
-| `train_minilm_with_gradients.rs` | Baseline gradient descent training | `cargo run --bin train_minilm_with_gradients --release` |
-| `evaluate_on_test_set.rs` | Train & evaluate with model export | `cargo run --bin evaluate_on_test_set --release` |
-| `fast_embedding_generation.rs` | Generate embeddings (100-200x faster than Python) | `cargo run --bin fast_embedding_generation --release` |
+## Examples
 
-## Quick Start
+| Example | Description |
+|---------|-------------|
+| `train_neural_binary.rs` | Train the production-equivalent 384→256→128→1 MLP on a JSON file of pre-computed embeddings. Adam (lr=0.001), weighted BCE (injection_weight=2.5), 50 epochs with patience 10. |
+| `onnx_embedding_generation.rs` | Generate `paraphrase-multilingual-MiniLM-L12-v2` or `all-MiniLM-L6-v2` embeddings from a JSON file of `{text, is_injection, attack_type, attack_type_idx, source}` records. |
+| `evaluate_on_test_set.rs` | Load a trained MLP and report accuracy/precision/recall/F1 over a test split. |
+
+## Quick experiment
 
 ```bash
-# Train best model (99.62% accuracy)
-cargo run --bin train_on_expanded_dataset --release
+# 1. Generate embeddings (uses the same ONNX session the production library does).
+cargo run --example onnx_embedding_generation --features full --release -- \
+    --input  path/to/dataset.json \
+    --output path/to/embeddings.json \
+    --model-dir ~/.cache/jailguard/
 
-# Or train smaller model (faster, 99.62% accuracy)
-cargo run --bin train_neural_binary --release
+# 2. Train.
+cargo run --example train_neural_binary --features full --release -- \
+    --data   path/to/embeddings.json \
+    --output models/my_model.json
 ```
 
-## Output
+`--lr` and `--injection-weight` flags are available on `train_neural_binary`
+if you want to override the defaults.
 
-Training produces model files in `models/`:
-- `jailguard_injection_detector.json` - Human-readable format
-- `jailguard_injection_detector.safetensors` - Hugging Face format
-- `jailguard_injection_detector.onnx.metadata.json` - ONNX conversion metadata
+## Production training
 
-## Requirements
+To rebuild the deployed v3 weights from scratch, use the Rust pipeline in
+`jailguard_dataset`:
 
-- Training data in `data/` or `splits_200k/`
-- Run `bash scripts/download_large_datasets.sh` if data not present
+```bash
+cd ~/projects/jailguard_dataset
+HUGGINGFACE_TOKEN=hf_xxx cargo run --bin pipeline --release -- --download
+cargo run --bin pipeline --release -- --normalize --force
+cargo run --bin pipeline --release -- --train --force \
+    --output models/neural_binary_new.json
+
+# Drop the result into this repo and rebuild:
+cp models/neural_binary_new.json ~/Projects/jailguard/models/neural_binary_200k.json
+cd ~/Projects/jailguard
+cargo build --release
+cargo test --release    # exercises the embedded.rs integration tests
+```
+
+Expect ~25 min to embed the 79,626-sample pipeline dataset on Apple Silicon
++ ~25 min to train. Reproducibility caveat is in
+[`jailguard_dataset/BENCHMARKS.md`](https://github.com/yfedoseev/jailguard_dataset/blob/main/BENCHMARKS.md):
+the procedure is functionally reproducible but not byte-identical because of
+non-deterministic CPU ONNX multi-threading.

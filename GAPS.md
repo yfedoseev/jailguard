@@ -1,17 +1,18 @@
 # Open-Source Readiness Gaps
 
-Audit date: 2026-04-22. Last updated: 2026-04-22 (Phase A landed).
+Audit date: 2026-04-22. Last updated: 2026-05-03 (production benchmark
+revalidated, multilingual research moved to `jailguard_dataset`).
 Target: public crates.io release + credible "this is great" story for
 reviewers.
 
 ## TL;DR
 
-Packaging is ready. Benchmark story is **scaffolded, not yet executed**.
-The internal 99.07% accuracy number is trained *and* inferred with real
-ONNX (verified in `src/embedded.rs:30,98,109,144` — no hash-based
-fallback), so the figure is methodologically sound. It just has not been
-reproduced on any independent public benchmark and has no head-to-head
-comparison with existing detectors.
+Packaging is ready. Benchmark story is **partially executed**: in-domain
+pipeline accuracy 99.34% (5,945-sample test split), J1N2 OOD 99.38%,
+shalyhinpavel hard-negatives 89.12%. Real-ONNX inference path verified
+(`src/embedded.rs` — no hash-based fallback). Still missing: head-to-head
+comparison against published detectors (ProtectAI, PromptGuard, Rebuff)
+and runs on the public PINT and AgentDojo benchmarks.
 
 Phase A (all code-only work) is done — benches compile, CI covers ARM,
 external-eval harness is in place. Phase B (running the benches on
@@ -29,8 +30,10 @@ next and needs physical hardware runs.
   default features, informational on `full`), MSRV, cargo-shear,
   cargo-hack powerset, docs with `-D warnings`, llvm-cov, semver-checks,
   cargo-deny, cargo-audit.
-- Internal accuracy: 99.07% / F1 0.9908 on 20K held-out split of a 200K
-  composite mix; README already disclaims this as non-independent.
+- Internal accuracy: 99.34% / F1 0.985 on 5,945-sample held-out pipeline
+  test split; 99.38% / F1 0.990 on the J1N2 mix-prompt-injection dataset
+  (held outside training); 89.12% on the shalyhinpavel hard-negative
+  validation holdout. README discloses test-set provenance.
 - Runtime fidelity: embedded inference uses the same ONNX model
   (all-MiniLM-L6-v2) as training — not a hashed surrogate.
 

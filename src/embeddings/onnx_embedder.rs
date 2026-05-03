@@ -191,7 +191,9 @@ impl OnnxEmbedder {
                 let mask_val = attention_mask_flat[b * max_len + t] as f32;
                 if mask_val > 0.0 {
                     for d in 0..EMBEDDING_DIM {
-                        pooled[d] += output_data[b * max_len * EMBEDDING_DIM + t * EMBEDDING_DIM + d] * mask_val;
+                        pooled[d] += output_data
+                            [b * max_len * EMBEDDING_DIM + t * EMBEDDING_DIM + d]
+                            * mask_val;
                     }
                     token_count += mask_val;
                 }

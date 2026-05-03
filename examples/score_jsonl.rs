@@ -27,13 +27,11 @@ fn main() {
         if line.trim().is_empty() {
             continue;
         }
-        let v: serde_json::Value = match serde_json::from_str(&line) {
-            Ok(v) => v,
-            Err(_) => continue,
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(&line) else {
+            continue;
         };
-        let text = match v["text"].as_str() {
-            Some(t) => t,
-            None => continue,
+        let Some(text) = v["text"].as_str() else {
+            continue;
         };
         let id = v["id"].as_str().unwrap_or("");
         let label = v["label"].as_i64().unwrap_or(-1);

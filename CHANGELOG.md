@@ -35,18 +35,23 @@ Initial public release.
 
 ### Measured
 
-On a held-out split of the 200K training mix (20,000 samples):
+Production model: 17-source pipeline (79,626 samples; ALERT adversarial,
+LMSYS Toxic Chat, JailbreakBench, BeaverTails, Alpaca, Dolly, shalyhinpavel
+hard-negatives, etc.). Trained with Adam (lr=0.001, β₁=0.9, β₂=0.999) +
+weighted BCE (injection_weight=2.5). Re-validated 2026-05-03.
 
-| Metric       | Value   |
-|--------------|---------|
-| Accuracy     | 99.07%  |
-| Precision    | 98.93%  |
-| Recall       | 99.22%  |
-| F1           | 0.9908  |
-| CPU latency  | <50 ms  |
+| Test set | Samples | Accuracy | Precision | Recall | F1 |
+|----------|---------|----------|-----------|--------|-----|
+| Pipeline (in-distribution) | 5,945 | 99.34% | 97.52% | 99.54% | 0.985 |
+| J1N2 mix (OOD) | 5,000 | 99.38% | 98.09% | 99.94% | 0.990 |
+| shalyhinpavel hard-negatives (OOD) | 147 | 89.12% | 76.60% | 87.80% | 0.818 |
 
-Note: these figures are on the project's own dataset split, not an independent
-public benchmark. Evaluation on PINT and AgentDojo is planned for a later
+CPU latency: p50 18 ms, p99 35 ms (Apple M3, single thread).
+
+The pipeline test split is in-distribution. J1N2 and shalyhinpavel are
+held outside the training data — see
+[`BENCHMARKS.md`](https://github.com/yfedoseev/jailguard_dataset/blob/main/BENCHMARKS.md).
+Evaluation on PINT, AgentDojo, and DataSentinel is planned for a later
 release.
 
 ### Known limitations

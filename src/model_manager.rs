@@ -138,7 +138,11 @@ pub fn download_model() -> Result<PathBuf, Error> {
     drop(file);
 
     // Verify integrity before making the file visible.
-    let actual: String = hasher.finalize().iter().map(|b| format!("{b:02x}")).collect();
+    let actual: String = hasher
+        .finalize()
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect();
     if actual != ONNX_SHA256 {
         let _ = std::fs::remove_file(&tmp_path);
         return Err(Error::Model(format!(

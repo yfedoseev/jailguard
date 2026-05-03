@@ -9,8 +9,8 @@
 //! ```
 
 use jailguard::training::{NeuralBinaryNetwork, NeuralDataLoader};
-use std::time::Instant;
 use serde_json;
+use std::time::Instant;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n{}", "=".repeat(80));
@@ -21,7 +21,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // === STEP 1: Load Training Data ===
     println!("📖 Loading training set from splits_200k/train.json...");
     let train_loader = NeuralDataLoader::load_from_file("splits_200k/train.json")?;
-    println!("✅ Loaded {} training samples", train_loader.train_samples.len());
+    println!(
+        "✅ Loaded {} training samples",
+        train_loader.train_samples.len()
+    );
 
     // === STEP 2: Load Test Data (as separate loader) ===
     println!("📖 Loading test set from splits_200k/test.json...");
@@ -113,8 +116,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         if patience_counter >= early_stopping_patience {
-            println!("\n⏹️  Early stopping at epoch {} (no improvement for {} epochs)",
-                     epoch + 1, early_stopping_patience);
+            println!(
+                "\n⏹️  Early stopping at epoch {} (no improvement for {} epochs)",
+                epoch + 1,
+                early_stopping_patience
+            );
             break;
         }
     }
@@ -202,9 +208,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n{}", "=".repeat(80));
     println!("📊 FINAL SUMMARY");
     println!("{}", "-".repeat(80));
-    println!("Best validation accuracy: {:.4} (epoch {})", best_val_acc, best_epoch);
+    println!(
+        "Best validation accuracy: {:.4} (epoch {})",
+        best_val_acc, best_epoch
+    );
     println!("Test set accuracy:        {:.4}", test_acc);
-    println!("Total training time:      {:.2}s ({:.2} minutes)", total_time, total_time / 60.0);
+    println!(
+        "Total training time:      {:.2}s ({:.2} minutes)",
+        total_time,
+        total_time / 60.0
+    );
     println!("\n✅ Test evaluation complete!");
 
     // Generalization check
@@ -262,10 +275,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::fs::write(onnx_meta_path, onnx_json)?;
     let onnx_size = std::fs::metadata(onnx_meta_path)?.len() as f64 / 1_000_000.0;
     println!("✅ Format 3 - ONNX metadata saved to: {}", onnx_meta_path);
-    println!("   📦 Size: {:.2} MB (metadata only, use scripts/json_to_onnx.py to convert)", onnx_size);
+    println!(
+        "   📦 Size: {:.2} MB (metadata only, use scripts/json_to_onnx.py to convert)",
+        onnx_size
+    );
 
     println!("\n📋 Model Distribution Summary:");
-    println!("   • JSON:        Human-readable, git-friendly ({})", json_path);
+    println!(
+        "   • JSON:        Human-readable, git-friendly ({})",
+        json_path
+    );
     println!("   • SafeTensors: Fastest loading ({})", safetensors_path);
     println!("   • ONNX:        Universal format (run json_to_onnx.py)");
     println!("{}\n", "=".repeat(80));

@@ -136,9 +136,12 @@ impl EmbeddedDetector {
         let attention_mask: Vec<i64> = mask[..len].iter().map(|&v| v as i64).collect();
         let token_type_ids: Vec<i64> = vec![0i64; len];
 
-        let input_ids_tensor = Value::from_array(ndarray::Array2::from_shape_vec((1, len), input_ids)?)?;
-        let attention_mask_tensor =
-            Value::from_array(ndarray::Array2::from_shape_vec((1, len), attention_mask.clone())?)?;
+        let input_ids_tensor =
+            Value::from_array(ndarray::Array2::from_shape_vec((1, len), input_ids)?)?;
+        let attention_mask_tensor = Value::from_array(ndarray::Array2::from_shape_vec(
+            (1, len),
+            attention_mask.clone(),
+        )?)?;
         let token_type_ids_tensor =
             Value::from_array(ndarray::Array2::from_shape_vec((1, len), token_type_ids)?)?;
 

@@ -88,7 +88,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     eprintln!("Epochs:           {}", num_epochs);
     eprintln!("Dropout:          0.2 (per hidden layer)");
     eprintln!("Optimizer:        Adam (β1=0.9, β2=0.999, ε=1e-8)");
-    eprintln!("Loss:             weighted BCE, injection_weight={:.1}\n", injection_weight);
+    eprintln!(
+        "Loss:             weighted BCE, injection_weight={:.1}\n",
+        injection_weight
+    );
 
     // === STEP 3: Create Network ===
     eprintln!("INITIALIZING NETWORK");
@@ -277,7 +280,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // === STEP 7: Summary ===
     eprintln!("\nTRAINING SUMMARY");
     eprintln!("{}", "-".repeat(80));
-    let total_samples = loader.train_samples.len() + loader.val_samples.len() + loader.test_samples.len();
+    let total_samples =
+        loader.train_samples.len() + loader.val_samples.len() + loader.test_samples.len();
     eprintln!("Dataset: {} samples", total_samples);
     eprintln!("  Train: {} (80%)", loader.train_samples.len());
     eprintln!("  Val:   {} (10%)", loader.val_samples.len());

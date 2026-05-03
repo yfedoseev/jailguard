@@ -457,17 +457,17 @@ impl NeuralBinaryNetwork {
 /// `NeuralBinaryNetwork::train_step_adam`.
 pub struct AdamState {
     // First moments
-    pub m_w_h1:  Vec<Vec<f32>>,
-    pub m_b_h1:  Vec<f32>,
-    pub m_w_h2:  Vec<Vec<f32>>,
-    pub m_b_h2:  Vec<f32>,
+    pub m_w_h1: Vec<Vec<f32>>,
+    pub m_b_h1: Vec<f32>,
+    pub m_w_h2: Vec<Vec<f32>>,
+    pub m_b_h2: Vec<f32>,
     pub m_w_out: Vec<Vec<f32>>,
     pub m_b_out: Vec<f32>,
     // Second moments
-    pub v_w_h1:  Vec<Vec<f32>>,
-    pub v_b_h1:  Vec<f32>,
-    pub v_w_h2:  Vec<Vec<f32>>,
-    pub v_b_h2:  Vec<f32>,
+    pub v_w_h1: Vec<Vec<f32>>,
+    pub v_b_h1: Vec<f32>,
+    pub v_w_h2: Vec<Vec<f32>>,
+    pub v_b_h2: Vec<f32>,
     pub v_w_out: Vec<Vec<f32>>,
     pub v_b_out: Vec<f32>,
     /// Global step counter (1-indexed, incremented inside train_step_adam).
@@ -477,16 +477,16 @@ pub struct AdamState {
 impl AdamState {
     pub fn new() -> Self {
         Self {
-            m_w_h1:  vec![vec![0.0; 384]; 256],
-            m_b_h1:  vec![0.0; 256],
-            m_w_h2:  vec![vec![0.0; 256]; 128],
-            m_b_h2:  vec![0.0; 128],
+            m_w_h1: vec![vec![0.0; 384]; 256],
+            m_b_h1: vec![0.0; 256],
+            m_w_h2: vec![vec![0.0; 256]; 128],
+            m_b_h2: vec![0.0; 128],
             m_w_out: vec![vec![0.0; 128]; 1],
             m_b_out: vec![0.0; 1],
-            v_w_h1:  vec![vec![0.0; 384]; 256],
-            v_b_h1:  vec![0.0; 256],
-            v_w_h2:  vec![vec![0.0; 256]; 128],
-            v_b_h2:  vec![0.0; 128],
+            v_w_h1: vec![vec![0.0; 384]; 256],
+            v_b_h1: vec![0.0; 256],
+            v_w_h2: vec![vec![0.0; 256]; 128],
+            v_b_h2: vec![0.0; 128],
             v_w_out: vec![vec![0.0; 128]; 1],
             v_b_out: vec![0.0; 1],
             t: 0,
@@ -547,7 +547,9 @@ impl NeuralBinaryNetwork {
         let mut grad_h2 = vec![0.0_f32; 128];
         for j in 0..128 {
             grad_h2[j] = grad_logit * self.w_out[0][j];
-            if cache.h2[j] <= 0.0 || !cache.h2_mask[j] { grad_h2[j] = 0.0; }
+            if cache.h2[j] <= 0.0 || !cache.h2_mask[j] {
+                grad_h2[j] = 0.0;
+            }
         }
         for i in 0..128 {
             for j in 0..256 {
@@ -569,8 +571,12 @@ impl NeuralBinaryNetwork {
         // ── h1 layer ─────────────────────────────────────────────────────
         let mut grad_h1 = vec![0.0_f32; 256];
         for j in 0..256 {
-            for i in 0..128 { grad_h1[j] += grad_h2[i] * self.w_h2[i][j]; }
-            if cache.h1[j] <= 0.0 || !cache.h1_mask[j] { grad_h1[j] = 0.0; }
+            for i in 0..128 {
+                grad_h1[j] += grad_h2[i] * self.w_h2[i][j];
+            }
+            if cache.h1[j] <= 0.0 || !cache.h1_mask[j] {
+                grad_h1[j] = 0.0;
+            }
         }
         for i in 0..256 {
             for j in 0..384 {
