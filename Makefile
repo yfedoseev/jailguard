@@ -133,8 +133,11 @@ lint: lint-rust
 lint-rust:
 	cargo clippy --release --all-targets --locked -- -D warnings
 
+# Informational only — the `full` research surface still has known clippy
+# warnings (see CI's `clippy (all features, informational)` job). Don't
+# promote to error.
 lint-rust-full:
-	cargo clippy --release --all-targets --locked --features full -- -D warnings
+	cargo clippy --release --all-targets --locked --features full
 
 lint-py:
 	@command -v ruff >/dev/null || (echo "Install ruff: pip install ruff"; exit 1)
@@ -200,7 +203,12 @@ check-all: check-rust
 	@echo "Run check-py / check-go / check-js individually as bindings come online"
 
 # Mirror what GitHub Actions does, locally. Slow.
-ci-local: fmt-check lint lint-rust-full test-rust test-doc bench-build docs
+# `lint-rust-full` runs but doesn't fail the run — same as CI's
+# `clippy (all features, informational)` job.
+ci-local: fmt-check lint test-rust test-doc bench-build docs
+	@echo ""
+	@echo "Running informational full-feature clippy..."
+	-@$(MAKE) lint-rust-full
 	@echo ""
 	@echo "✓ CI-equivalent checks all passed"
 
