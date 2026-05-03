@@ -14,7 +14,7 @@
 //! - Single clear optimization target (binary classification)
 //! - Should exceed Phase 5d baseline (84.62%)
 
-use jailguard::training::{NeuralBinaryNetwork, NeuralDataLoader};
+use jailguard::training::{AdamState, NeuralBinaryNetwork, NeuralDataLoader};
 use std::time::Instant;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -27,6 +27,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
     let mut data_path = String::from("data/combined_minilm_embeddings_with_types.json");
     let mut model_output = String::from("models/neural_binary.json");
+    let mut learning_rate_arg: Option<f32> = None;
+    let mut injection_weight_arg: Option<f32> = None;
 
     let mut i = 1;
     while i < args.len() {
@@ -37,6 +39,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             "--output" if i + 1 < args.len() => {
                 model_output = args[i + 1].clone();
+                i += 2;
+            }
+            "--lr" if i + 1 < args.len() => {
+                learning_rate_arg = args[i + 1].parse().ok();
+                i += 2;
+            }
+            "--injection-weight" if i + 1 < args.len() => {
+                injection_weight_arg = args[i + 1].parse().ok();
                 i += 2;
             }
             _ => i += 1,
@@ -68,15 +78,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     eprintln!("TRAINING CONFIGURATION");
     eprintln!("{}", "-".repeat(80));
 
-    let learning_rate = 0.01;
+    let learning_rate = learning_rate_arg.unwrap_or(0.001);
+    let injection_weight = injection_weight_arg.unwrap_or(2.5);
     let num_epochs = 50;
     let batch_size = 64;
 
-    eprintln!("Learning rate: {:.4}", learning_rate);
-    eprintln!("Batch size: {}", batch_size);
-    eprintln!("Epochs: {}", num_epochs);
-    eprintln!("Dropout: 0.2 (per hidden layer)");
-    eprintln!("Loss: Binary cross-entropy\n");
+    eprintln!("Learning rate:    {:.4}", learning_rate);
+    eprintln!("Batch size:       {}", batch_size);
+    eprintln!("Epochs:           {}", num_epochs);
+    eprintln!("Dropout:          0.2 (per hidden layer)");
+    eprintln!("Optimizer:        Adam (β1=0.9, β2=0.999, ε=1e-8)");
+    eprintln!("Loss:             weighted BCE, injection_weight={:.1}\n", injection_weight);
 
     // === STEP 3: Create Network ===
     eprintln!("INITIALIZING NETWORK");
@@ -97,6 +109,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut best_val_acc = 0.0;
     let mut best_epoch = 0;
     let mut epoch_metrics = Vec::new();
+    let mut adam = AdamState::new();
 
     for epoch in 0..num_epochs {
         let epoch_start = Instant::now();
@@ -111,7 +124,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         for batch in &batches {
             for (embedding, is_injection, _) in batch {
-                network.train_step(embedding, *is_injection);
+                network.train_step_adam(embedding, *is_injection, &mut adam, injection_weight);
                 let loss = network.evaluate_loss(embedding, *is_injection);
                 train_loss += loss;
 
