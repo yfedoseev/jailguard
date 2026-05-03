@@ -70,3 +70,9 @@ models/neural_binary_en.json
 
 # Playwright MCP working dir
 .playwright-mcp/
+
+# maturin develop output
+python/jailguard/*.so
+python/jailguard/*.pyd
+python/jailguard/__pycache__/
+python/tests/__pycache__/
