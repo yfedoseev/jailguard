@@ -53,17 +53,16 @@ docs/internal/
 # Training and benchmark logs
 data/*.log
 
-# Multilingual research artifacts (preserved in MULTILINGUAL_README.md, not committed)
+# Diagnostic / one-off scripts
+examples/score_test_long.rs
+
+# Stray multilingual experiment artifacts left over locally
+# (the canonical home for multilingual work is jailguard_dataset/MULTILINGUAL.md)
 data/combined_v*.json
 data/combined_*_embeddings*.json
 data/combined_multilingual*.json
 data/combined_injection_dataset.json
 data/pipeline_dataset_v4fmt.json
-
-# Diagnostic / one-off scripts
-examples/score_test_long.rs
-
-# Failed-experiment model checkpoints (kept locally for forensics)
 models/neural_binary_v4*.json
 models/neural_binary_pipeline_l12.json
 models/neural_binary_multilingual.json
