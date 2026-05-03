@@ -125,6 +125,26 @@ name = "unified_api_ensemble_demo"
 path = "examples/unified_api_ensemble_demo.rs"
 required-features = ["full"]
 
+[[example]]
+name = "onnx_embedding_generation"
+path = "train/onnx_embedding_generation.rs"
+required-features = ["full"]
+
+[[example]]
+name = "train_neural_binary"
+path = "train/train_neural_binary.rs"
+required-features = ["full"]
+
+[[example]]
+name = "evaluate_on_test_set"
+path = "train/evaluate_on_test_set.rs"
+required-features = ["full"]
+
+[[example]]
+name = "score_test"
+path = "examples/score_test.rs"
+required-features = ["full"]
+
 [lints.rust]
 unsafe_code = "warn"
 # missing_docs is scoped to the library (src/lib.rs) — applying it crate-wide
