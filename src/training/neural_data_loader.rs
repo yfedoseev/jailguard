@@ -111,18 +111,17 @@ impl NeuralDataLoader {
             return Err("No samples loaded from file".to_string());
         }
 
-        // Shuffle samples
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-        let mut hasher = DefaultHasher::new();
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs()
-            .hash(&mut hasher);
-        let seed = hasher.finish();
+        // Shuffle samples with a *reproducible* seed so the train/val/test
+        // split is identical across runs. The benchmark binary depends on this
+        // — without a fixed seed the "held-out test" the benchmark scores on
+        // does not match the set the trainer held out. Override via the
+        // JAILGUARD_SPLIT_SEED env var if you need a different partition.
+        const DEFAULT_SPLIT_SEED: u64 = 0x4A41_494C_4755_4152; // "JAILGUAR"
+        let seed: u64 = std::env::var("JAILGUARD_SPLIT_SEED")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(DEFAULT_SPLIT_SEED);
 
-        // Simple deterministic shuffle using seed
         for i in 0..samples.len() {
             let j = ((i as u64 * 17 + seed) % samples.len() as u64) as usize;
             samples.swap(i, j);
