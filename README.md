@@ -154,10 +154,13 @@ in the repository:
 
 Independent-benchmark scaffolding (PINT, AgentDojo, head-to-head vs.
 `protectai/deberta-v3-base-prompt-injection`, Meta `PromptGuard`,
-Rebuff) lives under `evaluation/external/`. Results from those runs
-are not yet in the tree; the harness defines the schema so third-party
-reruns land in the same shape. See [`GAPS.md`](GAPS.md) for the full
-picture.
+Rebuff) lives in the companion repo `jailguard-datasets/`, under
+`evaluation/external/` and `benchmark/`. The current iter-9
+methodology + four-eval comparison + head-to-head table vs three open-
+source CPU baselines (protectai-base, deepset, madhurjindal) is in
+[`jailguard-datasets/BENCHMARKS.md`](https://github.com/yfedoseev/jailguard-datasets/blob/main/BENCHMARKS.md).
+See [`GAPS.md`](GAPS.md) for the higher-level open-source-readiness
+audit.
 
 ## Attack categories covered in training
 
