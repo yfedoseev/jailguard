@@ -1,4 +1,5 @@
 //! API endpoint definitions and routing.
+#![allow(missing_docs)]
 
 use super::{
     ApiConfig, ApiError, ApiMetrics, ApiResult, BatchInferenceRequest, BatchInferenceResponse,
@@ -94,7 +95,7 @@ impl ApiEndpoints {
 
     /// Get health status
     pub fn health(&self) -> HealthResponse {
-        let snapshot = self.metrics.snapshot();
+        let _snapshot = self.metrics.snapshot();
 
         HealthResponse::healthy(0) // Would track actual uptime
     }

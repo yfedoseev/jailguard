@@ -8,14 +8,10 @@ JailGuard takes security seriously. If you discover a security vulnerability, pl
 
 **Do NOT** create a public GitHub issue for security vulnerabilities. Instead:
 
-1. **Email:** Send details to: [security@jailguard.dev](mailto:security@jailguard.dev)
-   - Subject: `[SECURITY] Vulnerability in JailGuard`
-   - Include: Description, steps to reproduce, impact assessment
-
-2. **GitHub Security Advisory:** (Alternative)
+1. **GitHub Security Advisory** (preferred):
    - Go to: https://github.com/yfedoseev/jailguard/security/advisories
    - Click "Report a vulnerability"
-   - Provide details in the form
+   - Provide details in the form — this keeps the report private until a fix is released
 
 ### What to Include
 
@@ -135,7 +131,6 @@ let config = JailGuardConfig {
 
 ## Security Contact
 
-- **Email:** [security@jailguard.dev](mailto:security@jailguard.dev)
 - **GitHub:** [@yfedoseev](https://github.com/yfedoseev)
 - **Response target:** 24-72 hours
 

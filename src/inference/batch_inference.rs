@@ -1,4 +1,5 @@
 //! Batch inference for efficient model processing.
+#![allow(missing_docs)]
 
 use super::{InferenceConfig, InferenceError, InferenceResult};
 use std::time::Instant;

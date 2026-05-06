@@ -182,7 +182,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     eprintln!("  Samples:    {total}");
     eprintln!("  Dimensions: 384 (all-MiniLM-L6-v2)");
     eprintln!("  Rate:       {rate:.1} samples/sec");
-    eprintln!("  Total time: {embed_time:.1}s ({:.1} minutes)", embed_time / 60.0);
+    eprintln!(
+        "  Total time: {embed_time:.1}s ({:.1} minutes)",
+        embed_time / 60.0
+    );
 
     Ok(())
 }

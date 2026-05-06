@@ -1,6 +1,6 @@
 //! Synthetic dataset generation for training.
 
-use rand::seq::SliceRandom;
+use rand::prelude::{IndexedRandom, SliceRandom};
 use rand::Rng;
 
 use super::{Dataset, Sample};
@@ -13,7 +13,7 @@ pub struct SyntheticDataset {
 impl SyntheticDataset {
     /// Create a new synthetic dataset with the given number of samples.
     pub fn generate(injection_count: usize, benign_count: usize) -> Self {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut samples = Vec::with_capacity(injection_count + benign_count);
 
         // Generate injection samples

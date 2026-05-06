@@ -2,6 +2,7 @@
 //!
 //! Collects jailbreak and adversarial attack discussions from academic papers
 //! on arXiv, focusing on LLM security, prompt injection, and jailbreak research.
+#![allow(missing_docs)]
 
 use super::error::CollectionResult;
 use super::rate_limiter::{RateLimitConfig, RateLimiter};

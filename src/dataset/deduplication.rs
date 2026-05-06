@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 /// Deduplication framework for removing semantic duplicates from augmented datasets
 ///
 /// Uses embedding-based similarity to identify and remove near-duplicate samples,

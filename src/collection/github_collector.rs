@@ -2,6 +2,7 @@
 //!
 //! Collects jailbreak attempts from GitHub repositories focused on
 //! adversarial attacks, LLM security, and jailbreak techniques.
+#![allow(missing_docs)]
 
 use super::error::CollectionResult;
 use super::rate_limiter::{RateLimitConfig, RateLimiter};

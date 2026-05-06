@@ -8,6 +8,7 @@
 //! - Text entropy and statistical properties
 //! - Structural anomalies (prompt markers, instruction patterns)
 //! - Semantic indicators (command-like language, role-play)
+#![allow(missing_docs)]
 
 /// Real injection detection result
 #[derive(Clone, Debug)]
@@ -339,6 +340,7 @@ impl Default for RealDetector {
 }
 
 /// Extracted text features for classification
+#[allow(dead_code)]
 struct TextFeatures {
     has_roleplay_indicators: bool,
     has_instruction_override: bool,

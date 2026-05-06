@@ -26,6 +26,7 @@
 //! - +3-5% accuracy on adversarial examples
 //! - Better generalization to novel patterns
 //! - Reduced false negatives on obfuscated attacks
+#![allow(missing_docs)]
 
 use crate::training::fine_tune::TrainingSample;
 use serde::{Deserialize, Serialize};

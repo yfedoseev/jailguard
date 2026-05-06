@@ -1,6 +1,7 @@
 //! Phase 6 trainer orchestrating the complete training loop.
 //!
 //! Manages training epochs, validation, learning rate scheduling, and early stopping.
+#![allow(missing_docs)]
 
 use super::early_stopping::{EarlyStopper, EarlyStoppingConfig};
 use super::neural_data_loader::{NeuralDataLoader, NeuralEmbeddingSample};
@@ -176,7 +177,7 @@ impl NeuralTrainer {
                 let loss = self
                     .network
                     .evaluate_sample(embedding, *is_injection, *attack_type);
-                let (pred_is_inj, _, pred_attack) = self.network.forward(embedding);
+                let (pred_is_inj, _, _pred_attack) = self.network.forward(embedding);
 
                 epoch_loss += loss;
                 epoch_correct += if pred_is_inj == *is_injection { 1 } else { 0 };

@@ -2,6 +2,7 @@
 //!
 //! Collects jailbreak and prompt injection discussions from Stack Overflow
 //! security-related tags and questions.
+#![allow(missing_docs)]
 
 use super::error::CollectionResult;
 use super::rate_limiter::{RateLimitConfig, RateLimiter};

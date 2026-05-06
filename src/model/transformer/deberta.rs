@@ -24,8 +24,10 @@ pub struct DisentangledAttention<B: Backend> {
     /// Output projection
     out_proj: Linear<B>,
     /// Number of attention heads
+    #[allow(dead_code)]
     num_heads: usize,
     /// Head dimension
+    #[allow(dead_code)]
     head_dim: usize,
     /// Dropout
     dropout: Dropout,
@@ -125,6 +127,7 @@ pub struct DeBERTaEncoder<B: Backend> {
     /// Stack of DeBERTa blocks
     layers: Vec<DeBERTaBlock<B>>,
     /// Number of layers
+    #[allow(dead_code)]
     num_layers: usize,
 }
 

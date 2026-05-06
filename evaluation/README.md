@@ -35,13 +35,15 @@ cargo run --bin phase_9_sota_validation --release
 
 ## Current Results
 
-| Metric | Value |
-|--------|-------|
-| Test Accuracy | 99.62% |
-| Precision | 99.97% |
-| Recall | 98.12% |
-| F1 Score | 99.04% |
-| Specificity | 99.99% |
+Authoritative benchmark numbers live in
+[`jailguard_dataset/BENCHMARKS.md`](https://github.com/yfedoseev/jailguard_dataset/blob/main/BENCHMARKS.md).
+Headline (re-validated 2026-05-03):
+
+| Test set | Samples | Accuracy | Precision | Recall | F1 |
+|----------|---------|----------|-----------|--------|-----|
+| Pipeline (in-distribution) | 5,945 | 99.34% | 97.52% | 99.54% | 0.985 |
+| J1N2 mix (OOD) | 5,000 | 99.38% | 98.09% | 99.94% | 0.990 |
+| shalyhinpavel hard-negatives (OOD) | 147 | 89.12% | 76.60% | 87.80% | 0.818 |
 
 ## Requirements
 

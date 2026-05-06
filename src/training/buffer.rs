@@ -1,6 +1,6 @@
 //! Experience replay buffer for RL training.
 
-use rand::seq::SliceRandom;
+use rand::prelude::IndexedRandom;
 
 use crate::agent::Experience;
 
@@ -43,7 +43,7 @@ impl ExperienceBuffer {
 
     /// Sample a batch of experiences randomly.
     pub fn sample(&self, batch_size: usize) -> Vec<Experience> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let actual_size = batch_size.min(self.len());
 
         self.experiences

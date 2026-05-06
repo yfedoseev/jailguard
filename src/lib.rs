@@ -47,14 +47,43 @@ mod error;
 pub(crate) mod model_manager;
 pub(crate) mod network;
 
+/// C ABI surface — Go (cgo) and Node.js (napi-rs) bindings link against
+/// these `extern "C"` functions. Compiled unconditionally so the
+/// `cdylib` / `staticlib` artifact always exposes the symbols; the
+/// `c-api` feature only gates the cbindgen header regeneration in
+/// `build.rs`.
+pub mod c_api;
+
+/// Node.js native module via napi-rs / N-API. Compiled only when the
+/// `napi` feature is enabled (typically via `npx napi build`).
+#[cfg(feature = "napi")]
+pub mod napi;
+
+/// WASM bindings via wasm-bindgen. Compiled only when the `wasm` feature
+/// is enabled (typically via `wasm-pack build`). Status: alpha — see
+/// `src/wasm.rs` for the gap explanation.
+#[cfg(feature = "wasm")]
+pub mod wasm;
+
 // Primary API at crate root
 pub use embedded::{detect, detect_batch, is_injection, score, DetectionOutput, RiskLevel};
 pub use error::{Error, Result};
-pub use model_manager::ensure_model;
+pub use model_manager::download_model;
+
+/// Deprecated alias for [`download_model`]. Retained so the companion
+/// `jailguard-datasets/pipeline` and other downstream code that pinned the
+/// 0.1 API keep compiling. New code should call `download_model` directly.
+#[deprecated(since = "0.2.0", note = "use `download_model` instead")]
+pub fn ensure_model() -> Result<std::path::PathBuf> {
+    download_model()
+}
 
 // ============================================================================
 // Feature-gated modules
 // ============================================================================
+
+#[cfg(feature = "python")]
+mod python;
 
 #[cfg(feature = "full")]
 pub mod advanced_ensemble;

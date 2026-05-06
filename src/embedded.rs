@@ -23,7 +23,7 @@
 //!
 //! Pre-download the ONNX model during deployment:
 //! ```rust,no_run
-//! jailguard::ensure_model().expect("Failed to download ONNX model");
+//! jailguard::download_model().expect("Failed to download ONNX model");
 //! ```
 
 use once_cell::sync::Lazy;
@@ -50,7 +50,7 @@ const MAX_SEQ_LENGTH: usize = 256;
 /// Initialization will download the ONNX model if not already cached.
 /// Panics if initialization fails (no network, broken model, etc.).
 static DETECTOR: Lazy<EmbeddedDetector> = Lazy::new(|| {
-    EmbeddedDetector::new().expect("Failed to initialize embedded detector — is the ONNX model available? Try calling jailguard::ensure_model() first.")
+    EmbeddedDetector::new().expect("Failed to initialize embedded detector — is the ONNX model available? Try calling jailguard::download_model() first.")
 });
 
 /// Detection result from the embedded detector
@@ -95,7 +95,7 @@ impl RiskLevel {
 
 /// Internal embedded detector holding the ONNX session, tokenizer, and classifier.
 struct EmbeddedDetector {
-    session: Session,
+    session: std::sync::Mutex<Session>,
     tokenizer: tokenizers::Tokenizer,
     network: NeuralBinaryNetwork,
 }
@@ -103,7 +103,7 @@ struct EmbeddedDetector {
 impl EmbeddedDetector {
     fn new() -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         // 1. Ensure ONNX model is downloaded
-        let onnx_path = model_manager::ensure_model()?;
+        let onnx_path = model_manager::download_model()?;
 
         // 2. Load ONNX session from disk
         let session = Session::builder()?.commit_from_file(&onnx_path)?;
@@ -116,7 +116,7 @@ impl EmbeddedDetector {
         let network: NeuralBinaryNetwork = serde_json::from_str(EMBEDDED_MODEL)?;
 
         Ok(Self {
-            session,
+            session: std::sync::Mutex::new(session),
             tokenizer,
             network,
         })
@@ -136,17 +136,22 @@ impl EmbeddedDetector {
         let attention_mask: Vec<i64> = mask[..len].iter().map(|&v| v as i64).collect();
         let token_type_ids: Vec<i64> = vec![0i64; len];
 
-        let input_ids_array = ndarray::Array2::from_shape_vec((1, len), input_ids)?;
-        let attention_mask_array =
-            ndarray::Array2::from_shape_vec((1, len), attention_mask.clone())?;
-        let token_type_ids_array = ndarray::Array2::from_shape_vec((1, len), token_type_ids)?;
+        let input_ids_tensor =
+            Value::from_array(ndarray::Array2::from_shape_vec((1, len), input_ids)?)?;
+        let attention_mask_tensor = Value::from_array(ndarray::Array2::from_shape_vec(
+            (1, len),
+            attention_mask.clone(),
+        )?)?;
+        let token_type_ids_tensor =
+            Value::from_array(ndarray::Array2::from_shape_vec((1, len), token_type_ids)?)?;
 
         let inputs = ort::inputs![
-            "input_ids" => Value::from_array(input_ids_array)?,
-            "attention_mask" => Value::from_array(attention_mask_array)?,
-            "token_type_ids" => Value::from_array(token_type_ids_array)?
+            "input_ids" => input_ids_tensor,
+            "attention_mask" => attention_mask_tensor,
+            "token_type_ids" => token_type_ids_tensor
         ]?;
-        let outputs = self.session.run(inputs)?;
+        let session = self.session.lock().expect("session mutex poisoned");
+        let outputs = session.run(inputs)?;
 
         // Output shape: [1, seq_len, 384]
         let output_tensor = outputs[0].try_extract_tensor::<f32>()?;
@@ -216,7 +221,7 @@ impl EmbeddedDetector {
 /// Returns a detailed [`DetectionOutput`] with score, confidence, and risk level.
 ///
 /// On first call, this downloads the ONNX embedding model (~90 MB) if not cached.
-/// Call [`ensure_model()`](crate::ensure_model) at startup to avoid latency on
+/// Call [`download_model()`](crate::download_model) at startup to avoid latency on
 /// the first request.
 ///
 /// # Example

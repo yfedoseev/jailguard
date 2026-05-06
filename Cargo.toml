@@ -27,14 +27,22 @@ include = [
   "src/error.rs",
   "src/model_manager.rs",
   "src/network.rs",
+  "src/python.rs",
+  "src/c_api.rs",
   "models/neural_binary_200k.json",
   "models/tokenizer.json",
   "Cargo.toml",
+  "build.rs",
+  "cbindgen.toml",
   "LICENSE",
   "README.md",
   "CHANGELOG.md",
   "examples/quick_start.rs",
+  "python/",
 ]
+
+[lib]
+crate-type = ["cdylib", "rlib", "staticlib"]
 
 [dependencies]
 # Core — always present
@@ -44,21 +52,35 @@ once_cell = "1"
 thiserror = "2"
 
 # ONNX inference (default — required for real ML pipeline).
+# Pinned to rc.9 — rc.10+ requires glibc 2.38+; this dev box has 2.36.
+# Bumping requires verifying the target deployment glibc.
 ort = "=2.0.0-rc.9"
-tokenizers = "0.21"
+tokenizers = "0.23"
 ndarray = "0.16"
-ureq = "2"
+ureq = "3"
+sha2 = "0.11"
+
+# Python bindings (pyo3 + maturin)
+pyo3 = { version = "0.22", features = ["abi3-py38"], optional = true }
+
+# Node.js bindings (napi-rs / N-API)
+napi = { version = "2", default-features = false, features = ["napi8"], optional = true }
+napi-derive = { version = "2", optional = true }
+
+# WASM bindings (wasm-bindgen). Browser / Deno / Cloudflare Workers.
+wasm-bindgen = { version = "0.2", optional = true }
+js-sys = { version = "0.3", optional = true }
 
 # Feature-gated dependencies (only pulled in under `--features full` or friends).
-burn = { version = "0.19", default-features = false, optional = true }
-burn-ndarray = { version = "0.19", default-features = false, optional = true }
+burn = { version = "0.20", default-features = false, optional = true }
+burn-ndarray = { version = "0.20", default-features = false, optional = true }
 parking_lot = { version = "0.12", optional = true }
 tracing = { version = "0.1", optional = true }
 unicode-segmentation = { version = "1.12", optional = true }
-rand = { version = "0.8", optional = true }
+rand = { version = "0.9", optional = true }
 uuid = { version = "1", features = ["v4", "serde"], optional = true }
-dirs = { version = "5.0", optional = true }
-lru = { version = "0.12", optional = true }
+dirs = { version = "6.0", optional = true }
+lru = { version = "0.18", optional = true }
 regex = { version = "1", optional = true }
 reqwest = { version = "0.12", features = ["json", "stream"], optional = true }
 tokio = { version = "1", features = ["full"], optional = true }
@@ -66,10 +88,27 @@ csv = { version = "1.3", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
-criterion = "0.5"
+criterion = "0.8"
+
+[build-dependencies]
+napi-build = { version = "2", optional = true }
 
 [features]
 default = []
+python = ["pyo3"]
+# Reserved for future use — currently a no-op since the C ABI is always
+# compiled in (the cdylib + staticlib artifacts always export the
+# `jailguard_*` symbols). Header regeneration is via `make regen-c-header`.
+c-api = []
+# Node.js native module via napi-rs / N-API.
+napi = ["dep:napi", "dep:napi-derive", "dep:napi-build"]
+# Browser / Deno / Cloudflare Workers via wasm-bindgen. Note: ONNX
+# inference is NOT yet supported under the `wasm32-unknown-unknown`
+# target (`ort` doesn't compile there). This feature compiles the
+# public-API surface but the runtime functions return an error
+# explaining the gap. Full ONNX-in-WASM via `tract` or ORT-Web is
+# tracked for a future release.
+wasm = ["dep:wasm-bindgen", "dep:js-sys"]
 full = [
   "dep:burn",
   "dep:burn-ndarray",
@@ -113,6 +152,26 @@ required-features = ["full"]
 [[example]]
 name = "unified_api_ensemble_demo"
 path = "examples/unified_api_ensemble_demo.rs"
+required-features = ["full"]
+
+[[example]]
+name = "onnx_embedding_generation"
+path = "train/onnx_embedding_generation.rs"
+required-features = ["full"]
+
+[[example]]
+name = "train_neural_binary"
+path = "train/train_neural_binary.rs"
+required-features = ["full"]
+
+[[example]]
+name = "evaluate_on_test_set"
+path = "train/evaluate_on_test_set.rs"
+required-features = ["full"]
+
+[[example]]
+name = "score_test"
+path = "examples/score_test.rs"
 required-features = ["full"]
 
 [lints.rust]

@@ -1,0 +1,65 @@
+{
+  "name": "@jailguard/jailguard",
+  "version": "0.1.0",
+  "description": "Fast prompt-injection detection — Rust core, Node.js + WASM bindings",
+  "license": "MIT OR Apache-2.0",
+  "author": "Yury Fedoseev",
+  "homepage": "https://github.com/yfedoseev/jailguard",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yfedoseev/jailguard.git"
+  },
+  "bugs": "https://github.com/yfedoseev/jailguard/issues",
+  "keywords": [
+    "security",
+    "llm",
+    "prompt-injection",
+    "jailbreak",
+    "ai-safety"
+  ],
+  "type": "module",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.js",
+      "default": "./lib/index.js"
+    },
+    "./wasm": {
+      "types": "./wasm/jailguard.d.ts",
+      "import": "./wasm/jailguard.js",
+      "default": "./wasm/jailguard.js"
+    }
+  },
+  "files": [
+    "lib/",
+    "wasm/",
+    "src/",
+    "README.md",
+    "LICENSE-APACHE",
+    "LICENSE-MIT"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/build-native.mjs",
+    "build:wasm": "node scripts/build-wasm.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf lib build wasm/jailguard*"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "optionalDependencies": {
+    "@napi-rs/cli": "^3.0.0"
+  }
+}

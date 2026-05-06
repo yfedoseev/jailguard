@@ -51,6 +51,7 @@ pub struct AdversarialBatchStats {
 /// Mixes regular and adversarial samples for robust training.
 pub struct AdversarialBatchMixer {
     config: AdversarialBatchConfig,
+    #[allow(dead_code)]
     generator: AdversarialGenerator,
 }
 

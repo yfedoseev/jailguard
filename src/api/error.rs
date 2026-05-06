@@ -1,4 +1,5 @@
 //! Error types for API operations.
+#![allow(missing_docs)]
 
 use serde::{Deserialize, Serialize};
 

@@ -1,0 +1,169 @@
+name: Go Bindings CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Build the libjailguard cdylib once per OS and share with downstream
+  # Go jobs as an artifact.  Saves rebuilding ~150 MB of Rust per matrix
+  # cell.
+  # ---------------------------------------------------------------------------
+  build-lib:
+    name: build libjailguard (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          key: build-lib-${{ matrix.os }}
+      - name: Build cdylib + staticlib
+        run: cargo build --release --lib
+
+      - name: Upload native lib + header artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-lib-${{ matrix.os }}
+          retention-days: 1
+          if-no-files-found: ignore
+          path: |
+            target/release/libjailguard.so
+            target/release/libjailguard.a
+            target/release/libjailguard.dylib
+            target/release/jailguard.dll
+            target/release/jailguard.lib
+            include/jailguard.h
+
+  # ---------------------------------------------------------------------------
+  # Go tests on every OS, downloading the cdylib from build-lib above.
+  # ---------------------------------------------------------------------------
+  test:
+    name: go test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: [build-lib]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: 'stable'
+
+      - name: Download native lib artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: native-lib-${{ matrix.os }}
+
+      - name: Verify artifact layout
+        shell: bash
+        run: |
+          ls -la target/release/ || true
+          ls -la include/ || true
+
+      - name: Go build
+        working-directory: go
+        env:
+          CGO_CFLAGS: "-I${{ github.workspace }}/include"
+          CGO_LDFLAGS: "-L${{ github.workspace }}/target/release -ljailguard"
+        run: go build ./...
+
+      - name: Go vet
+        working-directory: go
+        env:
+          CGO_CFLAGS: "-I${{ github.workspace }}/include"
+          CGO_LDFLAGS: "-L${{ github.workspace }}/target/release -ljailguard"
+        run: go vet ./...
+
+      - name: gofmt check
+        if: matrix.os == 'ubuntu-latest'
+        working-directory: go
+        shell: bash
+        run: |
+          diff=$(gofmt -l .)
+          if [ -n "$diff" ]; then
+            echo "The following files need formatting:"
+            echo "$diff"
+            exit 1
+          fi
+
+      - name: Go test (with race)
+        working-directory: go
+        env:
+          CGO_CFLAGS: "-I${{ github.workspace }}/include"
+          CGO_LDFLAGS: "-L${{ github.workspace }}/target/release -ljailguard"
+          LD_LIBRARY_PATH: "${{ github.workspace }}/target/release"
+          DYLD_LIBRARY_PATH: "${{ github.workspace }}/target/release"
+        run: go test -race -count=1 -timeout 120s ./...
+
+  # ---------------------------------------------------------------------------
+  # golangci-lint v2 + govulncheck — Linux-only, run after the cdylib
+  # build so the lint can typecheck cgo properly.
+  # ---------------------------------------------------------------------------
+  lint:
+    name: golangci-lint + govulncheck
+    runs-on: ubuntu-latest
+    needs: [build-lib]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version: 'stable'
+
+      - name: Download native lib artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: native-lib-ubuntu-latest
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.11.4
+          working-directory: go
+          args: --timeout 5m
+        env:
+          CGO_CFLAGS: "-I${{ github.workspace }}/include"
+          CGO_LDFLAGS: "-L${{ github.workspace }}/target/release -ljailguard"
+
+      - name: govulncheck
+        working-directory: go
+        env:
+          CGO_CFLAGS: "-I${{ github.workspace }}/include"
+          CGO_LDFLAGS: "-L${{ github.workspace }}/target/release -ljailguard"
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+  # ---------------------------------------------------------------------------
+  # Aggregate gate for branch protection.
+  # ---------------------------------------------------------------------------
+  go-success:
+    name: go success
+    if: always()
+    needs: [build-lib, test, lint]
+    runs-on: ubuntu-latest
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+      - run: echo "All Go jobs passed"

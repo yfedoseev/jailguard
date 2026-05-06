@@ -73,12 +73,12 @@ impl DQNAgent {
     ///
     /// Returns (action, `log_probability`).
     pub fn select_action(&self, state: &[f32]) -> (usize, f32) {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // Epsilon-greedy exploration
-        if rng.gen::<f32>() < self.epsilon {
+        if rng.random::<f32>() < self.epsilon {
             // Random action
-            let action = rng.gen_range(0..2);
+            let action = rng.random_range(0..2);
             (action, 0.0) // Log prob not meaningful for random action
         } else {
             // Greedy action

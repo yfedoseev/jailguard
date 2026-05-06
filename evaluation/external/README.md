@@ -7,9 +7,8 @@ at a glance what was measured on independent data.
 
 ## Status
 
-Scaffolding only — no results yet. See `GAPS.md` (Phase B) for the
-remaining work. This directory defines the shape of the evaluation so
-runs on different machines produce comparable artifacts.
+Scaffolding only — no results yet. This directory defines the shape of
+the evaluation so runs on different machines produce comparable artifacts.
 
 ## Datasets
 
