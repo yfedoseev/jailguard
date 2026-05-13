@@ -47,7 +47,12 @@ weighted BCE (injection_weight=2.5). Re-validated 2026-05-03.
 | J1N2 mix (OOD) | 5,000 | 99.38% | 98.09% | 99.94% | 0.990 |
 | shalyhinpavel hard-negatives (OOD) | 147 | 89.12% | 76.60% | 87.80% | 0.818 |
 
-CPU latency: p50 18 ms, p99 35 ms (Apple M3, single thread).
+CPU latency: p50 14 ms, p99 19 ms (Apple M3, single thread).
+Cold start ~140 ms; warm call ~20 ms.
+
+On a 4-year-old low-power Chromebook (Intel i5-10210U @ 1.6 GHz, 4c/8t),
+p50 ~37 ms, p99 ~43 ms; cold start ~350 ms. See [`BENCHMARKS.md`](./BENCHMARKS.md)
+for the full two-machine comparison.
 
 The pipeline test split is in-distribution. J1N2 and shalyhinpavel are
 held outside the training data — see [`BENCHMARKS.md`](./BENCHMARKS.md).

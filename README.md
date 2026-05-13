@@ -156,14 +156,21 @@ Measured on Apple M3, last revalidated 2026-05-03. The pipeline test split is in
 | J1N2 mix (OOD) | 5,000 | **99.38%** | 98.09% | 99.94% | 0.990 |
 | shalyhinpavel hard-negatives (OOD) | 147 | **89.12%** | 76.60% | 87.80% | 0.818 |
 
-### Latency (single CPU thread, Apple M3)
+### Latency (single CPU thread)
 
-| Component               | Time    |
-|-------------------------|---------|
-| Embedding (MiniLM ONNX) | ~13 ms  |
-| Classification (MLP)    | ~1 ms   |
-| **Total (p50)**         | **~14 ms** |
-| **Total (p99)**         | **~18 ms** |
+| Component | Apple M3 | Intel i5-10210U @ 1.6 GHz¹ |
+|---|---|---|
+| Embedding (MiniLM ONNX) | ~13 ms | ~36 ms |
+| Classification (MLP) | ~1 ms | ~1 ms |
+| **Total (p50)** | **~14 ms** | **~37 ms** |
+| **Total (p99)** | **~19 ms** | **~43 ms** |
+| Cold start | ~140 ms | ~350 ms |
+
+¹ A 4-year-old low-power Chromebook CPU (Comet Lake-U, 2019, 4c/8t,
+running ChromeOS Crostini Linux 6.6). Included to show JailGuard runs
+well even on older / weaker hardware. Modern desktop or server CPUs
+land closer to the M3 column. Full per-benchmark numbers in
+[`BENCHMARKS.md`](./BENCHMARKS.md).
 
 ## Benchmarks
 

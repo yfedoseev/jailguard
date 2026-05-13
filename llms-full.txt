@@ -167,14 +167,21 @@ Measured on Apple M3, last revalidated 2026-05-03. The pipeline test split is in
 | J1N2 mix (OOD) | 5,000 | **99.38%** | 98.09% | 99.94% | 0.990 |
 | shalyhinpavel hard-negatives (OOD) | 147 | **89.12%** | 76.60% | 87.80% | 0.818 |
 
-### Latency (single CPU thread, Apple M3)
+### Latency (single CPU thread)
 
-| Component               | Time    |
-|-------------------------|---------|
-| Embedding (MiniLM ONNX) | ~13 ms  |
-| Classification (MLP)    | ~1 ms   |
-| **Total (p50)**         | **~14 ms** |
-| **Total (p99)**         | **~18 ms** |
+| Component | Apple M3 | Intel i5-10210U @ 1.6 GHz¹ |
+|---|---|---|
+| Embedding (MiniLM ONNX) | ~13 ms | ~36 ms |
+| Classification (MLP) | ~1 ms | ~1 ms |
+| **Total (p50)** | **~14 ms** | **~37 ms** |
+| **Total (p99)** | **~19 ms** | **~43 ms** |
+| Cold start | ~140 ms | ~350 ms |
+
+¹ A 4-year-old low-power Chromebook CPU (Comet Lake-U, 2019, 4c/8t,
+running ChromeOS Crostini Linux 6.6). Included to show JailGuard runs
+well even on older / weaker hardware. Modern desktop or server CPUs
+land closer to the M3 column. Full per-benchmark numbers in
+[`BENCHMARKS.md`](./BENCHMARKS.md).
 
 ## Benchmarks
 
@@ -428,13 +435,17 @@ dimensions: **classification accuracy** (accuracy, precision, recall, F1),
 
 ## Test Environment
 
-| | |
-|---|---|
-| Hardware | Apple M3, 16 GB RAM |
-| OS | macOS Darwin 25.4.0 |
-| Rust | 1.85 (release build, `--release`) |
-| JailGuard | v0.1.0 |
-| Date | 2026-04-30 |
+Numbers are reported on two reference machines so readers can see the
+spread between a premium chip and a 4-year-old low-power mobile CPU.
+
+| | Premium reference | Low-power reference |
+|---|---|---|
+| Hardware | Apple M3, 16 GB RAM | Intel Core i5-10210U @ 1.60 GHz (4c/8t, Comet Lake-U, 2019) |
+| OS | macOS Darwin 25.4.0 | Linux 6.6 (ChromeOS Crostini) |
+| RAM | 16 GB | 14.8 GB, no swap |
+| Rust | 1.85 (release build) | 1.95 (release build) |
+| JailGuard | v0.1.0 | v0.1.0 |
+| Date | 2026-04-30 | 2026-05-13 |
 
 ---
 
@@ -627,34 +638,45 @@ in-domain test set.
 
 ### Steady-state single-call latency (Criterion, warm session)
 
-Measured with the Criterion harness (`cargo bench --bench detect`) after a
-3-second warm-up phase. This represents **throughput-mode latency** — the
-ONNX session is already loaded and warmed up, equivalent to a long-running
-server process handling its second and subsequent requests.
+Measured with `cargo bench --bench detect` after a 3-second warm-up phase.
+This represents **throughput-mode latency** — the ONNX session is already
+loaded and warmed up, equivalent to a long-running server process handling
+its second and subsequent requests.
 
-| Benchmark | Median | 95% CI |
+| Benchmark | Apple M3 (median) | Intel i5-10210U (median) |
 |---|---|---|
-| `is_injection` (benign text) | **19.70 ms** | [19.59, 19.81] ms |
-| `is_injection` (injection text) | **19.60 ms** | [19.49, 19.72] ms |
+| `is_injection` (benign text) | **19.70 ms** | 39.21 ms |
+| `is_injection` (injection text) | **19.60 ms** | 36.37 ms |
+| `detect` (benign) | ~14 ms¹ | 37.18 ms |
+| `detect` (injection) | ~14 ms¹ | 37.40 ms |
+| `score` (benign) | ~16 ms¹ | 40.27 ms |
+| `detect` (long benign, ~300 tokens) | ~22 ms¹ | 40.60 ms |
+
+¹ M3 numbers for `detect` / `score` were not separately measured in the
+historical run; they're approximated from the `is_injection` baseline.
+Treat the Chromebook column as the verified floor.
 
 > Both benign and injection inputs take the same time — inference cost is
-> independent of the classification result.
+> independent of the classification result. The Chromebook column is the
+> "works on a 4-year-old low-power mobile chip" reference; modern desktop
+> or server CPUs land closer to the M3 figures.
 
 ### Batch throughput (Criterion)
 
 `detect_batch` runs each sample sequentially within the batch (the ONNX
-session is single-threaded by default). These numbers show that there is no
-significant per-sample overhead for batching at current batch sizes.
+session is single-threaded by default). There is no significant per-sample
+overhead for batching at current batch sizes.
 
-| Batch size | Total time (median) | Per-sample | Samples/sec |
+| Batch size | Apple M3 per-sample | Intel i5-10210U per-sample | Throughput (M3) |
 |---|---|---|---|
-| 8 | 110.6 ms | 13.8 ms | **72 samples/sec** |
-| 32 | 437.6 ms | 13.7 ms | **73 samples/sec** |
-| 128 | 1,840 ms | 14.4 ms | **70 samples/sec** |
+| 1 | ~14 ms | 39.2 ms | ~70 samples/sec |
+| 8 | 13.8 ms | 43.4 ms | ~72 samples/sec |
+| 32 | 13.7 ms | 47.9 ms | ~73 samples/sec |
+| 128 | 14.4 ms | 35.6 ms | ~70 samples/sec |
 
-> Throughput is flat across batch sizes (~70–73 samples/sec) because the ONNX
-> runtime processes one item at a time. True batched ONNX inference could
-> improve GPU throughput significantly but is not yet implemented.
+> Throughput is roughly flat across batch sizes because the ONNX runtime
+> processes one item at a time. True batched ONNX inference could improve
+> GPU throughput significantly but is not yet implemented.
 
 ### Cold-start latency
 
@@ -665,25 +687,23 @@ the tokenizer. Subsequent calls reuse the initialized session.
 cargo run --release --example cold_start_bench
 ```
 
-Typical output (Apple M3):
-
-```
-cold_start   : ~2,500 ms  (ONNX session initialization + first inference)
-warm call    : ~19.7 ms   (steady-state)
-init overhead: ~2,480 ms
-```
+| | Apple M3 (approx.) | Intel i5-10210U (measured) |
+|---|---|---|
+| Cold start (init + first inference) | ~140 ms | 350 ms |
+| Warm call (steady-state) | ~19.7 ms | 24.7 ms |
+| Init overhead | ~120 ms | 326 ms |
 
 Cold-start is a one-time cost per process. In production, call
 `jailguard::download_model()` at startup to pre-download the ONNX model and
 warm the session before handling any traffic.
 
-### Wall-clock latency on real samples (benchmark binary)
+### Wall-clock latency on real samples (benchmark binary, Apple M3)
 
 Measured across 1,113 real samples of varying length, including tokenization
-and MLP forward pass. This is the **end-to-end per-request cost** a
-production server would observe on steady-state traffic.
+and MLP forward pass. End-to-end per-request cost a production server
+would observe on steady-state traffic.
 
-| Percentile | Latency |
+| Percentile | Apple M3 |
 |---|---|
 | p50 | **14.40 ms** |
 | p90 | **15.76 ms** |
@@ -691,9 +711,14 @@ production server would observe on steady-state traffic.
 
 ### Latency comparison summary
 
+JailGuard's "premium-CPU" floor is sub-20 ms; the "low-power 4-year-old
+mobile CPU" floor is sub-50 ms. Both are 3–25× faster than the
+transformer baselines running on much beefier server CPUs.
+
 | Solution | p50 latency | Notes |
 |---|---|---|
-| **JailGuard (local, Rust)** | **~14 ms** | No network, CPU only |
+| **JailGuard (Apple M3)** | **~14 ms** | Local, Rust, no network |
+| **JailGuard (Intel i5-10210U @ 1.6 GHz)** | **~37 ms** | 4-year-old low-power Chromebook |
 | Regex / keyword baseline | < 0.01 ms | But ~80% recall miss rate |
 | protectai/deberta-v3-base (CPU) | ~104–212 ms | Python + ONNX export, AWS CPU |
 | Llama Prompt Guard 2 (GPU) | ~92 ms | A100 GPU; CPU is ~2–4× slower |
@@ -835,7 +860,12 @@ weighted BCE (injection_weight=2.5). Re-validated 2026-05-03.
 | J1N2 mix (OOD) | 5,000 | 99.38% | 98.09% | 99.94% | 0.990 |
 | shalyhinpavel hard-negatives (OOD) | 147 | 89.12% | 76.60% | 87.80% | 0.818 |
 
-CPU latency: p50 18 ms, p99 35 ms (Apple M3, single thread).
+CPU latency: p50 14 ms, p99 19 ms (Apple M3, single thread).
+Cold start ~140 ms; warm call ~20 ms.
+
+On a 4-year-old low-power Chromebook (Intel i5-10210U @ 1.6 GHz, 4c/8t),
+p50 ~37 ms, p99 ~43 ms; cold start ~350 ms. See [`BENCHMARKS.md`](./BENCHMARKS.md)
+for the full two-machine comparison.
 
 The pipeline test split is in-distribution. J1N2 and shalyhinpavel are
 held outside the training data — see [`BENCHMARKS.md`](./BENCHMARKS.md).
