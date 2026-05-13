@@ -4,7 +4,7 @@
 //! # `JailGuard` — Prompt Injection Detection
 //!
 //! Fast, accurate prompt injection detection with a simple API.
-//! The iter-9 model (98.40% accuracy on the in-domain test set) is
+//! The classifier (98.40% accuracy on the in-domain test set) is
 //! embedded in the library — no external files or setup required.
 //!
 //! ## Quick Start
@@ -24,7 +24,7 @@
 //!
 //! ## Features
 //!
-//! - **98.40% Accuracy**: iter-9 model trained on the 17-source public pipeline
+//! - **98.40% Accuracy**: trained on a 17-source public dataset pipeline
 //! - **Real ML**: ONNX embeddings (all-MiniLM-L6-v2) + neural classifier
 //! - **Auto-setup**: ONNX model auto-downloaded on first use (~90 MB, cached)
 //! - **Simple API**: `is_injection()`, `detect()`, `score()`

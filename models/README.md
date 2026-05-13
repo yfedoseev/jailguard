@@ -7,7 +7,7 @@ tokenizer that get compiled into the published library.
 
 | File | Size | Description |
 |------|------|-------------|
-| `neural_binary_200k.json` | ~1.4 MB | Iter-9 MLP weights, trained on the 17-source public pipeline (see [`BENCHMARKS.md`](../BENCHMARKS.md#training-dataset-stats)). Compiled into the binary via `include_str!`. |
+| `neural_binary_200k.json` | ~1.4 MB | MLP classifier weights, trained on the 17-source public pipeline (see [`BENCHMARKS.md`](../BENCHMARKS.md#training-dataset-stats)). Compiled into the binary via `include_str!`. |
 | `tokenizer.json` | ~466 KB | `all-MiniLM-L6-v2` WordPiece tokenizer (vocab=30,522). Compiled into the binary via `include_bytes!`. |
 
 The 90 MB ONNX embedding model (`all-MiniLM-L6-v2.onnx`) is **not** bundled —
@@ -17,7 +17,7 @@ it is auto-downloaded to `~/.cache/jailguard/` on first use by
 ## Performance
 
 Authoritative benchmark numbers and methodology live in
-[`BENCHMARKS.md`](../BENCHMARKS.md). Headline numbers (iter-9):
+[`BENCHMARKS.md`](../BENCHMARKS.md). Headline numbers:
 
 | Test set | Samples | Accuracy | Precision | Recall | F1 |
 |----------|---------|----------|-----------|--------|-----|
