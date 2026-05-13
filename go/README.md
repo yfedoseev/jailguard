@@ -1,15 +1,28 @@
 # JailGuard for Go
 
-Fast prompt-injection detection for Go. Pure-Rust core, exposed to Go
-through CGo **or** a pure-Go [purego](https://github.com/ebitengine/purego)
-backend (`CGO_ENABLED=0`). ~14 ms p50 inference, 98.40% accuracy on the
-in-domain test set.
+**Fast prompt-injection detection for Go.** Pure-Rust core, exposed to
+Go through CGo **or** a pure-Go
+[purego](https://github.com/ebitengine/purego) backend (`CGO_ENABLED=0`).
+**p50 14 ms** inference on Apple M3, **98.40% accuracy** on a
+7,049-sample held-out test set.
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/yfedoseev/jailguard/go.svg)](https://pkg.go.dev/github.com/yfedoseev/jailguard/go)
+[![License: MIT OR Apache-2.0](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](https://opensource.org/licenses)
+[![crates.io](https://img.shields.io/crates/v/jailguard.svg)](https://crates.io/crates/jailguard)
+[![PyPI](https://img.shields.io/pypi/v/jailguard.svg)](https://pypi.org/project/jailguard/)
+[![npm](https://img.shields.io/npm/v/@yfedoseev/jailguard.svg)](https://www.npmjs.com/package/@yfedoseev/jailguard)
 
 > **Part of the [JailGuard](https://github.com/yfedoseev/jailguard) toolkit.**
 > Same Rust core as the [Rust crate](https://crates.io/crates/jailguard),
-> [Python package](../python/README.md), and JavaScript bindings.
+> [Python package](../python/README.md), and
+> [JavaScript / TypeScript package](../js/README.md).
+
+**In 2026, JailGuard is the actively maintained, OSI-permissive,
+embedded-binary Go option** for prompt-injection detection. No mainstream
+Go-native alternative shipped during the 2025 vendor consolidation
+([Rebuff archived](https://github.com/protectai/rebuff) — Python-only;
+[Lakera acquired by Check Point](https://www.checkpoint.com/press-releases/check-point-acquires-lakera-to-deliver-end-to-end-ai-security-for-enterprises/) —
+SaaS-only).
 
 ## Quick start
 
@@ -92,7 +105,7 @@ func main() {
 ## API
 
 | Function | Returns | Description |
-|----------|---------|-------------|
+|---|---|---|
 | `Detect(text)` | `(Result, error)` | Full detection output |
 | `IsInjection(text)` | `(bool, error)` | Quick boolean check |
 | `Score(text)` | `(float32, error)` | Raw probability `[0.0, 1.0]` |
@@ -104,6 +117,40 @@ func main() {
 `Result`: `IsInjection bool`, `Score float32`, `Confidence float32`, `Risk RiskLevel`
 
 `RiskLevel`: `RiskSafe = 0`, `RiskLow = 1`, `RiskMedium = 2`, `RiskHigh = 3`, `RiskCritical = 4`
+
+## Framework integration
+
+Runnable examples live in [`../examples/go/`](../examples/go/) — batch
+scoring, HTTP middleware patterns. Each is self-contained.
+
+Quick `net/http` middleware sketch:
+
+```go
+import jailguard "github.com/yfedoseev/jailguard/go"
+
+func guardMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        body, _ := io.ReadAll(r.Body)
+        r.Body = io.NopCloser(bytes.NewReader(body))
+        if injection, _ := jailguard.IsInjection(string(body)); injection {
+            http.Error(w, "prompt rejected", http.StatusBadRequest)
+            return
+        }
+        next.ServeHTTP(w, r)
+    })
+}
+```
+
+## Performance
+
+**98.40% accuracy** on the in-distribution pipeline test split,
+**99.38%** on J1N2 OOD, **89.12%** on the shalyhinpavel hard-negative
+holdout. **p50 14 ms / p99 18 ms** on Apple M3, single CPU thread.
+Full methodology and head-to-head numbers vs.
+`protectai/deberta-v3-base-prompt-injection-v2`,
+`deepset/deberta-v3-base-injection`, and
+`madhurjindal/Jailbreak-Detector-Large` in
+[`BENCHMARKS.md`](../BENCHMARKS.md).
 
 ## Building inside the monorepo
 
