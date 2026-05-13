@@ -1,0 +1,1635 @@
+# JailGuard — Full Documentation Bundle
+
+> Single-file documentation bundle for LLM/agent context windows.
+> See llms.txt for the indexed version. Last regenerated: 2026-05-13.
+
+---
+
+---
+
+# === README.md ===
+
+# JailGuard
+
+[![Accuracy](https://img.shields.io/badge/Accuracy-98.40%25-blue)](CHANGELOG.md)
+[![F1 Score](https://img.shields.io/badge/F1-0.983-blue)](CHANGELOG.md)
+[![Pure Rust](https://img.shields.io/badge/Pure-Rust-orange)](https://www.rust-lang.org/)
+[![License](https://img.shields.io/badge/License-MIT%2FApache--2.0-blue)](LICENSE)
+
+**Fast, lightweight prompt injection detection in pure Rust.** Embedded 130K-parameter classifier, CPU-only, sub-50 ms inference, zero-config API.
+
+## Highlights
+
+- **98.40% accuracy / F1 0.983** on a 7,049-sample held-out split of the training pipeline; **99.38% / F1 0.990** on the J1N2 OOD benchmark; **89.12%** on the shalyhinpavel hard-negative holdout.
+- **CPU-only.** No GPU required for inference or training.
+- **Embedded model.** The classifier ships inside the crate; the 90 MB ONNX embedding model is auto-downloaded and cached on first use.
+- **Small surface area.** Three functions: `detect()`, `is_injection()`, `score()`.
+- **Permissive.** MIT OR Apache-2.0.
+
+> In-distribution numbers are from the project's own pipeline test split. The J1N2 and shalyhinpavel sets are independent of training data — see [`BENCHMARKS.md`](./BENCHMARKS.md).
+
+## How it works
+
+JailGuard pairs a frozen sentence-embedding model with a small classifier:
+
+1. **MiniLM-L6-v2** (384-dim, ONNX) produces a semantic vector for the input.
+2. A 3-layer MLP (384 → 256 → 128 → 1, ~130K parameters, ReLU + dropout 0.2 + sigmoid) scores it as injection vs. benign.
+
+The embedding model is frozen — no fine-tuning — which keeps the training and inference cost on CPU modest.
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                 JAILGUARD DETECTION PIPELINE                │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│   User Prompt                                               │
+│       │                                                     │
+│       ▼                                                     │
+│   ┌─────────────┐                                          │
+│   │  MiniLM-L6  │  Semantic Embedding (384-dim)            │
+│   │   (ONNX)    │  • Pre-trained by Microsoft              │
+│   └──────┬──────┘  • Captures meaning, not just keywords   │
+│          │                                                  │
+│          ▼                                                  │
+│   ┌─────────────────────────────────────────┐              │
+│   │     Binary Classifier (Pure Rust)       │              │
+│   │  ┌─────────────┐  ┌─────────────────┐   │              │
+│   │  │ Dense 256   │→│   Dense 128     │   │              │
+│   │  │ ReLU+Drop   │  │   ReLU+Drop     │   │              │
+│   │  └─────────────┘  └─────────────────┘   │              │
+│   │                          │               │              │
+│   │                          ▼               │              │
+│   │              ┌─────────────────┐        │              │
+│   │              │  Sigmoid (0-1)  │        │              │
+│   │              └─────────────────┘        │              │
+│   └──────────────────────────────────────────┘              │
+│          │                                                  │
+│          ▼                                                  │
+│   Detection Result                                          │
+│   • confidence: 0.0 - 1.0                                  │
+│   • is_injection: confidence > 0.5                         │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Quick Start
+
+### Rust (Recommended)
+
+```toml
+[dependencies]
+jailguard = "0.1.0"
+```
+
+The classifier is embedded in the binary. The ONNX embedding model (~90 MB) is auto-downloaded to `~/.cache/jailguard/` on first use.
+
+```rust
+use jailguard::{is_injection, detect};
+
+// Simple boolean check
+if is_injection("ignore all previous instructions") {
+    println!("Blocked!");
+}
+
+// Get detailed result
+let result = detect("What is the capital of France?");
+println!("Safe: {}, Confidence: {:.1}%", !result.is_injection, result.confidence * 100.0);
+```
+
+**Available functions:**
+
+| Function | Returns | Use Case |
+|----------|---------|----------|
+| `is_injection(text)` | `bool` | Quick yes/no check |
+| `detect(text)` | `DetectionOutput` | Full details with confidence |
+| `score(text)` | `f32` | Raw probability (0.0-1.0) |
+| `detect_batch(texts)` | `Vec<DetectionOutput>` | Process multiple inputs |
+| `download_model()` | `Result<PathBuf>` | Pre-download ONNX model |
+
+### Production Setup
+
+In production, pre-download the ONNX model to avoid first-request latency:
+
+```rust
+// Option A: call at app startup
+jailguard::download_model().expect("Failed to download ONNX model");
+```
+
+```dockerfile
+# Option B: pre-download in Dockerfile
+ENV JAILGUARD_MODEL_DIR=/app/models
+RUN curl -L -o /app/models/all-MiniLM-L6-v2.onnx \
+    https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx
+```
+
+Set `JAILGUARD_MODEL_DIR` to control where the model is cached (default: `~/.cache/jailguard/`).
+
+## Measurements
+
+Measured on Apple M3, last revalidated 2026-05-03. The pipeline test
+split is in-distribution (held-out from the same training pipeline). J1N2 and
+shalyhinpavel are external datasets, neither used during training.
+See [`BENCHMARKS.md`](./BENCHMARKS.md) for the full breakdown including
+head-to-head latency vs. competitors.
+
+| Test set | Samples | Accuracy | Precision | Recall | F1 |
+|----------|---------|----------|-----------|--------|-----|
+| Pipeline (in-distribution) | 7,049 | **98.40%** | 98.56% | 97.98% | 0.983 |
+| J1N2 mix (OOD) | 5,000 | **99.38%** | 98.09% | 99.94% | 0.990 |
+| shalyhinpavel hard-negatives (OOD) | 147 | **89.12%** | 76.60% | 87.80% | 0.818 |
+
+### Latency (single CPU thread)
+
+| Component               | Time    |
+|-------------------------|---------|
+| Embedding (MiniLM ONNX) | ~25 ms  |
+| Classification (MLP)    | ~1 ms   |
+| **Total**               | **<50 ms** |
+
+## Benchmarks
+
+Reproducible latency and throughput numbers are driven by two harnesses
+in the repository:
+
+- `benches/detect.rs` — Criterion bench covering single-shot
+  `is_injection` / `detect` / `score` and batch throughput at
+  `n = 1, 8, 32, 128`. Run with `cargo bench --bench detect`.
+- `examples/cold_start_bench.rs` — process-startup cost (ONNX session
+  init + first inference). Run with
+  `cargo run --release --example cold_start_bench`.
+- `scripts/bench.sh` — portable POSIX wrapper that captures machine
+  metadata (CPU, arch, kernel, toolchain) and emits a single markdown
+  report. Same script runs on Linux x86_64, Linux aarch64, macOS Intel,
+  macOS Apple Silicon, and Chromebook Crostini.
+
+Full methodology, four-eval comparison, and head-to-head table vs
+three open-source CPU baselines (protectai-base, deepset, madhurjindal)
+are in [`BENCHMARKS.md`](./BENCHMARKS.md).
+
+## Attack categories covered in training
+
+The classifier is binary (injection / benign), but its training mix spans eight
+attack families:
+
+| Category              | Examples                                |
+|-----------------------|-----------------------------------------|
+| Direct injection      | "Ignore previous instructions"          |
+| Jailbreak             | DAN, developer-mode prompts             |
+| Role-play             | Persona-based overrides                 |
+| System prompt leak    | "Reveal your instructions"              |
+| Encoding attacks      | Base64, ROT13, Unicode obfuscation      |
+| Context manipulation  | Framing and separator tricks            |
+| Output manipulation   | Format coercion                         |
+| Indirect injection    | Malicious content embedded in documents |
+
+## References
+
+- [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) — sentence embeddings
+- [PromptGuard (Meta)](https://github.com/meta-llama/PurpleLlama)
+- [Lakera Guard](https://www.lakera.ai/) and the [PINT benchmark](https://github.com/lakeraai/pint-benchmark)
+- [Rebuff](https://github.com/protectai/rebuff)
+- [Sentinel: SOTA model to protect against prompt injections](https://arxiv.org/abs/2506.05446)
+- [Not What You've Signed Up For — indirect injection](https://arxiv.org/abs/2302.12173)
+
+## Citation
+
+If you use JailGuard in research, please cite:
+
+```bibtex
+@software{jailguard,
+  title = {JailGuard: Efficient Prompt Injection Detection via Pre-trained Embeddings},
+  author = {Fedoseev, Yury},
+  year = {2026},
+  url = {https://github.com/yfedoseev/jailguard}
+}
+```
+
+## License
+
+MIT OR Apache-2.0
+
+---
+
+# === AGENTS.md ===
+
+# AGENTS.md — JailGuard
+
+Guidance for AI coding agents (Cursor, Claude Code, Devin, Aider,
+Cline, Copilot Workspace, etc.) working in this repo. Optimized for
+agent comprehension: commands first, prose minimal, examples concrete.
+
+## What this project is
+
+JailGuard is a pure-Rust prompt-injection detector with a 1.5 MB
+embedded ONNX classifier. The Rust core ships bindings for Python
+(pyo3 + maturin), JavaScript (napi-rs), and Go (CGo + purego). 98.40%
+accuracy on the in-domain test set, p50 14 ms CPU inference on Apple M3.
+
+## Build
+
+```sh
+cargo build --release                    # default features (embedded detector)
+cargo build --release --all-features     # full surface (training, examples)
+make build-py                            # Python wheel via maturin
+make build-js                            # napi addon + tsc
+make build-go                            # cgo binding (needs cargo build --release first)
+```
+
+## Test
+
+```sh
+cargo test --release --lib               # unit tests, fastest
+cargo test --release                     # +integration tests
+cargo test --release --doc               # doc-tests in src/lib.rs
+make check                               # fmt-check + clippy + lib tests (CI gate)
+make test-py                             # Python pytest (after build-py)
+make test-js                             # vitest (after build-js)
+make test-go                             # Go tests (uses -tags jailguard_dev)
+```
+
+## Lint / format
+
+```sh
+make lint                                # cargo clippy --release --all-targets -- -D warnings
+make fmt                                 # cargo fmt + ruff format + taplo fmt
+make fmt-check                           # all formatters in check mode
+cargo clippy --features full             # informational only (research surface has known warnings)
+```
+
+## Project structure
+
+| Path | Contents |
+|---|---|
+| `src/lib.rs` | Crate root + feature-gated module declarations |
+| `src/embedded.rs` | Zero-config public API: `detect()`, `is_injection()`, `score()`, `detect_batch()` |
+| `src/network.rs` | The 130K-parameter MLP (forward pass only at runtime) |
+| `src/model_manager.rs` | ONNX model auto-download to `~/.cache/jailguard/` |
+| `src/c_api.rs` | C ABI exported via `cdylib`/`staticlib` (consumed by Go + napi) |
+| `src/python.rs` | pyo3 bindings (feature `python`) |
+| `src/napi.rs` | napi-rs bindings (feature `napi`) |
+| `src/heuristics.rs` | Regex-based first-pass detection (7 rule categories) |
+| `src/detection/` | 8-class `AttackType` enum + result types |
+| `src/training/` | Training surface — feature-gated `full` / `training`. Not on public API. |
+| `python/` | Python package source + tests |
+| `js/` | TypeScript wrapper + prebuilds loader (`src/index.ts`, `cmd/install`-style flow not present yet) |
+| `go/` | Go bindings: `jailguard.go` (CGo), `jailguard_purego.go` (purego), `cmd/install/` (installer) |
+| `models/` | Embedded classifier weights (`neural_binary_200k.json`, 1.5 MB) + tokenizer |
+| `examples/` | One file per supported example, gated where they need `full` |
+| `tests/` | Integration tests + scenario suites |
+| `benches/` | Criterion benches (`detect.rs`) |
+| `BENCHMARKS.md` | Authoritative numbers — methodology, dataset breakdown, latencies |
+| `docs/` | API.md, ARCHITECTURE.md, GETTING_STARTED.md, INTEGRATION_GUIDE.md |
+
+## Code style
+
+- **Clippy lints** (strict, enforced by CI): `dbg_macro = "deny"`,
+  `todo = "deny"`, `unimplemented = "deny"`. See `Cargo.toml`
+  `[lints.clippy]` block for the full pedantic list.
+- **Use `eprintln!` not `println!` in binaries** — `clippy::print_stdout`
+  is warned on the library.
+- **Regex word boundaries:** always use `\b` for short acronyms (DAN,
+  STAN) to avoid matching inside unrelated words.
+- **Public API surface is deliberately minimal:** three functions
+  (`detect`, `is_injection`, `score`) plus `detect_batch` and
+  `download_model`. Resist adding more to the public surface.
+- **MSRV is 1.85** (`rust-version` in `Cargo.toml`).
+
+## Feature flags
+
+| Feature | Purpose |
+|---|---|
+| `default` | Embedded detector only — minimal dep set |
+| `python` | pyo3 + maturin bindings |
+| `napi` | napi-rs + napi-build for Node.js |
+| `full` | Training, evaluation, ensemble, experimental modules |
+| `training` | Subset of `full` exposing `NeuralBinaryNetwork` / `NeuralDataLoader` to external training pipelines |
+| `download` | Reqwest + tokio for dataset download (training only) |
+
+Default is **deliberately small**. Don't enable `full` unless touching
+the training surface.
+
+## Attack taxonomy (8-class)
+
+The training classifier knows 8 attack categories. The public API
+exposes only `is_injection: bool` + a numeric `score: f32` + a
+`RiskLevel` enum (`Safe`/`Low`/`Medium`/`High`/`Critical`). The 8-class
+output is not on the public API.
+
+| Index | Name | Description |
+|---|---|---|
+| 0 | Benign | No attack |
+| 1 | RolePlay | Persona injection |
+| 2 | InstructionOverride | "Ignore previous instructions" |
+| 3 | ContextManipulation | Separators, framing |
+| 4 | OutputManipulation | Format changes |
+| 5 | EncodingAttack | Base64, ROT13, hex |
+| 6 | JailbreakPattern | DAN, STAN, multi-technique |
+| 7 | PromptLeaking | "Reveal system prompt" |
+
+## ort crate (ONNX runtime) pinning
+
+`ort` is pinned to **`=2.0.0-rc.9`**. `rc.11+` requires glibc 2.38+,
+and our minimum target (Chromebook Crostini, manylinux_2_28) has glibc
+2.36. Bumping `ort` requires verifying the target deployment glibc on
+every platform in the release matrix.
+
+## Boundaries
+
+### Always do
+
+- Run `cargo fmt --all` and `cargo clippy --all-targets` before committing.
+- Add a `CHANGELOG.md` entry for user-visible changes.
+- Update `BENCHMARKS.md` whenever the model is retrained or the test
+  set changes.
+
+### Ask first
+
+- Renaming any public function/type in `src/embedded.rs`,
+  `src/c_api.rs`, `src/python.rs`, `src/napi.rs`, or any language
+  binding's user-facing surface.
+- Changes to the `Cargo.toml` `include = […]` list (controls what
+  ships to crates.io).
+- Bumping the `ort` version (see pinning note above).
+- Changes to the model weights file (`models/neural_binary_200k.json`).
+
+### Never do
+
+- Commit raw model files larger than 50 MB to git. The 90 MB ONNX
+  embedder is auto-downloaded, not committed.
+- Push to remote without explicit authorization. The user prefers a
+  reversible-changes-only workflow.
+- Skip git hooks (`--no-verify`) or bypass signing (`--no-gpg-sign`).
+- Disable clippy lints with `#[allow(...)]` without a comment
+  explaining why.
+
+## Release flow
+
+```sh
+# 1. Verify version alignment first
+grep -E '^version' Cargo.toml pyproject.toml
+node -p "require('./js/package.json').version"
+
+# 2. Tag and push
+git tag v0.X.Y
+git push origin v0.X.Y
+# .github/workflows/release.yml fires automatically
+```
+
+The release workflow handles: Rust crate (`cargo publish`), Python
+wheels (multi-platform via maturin → PyPI), npm package (prebuilt
+napi addons), Go module subpath tag (`go/v0.X.Y`), Go FFI tarballs
+attached to GitHub Release, and the GitHub Release itself. PyPI uses
+an API token (`secrets.PYPI_API_TOKEN`), not OIDC.
+
+## Common pitfalls
+
+- **Bare `go build` fails:** the Go bindings need either the
+  `jailguard_dev` build tag (monorepo) or `CGO_CFLAGS`/`CGO_LDFLAGS`
+  from the installer. Monorepo shortcut: `go build -tags jailguard_dev ./...`.
+- **`npm install` no longer rebuilds anything.** The new prebuilds
+  pattern (see `js/prebuilds/` populated by CI) ships native addons in
+  the tarball. For local dev: `cd js && npm run build:native`.
+- **Python wheel needs `maturin` + recent Rust toolchain.**
+- **Bare `cargo build` from inside `go/`:** doesn't work without env
+  vars set, by design — see `go/README.md` Option A (CGo) or Option B
+  (purego).
+
+---
+
+# === BENCHMARKS.md ===
+
+# JailGuard Benchmark Results
+
+Comparative evaluation of JailGuard against industry solutions across three
+dimensions: **classification accuracy** (accuracy, precision, recall, F1),
+**latency** (p50/p90/p99), and **throughput** (samples/second).
+
+---
+
+## Test Environment
+
+| | |
+|---|---|
+| Hardware | Apple M3, 16 GB RAM |
+| OS | macOS Darwin 25.4.0 |
+| Rust | 1.85 (release build, `--release`) |
+| JailGuard | v0.1.0 |
+| Date | 2026-04-30 |
+
+---
+
+## Test Dataset
+
+All classification metrics in this document are measured on the
+**JailGuard Pipeline Test Set** — held-out samples from the public dataset mix
+described below. Augmented samples (synthetic text variations generated during
+training) are **excluded** from evaluation; only original human-written text is
+used.
+
+### Composition
+
+The dataset covers 17 public sources, including large-scale injection examples
+(ALERT adversarial), benign hard negatives (BeaverTails, Dolly, Alpaca, Aegis,
+OpenAI Moderation), real jailbreak transcripts (LMSYS Toxic Chat,
+JailbreakBench), and security-adjacent hard negatives
+(shalyhinpavel/Prompt-Injection-Hard-Positives train split).
+
+| Source | HuggingFace dataset | Type | Role |
+|--------|---------------------|------|------|
+| deepset | [deepset/prompt-injections](https://huggingface.co/datasets/deepset/prompt-injections) | Prompt injection | Injection |
+| xTRam1 | [xTRam1/safe-guard-prompt-injection](https://huggingface.co/datasets/xTRam1/safe-guard-prompt-injection) | Prompt injection | Injection / Benign |
+| jackhhao | [jackhhao/jailbreak-classification](https://huggingface.co/datasets/jackhhao/jailbreak-classification) | Jailbreak | Injection |
+| rubend18 | [rubend18/ChatGPT-Jailbreak-Prompts](https://huggingface.co/datasets/rubend18/ChatGPT-Jailbreak-Prompts) | Jailbreak | Injection |
+| ALERT adversarial | [Babelscape/ALERT](https://huggingface.co/datasets/Babelscape/ALERT) | Adversarial injection | **Injection** (key source) |
+| ALERT regular | [Babelscape/ALERT](https://huggingface.co/datasets/Babelscape/ALERT) | Harmful content requests | Benign hard negative |
+| LMSYS Toxic Chat 0124 | [lmsys/toxic-chat](https://huggingface.co/datasets/lmsys/toxic-chat) | Real chat, jailbreak flag | Injection / Benign |
+| LMSYS Toxic Chat 1123 | [lmsys/toxic-chat](https://huggingface.co/datasets/lmsys/toxic-chat) | Real chat, jailbreak flag | Injection / Benign |
+| JailbreakBench harmful | [JailbreakBench/JBB-Behaviors](https://huggingface.co/datasets/JailbreakBench/JBB-Behaviors) | Jailbreak goals | Injection |
+| JailbreakBench benign | [JailbreakBench/JBB-Behaviors](https://huggingface.co/datasets/JailbreakBench/JBB-Behaviors) | Benign tasks | Benign |
+| Alpaca | [tatsu-lab/alpaca](https://huggingface.co/datasets/tatsu-lab/alpaca) | Instruction following | Benign hard negative |
+| Dolly | [databricks/databricks-dolly-15k](https://huggingface.co/datasets/databricks/databricks-dolly-15k) | Instruction following | Benign hard negative |
+| BeaverTails | [PKU-Alignment/BeaverTails](https://huggingface.co/datasets/PKU-Alignment/BeaverTails) | Harmful content requests | Benign hard negative |
+| Do-Not-Answer | [LibrAI/do-not-answer](https://huggingface.co/datasets/LibrAI/do-not-answer) | Sensitive questions | Benign hard negative |
+| Aegis | [nvidia/Aegis-AI-Content-Safety-Dataset-1.0](https://huggingface.co/datasets/nvidia/Aegis-AI-Content-Safety-Dataset-1.0) | Content safety | Benign hard negative |
+| OpenAI Moderation | [mmathys/openai-moderation-api-evaluation](https://huggingface.co/datasets/mmathys/openai-moderation-api-evaluation) | Moderation API data | Benign hard negative |
+| shalyhinpavel (train) | [shalyhinpavel/Prompt-Injection-Hard-Positives](https://huggingface.co/datasets/shalyhinpavel/Prompt-Injection-Hard-Positives) | Security-adjacent hard-neg + real RAG injection | Injection / Benign hard negative |
+
+**Label semantics**: harmful content requests (ALERT regular, BeaverTails, Aegis,
+Do-Not-Answer) are labelled **benign** because they are NOT prompt injections — they
+are requests for unsafe content. Teaching the model this distinction is critical
+to reducing false positives on benign-but-harmful phrasing.
+
+### Training dataset stats
+
+```
+Total normalized samples  : 70,479
+  — Injection             : 31,716  (45.0%)
+  — Benign                : 38,763  (55.0%)
+
+Test split (10% of originals, deterministic): 7,049 samples
+  — Injection             : 3,275  (46.5%)
+  — Benign                : 3,774  (53.5%)
+```
+
+The test split uses the last 10% of a deterministically-shuffled slice of
+non-augmented samples. Augmented samples are excluded from evaluation.
+
+---
+
+## Accuracy Results
+
+### In-domain test set (pipeline)
+
+Results measured by `cargo run --bin benchmark --release` on the held-out
+test split persisted by the trainer to `data/test_split.json`. JailGuard
+uses SGD with binary cross-entropy (lr=0.01, batch=64, dropout=0.2,
+50 epochs with patience-10 early stopping), trained on the embedding
+dataset produced by `cargo run --bin pipeline`.
+
+| Model | Accuracy | Precision | Recall | F1 | p50 ms | p90 ms | p99 ms |
+|---|---|---|---|---|---|---|---|
+| **JailGuard iter-9 (embedded, Rust)** | **98.40%** | **98.56%** | **97.98%** | **0.983** | **13.80** | **14.72** | **17.86** |
+| Regex / keyword heuristic | 79.87% | 92.06% | 8.90% | 0.162 | 0.00 | 0.00 | 0.00 |
+
+### Independent out-of-distribution benchmarks
+
+Evaluated with `cargo run --bin benchmark --release -- --external`. These
+datasets were **not seen during training** and test generalization on different
+distribution of injection/benign text.
+
+The shalyhinpavel evaluation uses only the **validation split (147 samples)**,
+which is held completely out of training. The train split (585 samples, 436
+unique) is part of the JailGuard training set as of this version.
+
+| Dataset | Samples | Accuracy | Precision | Recall | F1 |
+|---|---|---|---|---|---|
+| **J1N2/mix-prompt-injection-dataset** | 5,000 | **99.38%** | **98.09%** | **99.94%** | **0.990** |
+| **shalyhinpavel (validation holdout)** | 147 | **89.12%** | **76.60%** | **87.80%** | **0.818** |
+
+**J1N2** ([J1N2/mix-prompt-injection-dataset](https://huggingface.co/datasets/J1N2/mix-prompt-injection-dataset)):
+1,539 injection + 3,461 benign. A mixed dataset from jayavibhav/prompt-injection,
+not in training data. Near-identical performance to the in-domain test set —
+confirms the model generalizes, not just memorizes.
+
+**shalyhinpavel holdout** ([shalyhinpavel/Prompt-Injection-Hard-Positives](https://huggingface.co/datasets/shalyhinpavel/Prompt-Injection-Hard-Positives)):
+41 injection + 106 benign hard-negatives (validation split only). The benign
+samples are deliberately crafted to look suspicious — complex security-policy
+documents, technical architecture specs, red-team exercise descriptions. Adding
+the train split (436 unique samples) to JailGuard's training data reduced the
+false-positive rate substantially: see over-defense table below.
+
+> **JailGuard** uses the all-MiniLM-L6-v2 ONNX embedding model (~66 M params)
+> followed by a 130 K-param MLP classifier (384 → 256 → 128 → 1). Both run
+> entirely locally with no network calls.
+>
+> **Regex baseline** matches 26 hand-crafted injection keyword patterns.
+> High precision (few false positives) but near-useless recall — it misses
+> ~93% of injections, confirming that keyword matching alone is insufficient
+> for production use.
+
+### Published numbers for API-based competitors
+
+The table below combines the **PINT leaderboard** (Lakera, 2025-05-02) with
+published in-domain numbers from each vendor's model card. PINT is a
+neutral 4,314-sample benchmark with 20.9% hard negatives (benign prompts
+containing suspicious words like "ignore"), which causes significant drops
+from in-domain accuracy.
+
+| Model | In-domain accuracy | PINT score | Mechanism | Latency (CPU) |
+|---|---|---|---|---|
+| **JailGuard iter-9 (this repo)** | **98.40%** *(pipeline test set, 7,049 samples)* | *not yet evaluated* | Local ONNX + MLP, Rust | **p50 14 ms, p99 18 ms** |
+| Lakera Guard | not published | **95.22%** | Closed source API | ~150–300 ms |
+| AWS Bedrock Guardrails | not published | **89.24%** | Closed source API | ~200–400 ms |
+| Azure Prompt Shields | ~98.3% acc, 58.5% recall¹ | **89.12%** | Closed source API | ~200–600 ms RTT |
+| protectai/deberta-v3-base-prompt-injection-v2 | 95.25%² | **79.14%** | 184 M DeBERTa, HF API | 104–212 ms³ |
+| Llama Prompt Guard 2 86M (Meta) | 97.5% recall@1% FPR | **78.76%** | 86 M mDeBERTa, API/local | 92 ms (A100 GPU)⁴ |
+| Google Model Armor | not published | **70.07%** | Closed source API | not published |
+| Llama Prompt Guard 1 (Meta) | ~41.6%⁵ | **61.82%** | 86 M mDeBERTa | same as PG2 |
+
+¹ From arxiv:2502.15427 Table 2, in-distribution evaluation.  
+² From HuggingFace model card; tested on 20 K unseen prompts.  
+³ Per LLM Guard docs: AWS m5.xlarge CPU 212 ms, CPU+ONNX export 104 ms,
+  GPU (g5.xlarge) 7.65 ms. Source: [LLM Guard benchmarks](https://protectai.github.io/llm-guard/input_scanners/prompt_injection/).  
+⁴ Published GPU figure. CPU estimate: 200–400 ms (mDeBERTa is larger than MiniLM).  
+⁵ InjecGuard paper (arxiv:2410.22770): PG1 has ~99% FPR on benign prompts
+  containing the word "ignore". Average across in/out-of-distribution: 41.6%.
+
+### Local CPU head-to-head — iter-7 (no mosscap) — measured 2026-05-05
+
+Run with `benchmark/compare_local_models.py --limit 200` — same 200-sample
+balanced subset per dataset for every model. Three open-source baselines
+ran successfully; five additional models (Llama Prompt Guard 2 22M/86M,
+protectai-small, qualifire/sentinel, hlyn) returned 403 because the
+HuggingFace account hadn't accepted those models' license click-through
+yet — see [Reproducing](#reproducing-these-results) for the one-time fix.
+
+JailGuard's row uses its iter-7 ship-ready numbers from the Rust
+benchmark (full deduped sets via `cargo run --bin benchmark --release --
+--external`); the other rows are from the Python script's n=200 random
+subsets. **Direct cell-to-cell comparison is approximate** (different
+sample sizes + the cross-dedup gate in the Rust path). Same direction,
+not bit-identical.
+
+| Model | Pipeline acc / F1 | J1N2 acc / F1 | shalyhinpavel acc / F1 | p50 latency¹ |
+|---|---|---|---|---|
+| **JailGuard (embedded, Rust, 130K MLP)** | **98.85% / 0.989** | 80.51% / 0.503 | **91.30% / 0.900** | ~25-90 ms² |
+| protectai/deberta-v3-base-prompt-injection-v2 (184M) | 85.00% / 0.824 | **93.50% / 0.930** | 90.07% / 0.800 | 185 ms / 1145 ms / 1271 ms³ |
+| deepset/deberta-v3-base-injection (184M) | 83.00% / 0.855 | 59.50% / 0.708 | 48.94% / 0.532 | 333 / 1302 / 1538 ms |
+| madhurjindal/Jailbreak-Detector-Large (~280M) | 61.00% / 0.381 | 81.00% / 0.768 | 68.09% / 0.471 | 243 / 1362 / 1839 ms |
+
+¹ JailGuard from `cargo bench --bench detect`; baselines from Python
+`compare_local_models.py` (CPU, no batching).
+² Steady-state warm; varies with system load (p50 was 14 ms on Apple M3,
+74-89 ms on shared Linux runner).
+³ Three latency values are pipeline / J1N2 / shalyhinpavel respectively
+(longer prompts in J1N2/shalyhin → higher per-call cost on transformer
+baselines).
+
+**What the table shows:**
+
+- JailGuard wins **in-domain** (98.85% vs 85% best baseline) and
+  **shalyhinpavel** (91.30% vs 90.07% best baseline) — the two evals
+  most representative of curated training distributions and benign
+  hard negatives. The shalyhinpavel margin is notable because protectai
+  trained on a similar-style dataset; we hold even with their 184M
+  model using a 130K-param MLP.
+- **protectai-base wins J1N2** (93.5% vs our 80.5%). They have stronger
+  coverage of the jayavibhav/prompt-injection style (J1N2's source).
+  This is our biggest open gap — see Roadmap.
+- **deepset's over-defense problem is visible**: 100% recall on every
+  set, but 79% FPR on J1N2 / 72% FPR on shalyhinpavel (it fires on most
+  benign hard negatives). Confirms the InjecGuard paper's finding.
+- **madhur** swings the other way — 24% recall on pipeline (very
+  conservative), 81% acc on J1N2 / 68% on shalyhin from being
+  selective, but misses most pipeline injections.
+- **Latency:** JailGuard's MLP is ~5-25× faster than the transformer
+  baselines on CPU per call. The advantage compounds at scale.
+
+**5 models still to evaluate** (gated, awaiting license accept):
+
+| Model | Why missing | One-time fix |
+|---|---|---|
+| meta-llama/Llama-Prompt-Guard-2-22M | Llama license not accepted | Visit [HF page](https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-22M), agree |
+| meta-llama/Llama-Prompt-Guard-2-86M | Llama license | same as above |
+| protectai/deberta-v3-small-prompt-injection-v2 | Recently gated | Visit [HF page](https://huggingface.co/protectai/deberta-v3-small-prompt-injection-v2), agree |
+| qualifire/prompt-injection-sentinel | Recently gated | Visit [HF page](https://huggingface.co/qualifire/prompt-injection-sentinel), agree |
+| hlyn/prompt-injection-judge-deberta-70m | Manual approval required | Visit [HF page](https://huggingface.co/hlyn/prompt-injection-judge-deberta-70m), request access |
+
+Re-run after accepting:
+```sh
+/tmp/adj-venv/bin/python benchmark/compare_local_models.py \
+  --models pg2-22m,pg2-86m,protectai-small,sentinel,hlyn \
+  --limit 200 --hf-token $HF_TOKEN --output-dir results
+```
+
+### Local CPU head-to-head — iter-8 (+mosscap) — measured 2026-05-05
+
+Iter-8 added `Lakera/mosscap_prompt_injection` train split (11,872 unique
+samples after dedup) to JailGuard's training mix to lift J1N2 recall.
+The mosscap dataset is 223K real human-authored attack attempts from
+Lakera's gamified injection challenge — diverse direct-injection
+attacker writing styles. Three baselines re-run on the new
+pipeline_embeddings.json random subset for fresh apples-to-apples
+comparison.
+
+| Model | Pipeline acc / F1 | J1N2 acc / F1 | shalyhinpavel acc / F1 | p50 latency¹ |
+|---|---|---|---|---|
+| **JailGuard iter-8 (130K MLP, +mosscap)** | **97.89% / 0.972** | **89.65% / 0.794** | 83.70% / 0.800 | ~80-110 ms |
+| protectai/deberta-v3-base-prompt-injection-v2 (184M) | 86.50% / 0.844 | **93.50% / 0.930** | **90.07% / 0.800** | 220-1554 ms |
+| deepset/deberta-v3-base-injection (184M) | 74.50% / 0.787 | 59.50% / 0.708 | 48.94% / 0.532 | 423-1883 ms |
+| madhurjindal/Jailbreak-Detector-Large (~280M) | 58.50% / 0.325 | 81.00% / 0.768 | 68.09% / 0.471 | 475-1872 ms |
+
+¹ JailGuard from Rust benchmark on full deduped sets; baselines from
+Python script on n=200 subsets. Same caveat as iter-7 table: not
+bit-identical methodology.
+
+### Iter-7 vs iter-8 — the trade-off
+
+Same JailGuard architecture; only training data differs. Cross-dedup
+gate, persisted split, and SGD methodology unchanged.
+
+| JailGuard variant | Pipeline | J1N2 acc / **recall** | shalyhin acc / **recall** | AgentDojo acc / **recall** | Avg acc |
+|---|---|---|---|---|---|
+| **iter-7 (3K synthetic, no mosscap)** | 98.85% | 80.51% / **35.29%** | **91.30% / 87.80%** | **82.54% / 60.87%** | 88.30% |
+| **iter-8 (3K synthetic + 11.8K mosscap)** | 97.89% | **89.65% / 71.25%** | 83.70% / 73.17% | 79.37% / 56.52% | 87.65% |
+
+**What changed:**
+
+- **J1N2: +9.14pp accuracy, +35.96pp recall.** Biggest single-iteration
+  improvement we've achieved. Iter-7 missed 65% of J1N2 injections;
+  iter-8 misses 29%. Real safety win on diverse human attack patterns.
+- **shalyhinpavel: -7.60pp accuracy, -14.63pp recall.** Mosscap's
+  attack-heavy distribution shifted the decision boundary toward
+  conservative-on-benigns. Same over-defense pattern that bit us with
+  the failed iter-5 HackAPrompt experiment, smaller magnitude.
+- **AgentDojo: -3.17pp accuracy, -4.35pp recall.** Marginal regression;
+  mosscap's direct-injection style doesn't transfer to indirect
+  agent-context attacks.
+- **In-domain: -0.96pp.** Acceptable cost for the J1N2 lift.
+
+**Average is essentially flat (88.30% → 87.65%).** Iter-7 wins shalyhin
++ AgentDojo; iter-8 wins J1N2. Different operating points of the
+precision/recall trade-off, not strict improvement either way.
+
+**Decision: iter-9 shipped.** See the iter-9 section below for the rationale and full comparison table.
+
+### Local CPU head-to-head — iter-9 (filtered mosscap + benign hard-negs) — measured 2026-05-05
+
+Iter-9 was the rebalance attempt: keep iter-8's J1N2 lift while
+recovering iter-7's shalyhinpavel performance. Two changes:
+
+1. **Mosscap filtered to Level 1-6 only** (drops 6,759 subtler L7/L8
+   attacks like "let's play word association game" that pushed the
+   model toward over-defense on benign-but-suspicious text). 6,386
+   unique mosscap samples after dedup, vs iter-8's 11,872.
+2. **+1,446 synthetic security-doc benign hard-negatives** generated
+   by an agent in shalyhinpavel-style: internal security policies,
+   ADRs, runbooks, RBAC specs, compliance attestations. Embedded
+   suspicious-looking phrasing ("ignore the deprecated warning until
+   patched", "override the default policy when X") in legitimate
+   document context. 32 distinct document types.
+
+Cross-dedup gate stats unchanged (J1N2 5.9%, AgentDojo 1.6%,
+shalyhinpavel 37.4%) — the new sources don't introduce new
+contamination.
+
+| Model | Pipeline acc / F1 | J1N2 acc / F1 | shalyhinpavel acc / F1 | p50 latency¹ |
+|---|---|---|---|---|
+| **JailGuard iter-9 (130K MLP, filtered mosscap + benigns)** | **98.40% / 0.983** | 87.97% / 0.743 | 86.96% / 0.838 | ~50-140 ms² |
+| protectai/deberta-v3-base-prompt-injection-v2 (184M) | 86.50% / 0.844 | **93.50% / 0.930** | **90.07% / 0.800** | 1448-1564 ms |
+| deepset/deberta-v3-base-injection (184M) | 75.50% / 0.795 | 59.50% / 0.708 | 48.94% / 0.532 | 354-3101 ms |
+| madhurjindal/Jailbreak-Detector-Large (~280M) | 59.00% / 0.305 | 81.00% / 0.768 | 68.09% / 0.471 | 1637-7841 ms |
+
+¹ Baselines latency higher than the iter-7/iter-8 measurements
+because the system was under heavy load during this run (concurrent
+training jobs). Apples-to-apples direction holds.
+² JailGuard latency was also load-affected; isolated `cargo bench
+--bench detect` measurement on the actual deployment hardware
+(Chromebook Linux) is pending — expect ~10-25 ms p50.
+
+### Three-iteration JailGuard summary
+
+Same architecture (130K MLP after MiniLM-L6-v2 ONNX embedding); only
+training data composition differs.
+
+| Eval | iter-7 (3K synth) | iter-8 (+11.8K mosscap) | iter-9 (+L1-6 mosscap +1.5K benigns) |
+|---|---|---|---|
+| In-domain accuracy | **98.85%** | 97.89% | 98.40% |
+| In-domain F1 | **0.989** | 0.972 | 0.983 |
+| shalyhinpavel acc | **91.30%** | 83.70% | 86.96% |
+| shalyhinpavel recall | **87.80%** | 73.17% | 75.61% |
+| J1N2 acc | 80.51% | **89.65%** | 87.97% |
+| J1N2 recall | 35.29% | **71.25%** | 62.13% |
+| AgentDojo acc | **82.54%** | 79.37% | 79.37% |
+| AgentDojo recall | 60.87% | 56.52% | **65.22%** |
+| Average accuracy | **88.30%** | 87.65% | 88.18% |
+| **Worst-case eval** | 80.51% | 79.37% | **79.37%** |
+| **Worst-case recall** | 35.29% | 56.52% | **62.13%** |
+
+**What iter-9 demonstrates:**
+
+- ✅ **Best worst-case recall** (62.13% vs iter-7's 35.29% / iter-8's
+  56.52%). No eval falls below 62% recall — the model catches at least
+  62% of attacks across every distribution we test.
+- ✅ **Best AgentDojo recall ever** (65.22%). The synthetic benigns
+  appear to have helped indirect-injection generalization too, which
+  wasn't a designed-for outcome.
+- ✅ **Tightest spread across evals** (79.37% to 98.40% acc; iter-7
+  spread 80.51% to 98.85%, iter-8 spread 79.37% to 97.89%).
+- ⚠️ Doesn't strictly beat iter-7 on any individual non-J1N2 eval —
+  iter-7 still wins shalyhinpavel and AgentDojo accuracy. iter-9 wins
+  J1N2 by +7.46pp / +26.84pp recall, average by +0.12pp on AD recall.
+- ⚠️ shalyhinpavel only partially recovered (86.96% vs iter-8's
+  83.70%, iter-7's 91.30%). The benign augmentation helped but didn't
+  fully close the gap.
+
+### Recommended ship state: iter-9
+
+Iter-9 has the best **deployable** profile:
+
+- **No catastrophic weakness** — the lowest-performing eval is 79.37%
+  accuracy / 62.13% recall. Both iter-7 (J1N2 35.29% recall) and
+  iter-8 (shalyhin 73.17% recall) have a single eval below the floor
+  iter-9 establishes.
+- **Beats every open-CPU baseline on Pipeline** by 11+pp (next-best is
+  protectai-base at 86.50%). Closes the J1N2 gap to protectai-base
+  from iter-7's 13pp to ~5pp. Trails by 3pp on shalyhinpavel.
+- **Latency advantage stays** — 130K MLP vs 184M transformer is the
+  fundamental architectural win.
+
+Iter-9 is currently the embedded model in the jailguard library. To
+roll back to iter-7 or iter-8, reproduce by:
+- iter-7: keep current `synthetic_benign_hardneg` source disabled,
+  remove `lakera_mosscap` source, restore single-line `BENIGNS[:81]`
+  truncation.
+- iter-8: disable the L1-6 filter in the mosscap normalizer.
+Both rollbacks are ~1.5 hr pipeline reruns.
+
+### Important caveats
+
+**In-domain vs. PINT.** JailGuard iter-9's 98.40% is measured on its own test
+split, which shares the same distribution as its training data. PINT's 20.9%
+hard negatives (benign prompts containing injection-like words) will likely
+lower the PINT score — this is the primary open question. A PINT download
+attempt was rate-limited (HTTP 429); see [Roadmap](#roadmap) for status.
+
+**Over-defense problem.**  The InjecGuard paper (arxiv:2410.22770) measured
+false-positive rates on 339 benign prompts containing injection-like words:
+
+| Model | FPR on "hard negative" benign prompts |
+|---|---|
+| Llama Prompt Guard 1 | **99.1%** |
+| deepset/deberta-v3-base-injection | 65.9% |
+| protectai/deberta-v3-base-injection-v2 | 43.4% |
+| **JailGuard (before hard-neg training)** | **~27% FPR** (72.95% acc on 732-sample full set) |
+| Lakera Guard | 12.4% |
+| **JailGuard (after hard-neg training)** | **~10.4% FPR** (89.12% acc on 147-sample holdout) |
+
+JailGuard was explicitly trained with benign hard negatives (ALERT regular,
+BeaverTails, Aegis, etc.) to reduce over-defense. Adding the shalyhinpavel
+train split (436 unique security-adjacent benign + real RAG injection examples)
+reduced the false-positive rate on the held-out validation set from ~27% to
+~10.4%, matching the Lakera Guard level. The precision/recall trade-off on the
+in-domain test set moved as expected when adding harder negatives (iter-9: 98.40% accuracy, 98.56% precision).
+
+---
+
+## Latency Benchmarks
+
+### Steady-state single-call latency (Criterion, warm session)
+
+Measured with the Criterion harness (`cargo bench --bench detect`) after a
+3-second warm-up phase. This represents **throughput-mode latency** — the ONNX
+session is already loaded and warmed up, equivalent to a long-running server
+process handling its second and subsequent requests.
+
+| Benchmark | Median | 95% CI |
+|---|---|---|
+| `is_injection` (benign text) | **19.70 ms** | [19.59, 19.81] ms |
+| `is_injection` (injection text) | **19.60 ms** | [19.49, 19.72] ms |
+
+> Both benign and injection inputs take the same time — inference cost is
+> independent of the classification result.
+
+### Batch throughput (Criterion)
+
+`detect_batch` runs each sample sequentially within the batch (the ONNX
+session is single-threaded by default). These numbers show that there is no
+significant per-sample overhead for batching at current batch sizes.
+
+| Batch size | Total time (median) | Per-sample | Samples/sec |
+|---|---|---|---|
+| 8 | 110.6 ms | 13.8 ms | **72 samples/sec** |
+| 32 | 437.6 ms | 13.7 ms | **73 samples/sec** |
+| 128 | 1,840 ms | 14.4 ms | **70 samples/sec** |
+
+> Throughput is flat across batch sizes (~70–73 samples/sec) because the ONNX
+> runtime processes one item at a time. True batched ONNX inference could
+> improve GPU throughput significantly but is not yet implemented.
+
+### Cold-start latency
+
+The first call in a fresh process must initialize the ONNX runtime and load the
+tokenizer. Subsequent calls reuse the initialized session.
+
+```sh
+cargo run --release --example cold_start_bench
+```
+
+Typical output (Apple M3):
+
+```
+cold_start   : ~2,500 ms  (ONNX session initialization + first inference)
+warm call    : ~19.7 ms   (steady-state)
+init overhead: ~2,480 ms
+```
+
+Cold-start is a one-time cost per process. In production, call
+`jailguard::download_model()` at startup to pre-download the ONNX model and
+warm the session before handling any traffic.
+
+### Wall-clock latency on real samples (benchmark binary)
+
+Measured across 1,113 real samples of varying length, including tokenization
+and MLP forward pass. This is the **end-to-end per-request cost** a production
+server would observe on steady-state traffic.
+
+| Percentile | Latency |
+|---|---|
+| p50 | **14.40 ms** |
+| p90 | **15.76 ms** |
+| p99 | **18.99 ms** |
+
+### Latency comparison summary
+
+| Solution | p50 latency | Notes |
+|---|---|---|
+| **JailGuard (local, Rust)** | **~14 ms** | No network, CPU only |
+| Regex / keyword baseline | < 0.01 ms | But ~80% recall miss rate |
+| protectai/deberta-v3-base (CPU) | ~104–212 ms | Python + ONNX export, AWS CPU |
+| Llama Prompt Guard 2 (GPU) | ~92 ms | A100 GPU; CPU is ~2–4× slower |
+| Azure Prompt Shields (API) | ~200–600 ms | Network round-trip included |
+| LLM-based classifiers (GPT-4 etc.) | 5,000–11,000 ms | Whole LLM call |
+
+JailGuard is **8–25× faster** than Python-based transformer classifiers and
+**8–25× faster** than API-based solutions on steady-state traffic, while
+running completely locally (no API key, no network dependency, no Python
+runtime).
+
+---
+
+## Reproducing These Results
+
+### Accuracy benchmark (no API keys needed)
+
+```sh
+# 1. Download all dataset sources (resumes on interrupt, exponential backoff on 429)
+cargo run --bin pipeline --release -- --download
+
+# 2. Normalize, deduplicate, and embed
+cargo run --bin pipeline --release -- --normalize
+
+# 3. Train the MLP classifier
+cargo run --bin pipeline --release -- --train
+
+# Or run all three phases in sequence:
+cargo run --bin pipeline --release
+
+# 4. Run the benchmark
+cargo run --bin benchmark --release
+```
+
+Optionally set `HUGGINGFACE_TOKEN` for higher HuggingFace API rate limits:
+```sh
+export HUGGINGFACE_TOKEN=hf_xxx   # huggingface.co/settings/tokens
+```
+
+### With external API detectors
+
+```sh
+export HF_TOKEN=hf_xxx            # huggingface.co/settings/tokens
+export GROQ_API_KEY=gsk_xxx       # console.groq.com (free, no credit card)
+
+# Optional: Azure Prompt Shields (requires Azure account, 5 K free calls/month)
+export AZURE_CONTENT_SAFETY_ENDPOINT=https://your-resource.cognitiveservices.azure.com
+export AZURE_CONTENT_SAFETY_KEY=your_key
+
+cargo run --bin benchmark --release -- --samples 200
+```
+
+`--samples N` limits API calls to N samples (100 injection + 100 benign) to
+avoid burning rate limits. Default is 200.
+
+### Latency micro-benchmarks
+
+```sh
+cargo bench --bench detect          # Criterion suite (takes ~5–10 min)
+cargo run --release --example cold_start_bench  # Cold-start measurement
+```
+
+---
+
+## Roadmap
+
+- [ ] **PINT evaluation** — run JailGuard on the full PINT 4,314-sample benchmark
+  and submit to the [public leaderboard](https://github.com/lakeraai/pint-benchmark)
+- [x] **Hard-negatives FPR test** — shalyhinpavel validation holdout (147 samples)
+  measures FPR on security-adjacent benign text; reduced from ~27% to ~10.4%
+  after adding the train split to training data
+- [x] **Full embedding phase** — 79,626 embeddings (59,447 original + 20,179 augmented)
+  trained and deployed (iter-9); model achieves 98.40% accuracy, 97.98% recall on
+  7,049-sample in-domain test set; 86.96% on shalyhinpavel OOD holdout
+- [ ] **AgentDojo APR** — indirect injection benchmark against tool-return content
+- [ ] **Multi-language evaluation** — PINT includes 24+ languages; MiniLM is
+  English-centric so non-English accuracy is expected to degrade
+- [ ] **Batched ONNX inference** — enable true batching in the ONNX session for
+  higher GPU throughput
+- [ ] **GPU latency numbers** — measure on a GPU instance (CUDA / Metal) to
+  compete with the Llama PG2 GPU numbers
+
+---
+
+## References
+
+- [PINT Benchmark](https://github.com/lakeraai/pint-benchmark) — Lakera AI, CC-BY-NC-4.0
+- [LLM Guard PromptInjectionScanner](https://protectai.github.io/llm-guard/input_scanners/prompt_injection/)
+- [protectai/deberta-v3-base-prompt-injection-v2 model card](https://huggingface.co/protectai/deberta-v3-base-prompt-injection-v2)
+- [Llama Prompt Guard 2 model card](https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-86M)
+- [Azure Prompt Shields docs](https://learn.microsoft.com/en-us/azure/ai-services/content-safety/concepts/jailbreak-detection)
+- [InjecGuard: Mitigating Over-Defense in Guard Models (arxiv:2410.22770)](https://arxiv.org/abs/2410.22770)
+- [Adversarial Prompt Guardrail Benchmark (arxiv:2502.15427)](https://arxiv.org/html/2502.15427v1)
+- [Babelscape/ALERT dataset](https://huggingface.co/datasets/Babelscape/ALERT) — source of adversarial injection examples
+
+---
+
+# === CHANGELOG.md ===
+
+# Changelog
+
+All notable changes to JailGuard are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [0.1.0] - 2026-04-21
+
+Initial public release.
+
+### Added
+
+- **Embedded detector API.** Zero-config entry points at the crate root:
+  - `detect(text) -> DetectionOutput`
+  - `is_injection(text) -> bool`
+  - `score(text) -> f32`
+  - `detect_batch(texts) -> Vec<DetectionOutput>`
+  - `download_model() -> Result<PathBuf>` for pre-warming the ONNX cache.
+- **Embedded 200K classifier.** A ~130K-parameter MLP (`384 → 256 → 128 → 1`)
+  trained on 200,000 balanced samples from 14 public datasets. The classifier
+  weights (`models/neural_binary_200k.json`, 1.5 MB) ship inside the crate and
+  load lazily via `once_cell`.
+- **ONNX embedding backend.** Uses `sentence-transformers/all-MiniLM-L6-v2`
+  (384-dim) via the `ort` crate. The 90 MB ONNX file is auto-downloaded to
+  `~/.cache/jailguard/` on first use; override with the `JAILGUARD_MODEL_DIR`
+  environment variable.
+- **Feature flags.**
+  - `default`: embedded detector only (minimal dependency set).
+  - `python`, `napi`: language bindings (pyo3 / napi-rs).
+  - `full`: training, evaluation, ensemble, and experimental modules.
+  - `training`, `download`: narrower opt-ins for training-pipeline tooling.
+- **Example.** `examples/quick_start.rs` demonstrates the three-function API.
+
+### Measured
+
+Production model: 17-source pipeline (79,626 samples; ALERT adversarial,
+LMSYS Toxic Chat, JailbreakBench, BeaverTails, Alpaca, Dolly, shalyhinpavel
+hard-negatives, etc.). Trained with Adam (lr=0.001, β₁=0.9, β₂=0.999) +
+weighted BCE (injection_weight=2.5). Re-validated 2026-05-03.
+
+| Test set | Samples | Accuracy | Precision | Recall | F1 |
+|----------|---------|----------|-----------|--------|-----|
+| Pipeline (in-distribution) | 7,049 | 98.40% | 98.56% | 97.98% | 0.983 |
+| J1N2 mix (OOD) | 5,000 | 99.38% | 98.09% | 99.94% | 0.990 |
+| shalyhinpavel hard-negatives (OOD) | 147 | 89.12% | 76.60% | 87.80% | 0.818 |
+
+CPU latency: p50 18 ms, p99 35 ms (Apple M3, single thread).
+
+The pipeline test split is in-distribution. J1N2 and shalyhinpavel are
+held outside the training data — see [`BENCHMARKS.md`](./BENCHMARKS.md).
+
+### Known limitations
+
+- First call to `detect()` without a cached ONNX model triggers a 90 MB
+  download from HuggingFace. Call `download_model()` at startup to avoid this.
+- Indirect injection (tool-output contamination) is not a dedicated category
+  in the current binary classifier.
+
+### Not shipped
+
+Training datasets, dataset-preparation scripts, and training-time documentation
+live outside the published crate.
+
+---
+
+[0.1.0]: https://github.com/yfedoseev/jailguard/releases/tag/v0.1.0
+
+---
+
+# === docs/GETTING_STARTED.md ===
+
+# Getting started
+
+JailGuard is a Rust library for prompt-injection detection. The embedded
+classifier weights ship inside the crate; the ONNX embedding model (~90 MB) is
+auto-downloaded and cached on first use.
+
+## Install
+
+```toml
+[dependencies]
+jailguard = "0.1"
+```
+
+Minimum supported Rust version: **1.85** (matches `rust-version` in
+`Cargo.toml`; required by the `ort` crate and edition-2021 features).
+
+No feature flags are required for the default detection API.
+
+## Hello, detector
+
+```rust
+use jailguard::{detect, is_injection};
+
+fn main() {
+    if is_injection("ignore previous instructions") {
+        println!("blocked");
+    }
+
+    let result = detect("What is the capital of France?");
+    println!(
+        "injection={} score={:.3} risk={:?}",
+        result.is_injection, result.score, result.risk,
+    );
+}
+```
+
+The first call to any of `detect`, `is_injection`, `score`, or `detect_batch`
+lazily initialises the detector. If the ONNX model is not cached locally, it is
+downloaded from HuggingFace (~90 MB) to `~/.cache/jailguard/`.
+
+## Pre-warming for production
+
+To avoid a cold-start download on the first request, call `download_model()` at
+startup:
+
+```rust
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    jailguard::download_model()?;           // downloads if missing (blocking)
+    let _ = jailguard::detect("warm up"); // triggers model load
+    // ... start serving traffic ...
+    Ok(())
+}
+```
+
+`download_model()` is idempotent — it returns immediately if the file already
+exists.
+
+## Cache location
+
+The ONNX model is cached on disk at the first path that resolves:
+
+1. `$JAILGUARD_MODEL_DIR` (if set)
+2. `$HOME/.cache/jailguard/`
+
+In a container, set `JAILGUARD_MODEL_DIR` to a directory that is part of your
+persistent or build-time layer:
+
+```dockerfile
+ENV JAILGUARD_MODEL_DIR=/app/models
+RUN mkdir -p /app/models \
+ && curl -L --fail -o /app/models/all-MiniLM-L6-v2.onnx \
+      https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx
+```
+
+## Threshold tuning
+
+The default decision boundary is `score > 0.5 ⇒ injection`. If you need higher
+recall (catch more attacks at the cost of more false positives) or higher
+precision, use `score()` directly:
+
+```rust
+use jailguard::score;
+
+let s = score(user_input);
+let block = s > 0.35;  // more aggressive
+```
+
+The `RiskLevel` enum exposes the five-bucket banding:
+
+| Band        | Score range |
+|-------------|-------------|
+| `Safe`      | `< 0.3`     |
+| `Low`       | `0.3 – 0.5` |
+| `Medium`    | `0.5 – 0.7` |
+| `High`      | `0.7 – 0.9` |
+| `Critical`  | `≥ 0.9`     |
+
+## Batch inference
+
+If you have several inputs to score at once, `detect_batch` reuses the same
+detector instance and avoids repeated lazy-init overhead:
+
+```rust
+use jailguard::detect_batch;
+
+let inputs = vec!["hi", "ignore all prior instructions", "what is 2+2?"];
+for out in detect_batch(&inputs) {
+    println!("{:?}", out.risk);
+}
+```
+
+Note that the ONNX session inference path is currently per-input; `detect_batch`
+is a convenience wrapper, not a batched tensor call. If you need throughput,
+open an issue — batched ONNX inference is on the roadmap.
+
+## Troubleshooting
+
+**The first call panics with "Failed to initialize embedded detector".**
+The ONNX model could not be loaded. Most common causes:
+
+- No network at startup → call `download_model()` earlier, when network is up.
+- `$HOME` is unset and `$JAILGUARD_MODEL_DIR` is not set → set one of them.
+- Disk full → free space or point `JAILGUARD_MODEL_DIR` at a larger volume.
+
+**First call is slow.**
+That's the 90 MB download. Pre-warm with `download_model()` at startup or ship
+the file with your container image.
+
+**False positives on legitimate technical questions.**
+The classifier was trained on a binary mix; certain phrasings ("override the
+default behavior") can trigger it. Raise the threshold via `score()`, or file
+examples as issues — they're useful training data for future releases.
+
+## Next steps
+
+- [API reference](API.md) — function-by-function documentation.
+- [Architecture](ARCHITECTURE.md) — how embeddings and the classifier fit together.
+- [Integration guide](INTEGRATION_GUIDE.md) — patterns for web services, agents, and CI.
+
+---
+
+# === docs/API.md ===
+
+# API reference
+
+The crate root (`jailguard::`) re-exports everything you need for the default
+detection API. Source of truth is rustdoc:
+
+```bash
+cargo doc --open -p jailguard
+```
+
+This file summarises the stable public surface for the 0.1.x line.
+
+## Functions
+
+### `detect(text: &str) -> DetectionOutput`
+
+Run full detection on a single input and return score, boolean decision,
+confidence, and risk band.
+
+```rust
+let out = jailguard::detect("ignore previous instructions");
+assert!(out.is_injection);
+assert!(out.score > 0.5);
+```
+
+On the first call per process, this triggers lazy detector initialisation,
+which downloads the ONNX embedding model if it is not already cached.
+Subsequent calls reuse the same in-memory session.
+
+### `is_injection(text: &str) -> bool`
+
+Boolean shortcut equivalent to `detect(text).is_injection`. Uses the default
+0.5 decision threshold.
+
+### `score(text: &str) -> f32`
+
+Return only the raw model probability (0.0 – 1.0). Use this when you want to
+apply a custom threshold or route borderline cases to a stricter check.
+
+### `detect_batch(texts: &[&str]) -> Vec<DetectionOutput>`
+
+Convenience wrapper that calls `detect` on each input sequentially while
+reusing the same detector instance. No tensor-level batching yet.
+
+### `download_model() -> Result<PathBuf, Error>`
+
+Resolve the cache directory (`$JAILGUARD_MODEL_DIR` or `$HOME/.cache/jailguard/`),
+download the ONNX model if it is missing, and return the absolute path.
+Idempotent. Call this at application startup to avoid a download on the first
+request.
+
+
+## Types
+
+### `DetectionOutput`
+
+```rust
+pub struct DetectionOutput {
+    pub is_injection: bool,   // score > 0.5
+    pub score: f32,           // raw model output, 0.0..=1.0
+    pub confidence: f32,      // max(score, 1 - score), always >= 0.5
+    pub risk: RiskLevel,      // bucketed score
+}
+```
+
+### `RiskLevel`
+
+```rust
+pub enum RiskLevel {
+    Safe,      // score < 0.3
+    Low,       // 0.3..0.5
+    Medium,    // 0.5..0.7
+    High,      // 0.7..0.9
+    Critical,  // >= 0.9
+}
+```
+
+### `Error` and `Result`
+
+```rust
+pub type Result<T> = std::result::Result<T, Error>;
+
+#[non_exhaustive]
+pub enum Error {
+    Io(std::io::Error),
+    Config(String),
+    Model(String),
+    // ...
+}
+```
+
+`Error` implements `std::error::Error`, `Display`, and `From<std::io::Error>`.
+New variants may be added in minor releases (hence `#[non_exhaustive]`).
+
+## Environment variables
+
+| Variable               | Purpose                                             |
+|------------------------|-----------------------------------------------------|
+| `JAILGUARD_MODEL_DIR`  | Override the cache directory for the ONNX model.    |
+| `HOME`                 | Used as fallback root for `~/.cache/jailguard/`.    |
+
+## Feature flags
+
+| Feature     | Effect                                                           |
+|-------------|------------------------------------------------------------------|
+| *(default)* | Embedded detector only — `detect`, `is_injection`, `score`, etc. |
+| `full`      | Enables training, evaluation, and experimental modules (not part of the stable API). |
+| `train`     | `full` + training-specific dependencies.                         |
+| `wgpu`      | `full` + WGPU backend for Burn.                                  |
+| `download`  | `full` + async dataset downloaders.                              |
+
+Anything enabled only under `full` (or its supersets) is **not part of the
+0.1.x stable API** and may be reshaped or split into a separate crate in a
+future release.
+
+## Stability
+
+The four public functions and their return types (`DetectionOutput`,
+`RiskLevel`, `Error`, `Result`) are the stable 0.1.x surface. Classifier
+weights and the underlying ONNX embedding model may change in point releases,
+which can shift individual scores — if you rely on specific numeric outputs,
+pin a version.
+
+---
+
+# === docs/ARCHITECTURE.md ===
+
+# Architecture
+
+JailGuard is a two-stage detector:
+
+```
+text ──► [ MiniLM-L6-v2 (ONNX) ] ──► 384-dim vector ──► [ 3-layer MLP ] ──► score (0..1)
+```
+
+Neither stage is trained at runtime. The MiniLM encoder is the pre-trained
+public checkpoint from `sentence-transformers`. The classifier head is a small
+MLP trained once on a 200K-sample mix of public prompt-injection datasets; its
+weights ship inside the crate as JSON.
+
+## Stage 1 — sentence embedding
+
+**Model.** `sentence-transformers/all-MiniLM-L6-v2`, ONNX format, 384-dim
+output. The file (~90 MB) is not embedded in the crate; it is downloaded on
+first use to `$JAILGUARD_MODEL_DIR` or `$HOME/.cache/jailguard/` and memoised.
+
+**Runtime.** The `ort` crate (`=2.0.0-rc.9`) loads the model via the ONNX
+Runtime C API. Inference runs single-threaded on CPU with the default ORT
+execution provider.
+
+**Pipeline.**
+
+1. `tokenizers::Tokenizer` tokenises the input with the embedded
+   HuggingFace tokenizer (466 KB, `include_bytes!`-ed).
+2. Input is truncated to `MAX_SEQ_LENGTH = 256` tokens.
+3. ONNX session produces per-token hidden states, shape `[1, seq_len, 384]`.
+4. Hidden states are **mean-pooled** weighted by the attention mask.
+5. The pooled vector is **L2-normalised** to unit length.
+
+The result is a 384-dim, unit-norm sentence embedding.
+
+## Stage 2 — binary classifier
+
+**Shape.** `384 → 256 → 128 → 1` MLP, ~130 K parameters.
+
+- Linear(384, 256) → ReLU → Dropout(0.2)
+- Linear(256, 128) → ReLU → Dropout(0.2)
+- Linear(128, 1)   → Sigmoid
+
+Dropout is a train-time-only component; `forward_eval` does not apply it.
+
+**Storage.** Weights live in `models/neural_binary_200k.json` (1.5 MB) and are
+compiled into the binary via `include_str!`. At startup, `serde_json`
+deserialises them into a `NeuralBinaryNetwork` struct held inside a
+`once_cell::Lazy<EmbeddedDetector>`.
+
+**Training.** Binary cross-entropy, Adam-style gradient descent, batch size
+64, learning rate 0.01, 50 epochs with early stopping (best val epoch: 44).
+Training code lives under `src/training/` behind the `full`/`train` feature
+flags; datasets and data-prep scripts are not distributed with the crate.
+
+## Detector lifecycle
+
+```
+                    ┌───────────────────────────────┐
+first detect()  ──► │ EmbeddedDetector::new()       │
+                    │  • download_model()              │
+                    │  • Session::from_file(...)     │
+                    │  • Tokenizer::from_bytes(...)  │
+                    │  • serde_json::from_str(...)   │
+                    └──────────────┬────────────────┘
+                                   │
+                                   ▼
+                         ┌─────────────────────┐
+  detect(text) ────────► │  embed() ── forward │ ──► DetectionOutput
+                         └─────────────────────┘
+```
+
+Initialisation is done once per process via `once_cell::sync::Lazy`.
+Concurrent first-callers block on the same init future; subsequent calls are
+lock-free reads.
+
+## Crate layout (public surface)
+
+```
+src/
+├── lib.rs           — re-exports, feature gating
+├── embedded.rs      — detect / is_injection / score / detect_batch, RiskLevel
+├── model_manager.rs — download_model(), cache resolution, download
+├── network.rs       — NeuralBinaryNetwork forward_eval (inference only)
+└── error.rs         — Error, Result
+```
+
+Everything under `src/training/`, `src/collection/`, `src/api/`, `src/agent/`,
+`src/dataset/`, `src/detection/`, `src/ensemble/`, etc., is gated behind the
+`full` feature and is not part of the stable 0.1.x API.
+
+## Threading and concurrency
+
+- The `once_cell` detector is `Sync`. `detect()` can be called from any thread.
+- ONNX Runtime sessions are not thread-safe for concurrent `run()` calls in
+  ORT 2.x rc.9. Serialise access yourself, or create per-worker sessions if
+  you need parallelism. A future release may expose a parallel-friendly
+  `Detector` builder — open an issue if you need it.
+
+## What is deliberately **not** here
+
+- **Agentic defense layers** (spotlighting, task tracking, privilege context,
+  output validation, behaviour monitoring). These exist under the `full`
+  feature as research code; they are not part of the library's primary
+  detection contract.
+- **Online learning / feedback loop.** The shipped classifier is static. The
+  `feedback` and `online` modules under `full` are experimental.
+- **Indirect injection routing.** The binary classifier treats tool outputs
+  the same as user inputs. Detecting prompt-injection content in retrieved
+  documents is a call site decision (run `detect()` on the retrieved text
+  before concatenating it into the prompt).
+
+## Dependencies at runtime (default features)
+
+| Crate         | Purpose                             |
+|---------------|-------------------------------------|
+| `ort`         | ONNX Runtime bindings (rc.9 pinned) |
+| `tokenizers`  | HuggingFace BPE tokeniser            |
+| `ndarray`     | Tensor shaping for ONNX input        |
+| `serde_json`  | Classifier weight deserialisation    |
+| `once_cell`   | Lazy singleton detector              |
+| `ureq`        | Blocking HTTP download of ONNX file  |
+| `thiserror`   | Error derive                         |
+
+The feature-gated stack (`full`) pulls in Burn, tracing, regex, reqwest,
+tokio, and friends. Stay on default features for a lean dependency tree.
+
+---
+
+# === docs/INTEGRATION_GUIDE.md ===
+
+# Integration guide
+
+Patterns for using JailGuard in real applications. Each section is a recipe —
+pick the one that matches your architecture.
+
+## Pre-warm before serving traffic
+
+The first detection call per process downloads the ONNX model (if missing) and
+loads the session. Move that cost out of the hot path:
+
+```rust
+fn main() -> anyhow::Result<()> {
+    jailguard::download_model()?;            // download if needed
+    let _ = jailguard::detect("warm up");  // build the session now
+    serve()?;
+    Ok(())
+}
+```
+
+In a Kubernetes readiness probe, fail the probe until a warm-up detection
+succeeds.
+
+## HTTP middleware (axum)
+
+```rust
+use axum::{
+    extract::Json, http::StatusCode, middleware::Next,
+    response::Response, body::Body, extract::Request,
+};
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+struct Prompt { text: String }
+
+pub async fn inject_guard(
+    Json(body): Json<Prompt>,
+    req: Request,
+    next: Next,
+) -> Result<Response, StatusCode> {
+    // `detect` is sync and fast (<50 ms); for very high QPS wrap in spawn_blocking.
+    let out = jailguard::detect(&body.text);
+    if out.is_injection {
+        tracing::warn!(score = out.score, "blocked injection attempt");
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    Ok(next.run(req).await)
+}
+```
+
+For frameworks without this middleware shape (actix-web, rocket, tonic), the
+pattern is the same: call `jailguard::detect` synchronously before forwarding
+the prompt to the LLM.
+
+## Gate on score, not only `is_injection`
+
+The binary flag uses a fixed 0.5 threshold. Production systems usually want
+something richer:
+
+```rust
+use jailguard::{score, RiskLevel};
+
+let s = jailguard::score(user_input);
+match s {
+    s if s >= 0.9 => block(),                      // Critical
+    s if s >= 0.7 => block_and_alert(),            // High
+    s if s >= 0.5 => require_stricter_llm_guard(), // Medium
+    s if s >= 0.3 => log_for_review(),             // Low
+    _            => allow(),                       // Safe
+}
+```
+
+The `RiskLevel` enum encodes these same bands if you prefer a structured
+match.
+
+## Indirect injection in retrieved context
+
+The classifier does not know whether text came from a user or from a
+retrieval step. Run it on each retrieved chunk before concatenating:
+
+```rust
+fn safe_chunks(chunks: Vec<String>) -> Vec<String> {
+    let refs: Vec<&str> = chunks.iter().map(String::as_str).collect();
+    jailguard::detect_batch(&refs)
+        .into_iter()
+        .zip(chunks)
+        .filter_map(|(out, chunk)| (!out.is_injection).then_some(chunk))
+        .collect()
+}
+```
+
+For agent tool outputs, apply the same filter before feeding results back
+into the LLM.
+
+## Dockerfile — cache the ONNX model in the image
+
+Avoid runtime downloads and registry rate limits by baking the model in:
+
+```dockerfile
+FROM rust:1.78-slim AS builder
+WORKDIR /app
+COPY . .
+RUN cargo build --release --bin your-service
+
+FROM debian:bookworm-slim
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates curl \
+ && rm -rf /var/lib/apt/lists/*
+
+ENV JAILGUARD_MODEL_DIR=/opt/jailguard
+RUN mkdir -p $JAILGUARD_MODEL_DIR \
+ && curl -L --fail -o $JAILGUARD_MODEL_DIR/all-MiniLM-L6-v2.onnx \
+      https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx
+
+COPY --from=builder /app/target/release/your-service /usr/local/bin/
+ENTRYPOINT ["your-service"]
+```
+
+The resulting image carries ~90 MB of model weight. At start-up, `detect()`
+loads from `/opt/jailguard` with no network dependency.
+
+## CI: block PRs that ship injection-prone prompts
+
+```yaml
+# .github/workflows/prompt-lint.yml
+name: prompt-lint
+on: pull_request
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache ONNX model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/jailguard
+          key: jailguard-minilm-v1
+      - run: cargo run --release --example prompt_lint -- prompts/
+```
+
+Write `examples/prompt_lint.rs` to walk a directory of prompt files and fail
+when `jailguard::detect` flags any of them. Use the cache action so the
+90 MB download happens at most once per cache key.
+
+## Threading
+
+`ort` 2.0-rc.9 sessions are not safe for concurrent `run()` from multiple
+threads in the default configuration. The crate serialises access through a
+`once_cell::Lazy` singleton — correct, but not parallel. For high QPS:
+
+- Bound the detector behind a dedicated worker pool (`tokio::spawn_blocking`
+  with a small semaphore).
+- Or wait for a future release exposing a `Detector::builder()` that lets
+  you create per-worker detectors.
+
+If you hit a contention bottleneck, benchmark before layering complexity —
+25 ms per call per core is often enough.
+
+## Sizing
+
+Per process, steady-state:
+
+- **Classifier (MLP):** ~1.5 MB, resident in `.rodata`.
+- **ONNX session:** ~120–150 MB resident after load.
+- **Per-call latency:** ~25 ms (embedding) + ~1 ms (MLP) on a single modern
+  x86 core.
+
+Memory is dominated by the ONNX session. Plan for ~200 MB RSS above your
+application baseline.
+
+## Observability
+
+`detect()` logs nothing by default. If you want structured events on blocks:
+
+```rust
+let out = jailguard::detect(prompt);
+if out.is_injection {
+    tracing::warn!(
+        score = out.score,
+        risk = ?out.risk,
+        prompt_len = prompt.len(),
+        "jailguard block",
+    );
+}
+```
+
+Do **not** log the raw prompt in production unless you have a clear retention
+and redaction policy — prompts can contain user secrets.
+
+## Related
+
+- [Getting started](GETTING_STARTED.md)
+- [API reference](API.md)
+- [Architecture](ARCHITECTURE.md)

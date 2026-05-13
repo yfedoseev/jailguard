@@ -4,12 +4,12 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.85"
 license = "MIT OR Apache-2.0"
-description = "Prompt injection and jailbreak defense using neural networks"
+description = "Pure-Rust prompt-injection detector with 1.5MB embedded ONNX model. 98.40% accuracy, p50 14ms CPU inference, 8-class attack taxonomy. Apache-2.0/MIT alternative to Rebuff and Lakera Guard."
 repository = "https://github.com/yfedoseev/jailguard"
 readme = "README.md"
 documentation = "https://docs.rs/jailguard"
-keywords = ["security", "llm", "prompt-injection", "jailbreak", "ai-safety"]
-categories = ["security", "machine-learning"]
+keywords = ["prompt-injection", "llm-security", "guardrails", "jailbreak-detection", "onnx"]
+categories = ["text-processing", "science"]
 
 # Only the embedded-detector sources ship on crates.io.
 # Feature-gated modules (src/training and the full-feature surface)

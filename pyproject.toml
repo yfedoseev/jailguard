@@ -5,19 +5,41 @@ build-backend = "maturin"
 [project]
 name = "jailguard"
 version = "0.1.0"
-description = "Fast prompt injection detection — Rust-powered, CPU-only, no GPU required"
+description = "Pure-Rust prompt-injection detector with 1.5MB embedded ONNX model. 98.40% accuracy, p50 14ms CPU inference. Apache-2.0/MIT alternative to Rebuff (archived 2025) and Lakera Guard."
 readme = "README.md"
 license = { text = "MIT OR Apache-2.0" }
 requires-python = ">=3.8"
-keywords = ["security", "llm", "prompt-injection", "jailbreak", "ai-safety"]
+keywords = [
+    "prompt-injection",
+    "prompt-injection-detection",
+    "llm-security",
+    "ai-security",
+    "guardrails",
+    "jailbreak-detection",
+    "rebuff-alternative",
+    "lakera-alternative",
+    "onnx",
+    "llm-firewall",
+    "ai-safety",
+    "machine-learning",
+]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
     "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Security",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 

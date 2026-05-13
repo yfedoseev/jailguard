@@ -1,0 +1,35 @@
+# JailGuard
+
+> JailGuard is a pure-Rust prompt-injection detector with a 1.5 MB
+> embedded ONNX classifier. 98.40% accuracy on a 7,049-sample held-out
+> test set, p50 14 ms CPU inference on Apple M3, 8-class attack
+> taxonomy. Bindings for Rust, Python, JavaScript, and Go. Dual-licensed
+> Apache-2.0 OR MIT.
+
+## Quickstart
+
+- [Rust](https://github.com/yfedoseev/jailguard/blob/main/docs/GETTING_STARTED.md): `cargo add jailguard` — three functions: `detect()`, `is_injection()`, `score()`.
+- [Python](https://github.com/yfedoseev/jailguard/blob/main/python/README.md): `pip install jailguard` — same surface via pyo3 + maturin.
+- [JavaScript / TypeScript](https://github.com/yfedoseev/jailguard/blob/main/js/README.md): `npm install @jailguard/jailguard` — prebuilt napi addons ship in the tarball, no Rust toolchain needed.
+- [Go](https://github.com/yfedoseev/jailguard/blob/main/go/README.md): `go get github.com/yfedoseev/jailguard/go` then `go run github.com/yfedoseev/jailguard/go/cmd/install@latest` — CGo + purego backends.
+
+## Reference
+
+- [API reference](https://github.com/yfedoseev/jailguard/blob/main/docs/API.md): full function signatures, error codes, `RiskLevel` enum, `DetectionOutput` struct.
+- [Architecture](https://github.com/yfedoseev/jailguard/blob/main/docs/ARCHITECTURE.md): MiniLM-L6-v2 embedder → 130K-parameter MLP → 8-class output.
+- [Integration guide](https://github.com/yfedoseev/jailguard/blob/main/docs/INTEGRATION_GUIDE.md): wrapping LLM calls, middleware patterns, threshold tuning.
+
+## Benchmarks
+
+- [BENCHMARKS.md](https://github.com/yfedoseev/jailguard/blob/main/BENCHMARKS.md): methodology, dataset composition (17 public HF datasets, 70,479 normalized samples), per-platform latencies, head-to-head vs `protectai/deberta-v3-base-prompt-injection-v2`, `deepset/deberta-v3-base-injection`, and `madhurjindal/Jailbreak-Detector-Large`.
+
+## Agent guidance
+
+- [AGENTS.md](https://github.com/yfedoseev/jailguard/blob/main/AGENTS.md): build/test commands, project structure, code style, feature flags, release flow. Linux Foundation AGENTS.md spec.
+
+## Optional
+
+- [CHANGELOG](https://github.com/yfedoseev/jailguard/blob/main/CHANGELOG.md): release notes in Keep-a-Changelog format.
+- [CONTRIBUTING](https://github.com/yfedoseev/jailguard/blob/main/CONTRIBUTING.md): development setup, lint rules, PR guidelines.
+- [SECURITY](https://github.com/yfedoseev/jailguard/blob/main/SECURITY.md): vulnerability reporting, response SLA.
+- [CITATION.cff](https://github.com/yfedoseev/jailguard/blob/main/CITATION.cff): citation metadata.

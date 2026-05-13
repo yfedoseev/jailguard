@@ -92,3 +92,4 @@ examples/python/*/__pycache__/
 examples/go/*/go.sum
 /go/install
 /go/cmd/install/install
+docs/seo/
