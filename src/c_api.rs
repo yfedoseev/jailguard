@@ -142,7 +142,7 @@ unsafe fn cstr_to_str<'a>(text: *const c_char) -> Result<&'a str, c_int> {
     cstr.to_str().map_err(|_| JAILGUARD_INVALID_INPUT)
 }
 
-fn fill_result(out: &mut jailguard_detection_result_t, r: embedded::DetectionOutput) {
+fn fill_result(out: &mut jailguard_detection_result_t, r: &embedded::DetectionOutput) {
     out.is_injection = c_int::from(r.is_injection);
     out.score = r.score;
     out.confidence = r.confidence;
@@ -151,7 +151,7 @@ fn fill_result(out: &mut jailguard_detection_result_t, r: embedded::DetectionOut
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
-/// Return the JailGuard library version string (matches `Cargo.toml`).
+/// Return the `JailGuard` library version string (matches `Cargo.toml`).
 ///
 /// The returned pointer is to a static, NUL-terminated string and must
 /// not be freed.
@@ -182,9 +182,8 @@ pub extern "C" fn jailguard_download_model() -> c_int {
 /// [`jailguard_free_string`]. Returns null on internal error.
 #[unsafe(no_mangle)]
 pub extern "C" fn jailguard_model_cache_dir() -> *mut c_char {
-    let dir = match crate::model_manager::cache_dir_string() {
-        Ok(d) => d,
-        Err(_) => return std::ptr::null_mut(),
+    let Ok(dir) = crate::model_manager::cache_dir_string() else {
+        return std::ptr::null_mut();
     };
     match CString::new(dir) {
         Ok(cs) => cs.into_raw(),
@@ -192,7 +191,7 @@ pub extern "C" fn jailguard_model_cache_dir() -> *mut c_char {
     }
 }
 
-/// Free a string returned by the JailGuard C API.
+/// Free a string returned by the `JailGuard` C API.
 ///
 /// SAFETY: `s` must have been returned by a `jailguard_*` function that
 /// documents its return value as caller-owned. Must not be called twice
@@ -229,7 +228,7 @@ pub unsafe extern "C" fn jailguard_detect(
     };
     let result = embedded::detect(s);
     // SAFETY: caller contract for `out`.
-    unsafe { fill_result(&mut *out, result) };
+    unsafe { fill_result(&mut *out, &result) };
     JAILGUARD_OK
 }
 
@@ -307,7 +306,7 @@ pub unsafe extern "C" fn jailguard_detect_batch(
     // SAFETY: caller contract — `out` has at least `count` slots.
     let out_slice = unsafe { std::slice::from_raw_parts_mut(out, count) };
     for (slot, r) in out_slice.iter_mut().zip(results) {
-        fill_result(slot, r);
+        fill_result(slot, &r);
     }
     JAILGUARD_OK
 }

@@ -1,7 +1,7 @@
 # JailGuard
 
-[![Accuracy](https://img.shields.io/badge/Accuracy-99.34%25-blue)](CHANGELOG.md)
-[![F1 Score](https://img.shields.io/badge/F1-0.985-blue)](CHANGELOG.md)
+[![Accuracy](https://img.shields.io/badge/Accuracy-98.40%25-blue)](CHANGELOG.md)
+[![F1 Score](https://img.shields.io/badge/F1-0.983-blue)](CHANGELOG.md)
 [![Pure Rust](https://img.shields.io/badge/Pure-Rust-orange)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/License-MIT%2FApache--2.0-blue)](LICENSE)
 
@@ -9,13 +9,13 @@
 
 ## Highlights
 
-- **99.34% accuracy / F1 0.985** on a 5,945-sample held-out split of the training pipeline; **99.38% / F1 0.990** on the J1N2 OOD benchmark; **89.12%** on the shalyhinpavel hard-negative holdout.
+- **98.40% accuracy / F1 0.983** on a 7,049-sample held-out split of the training pipeline; **99.38% / F1 0.990** on the J1N2 OOD benchmark; **89.12%** on the shalyhinpavel hard-negative holdout.
 - **CPU-only.** No GPU required for inference or training.
 - **Embedded model.** The classifier ships inside the crate; the 90 MB ONNX embedding model is auto-downloaded and cached on first use.
 - **Small surface area.** Three functions: `detect()`, `is_injection()`, `score()`.
 - **Permissive.** MIT OR Apache-2.0.
 
-> In-distribution numbers are from the project's own pipeline test split. The J1N2 and shalyhinpavel sets are independent of training data — see [`BENCHMARKS.md`](https://github.com/yfedoseev/jailguard_dataset/blob/main/BENCHMARKS.md). Independent runs on [Lakera PINT](https://github.com/lakeraai/pint-benchmark) and [AgentDojo](https://agentdojo.spylab.ai/) are planned for a later release.
+> In-distribution numbers are from the project's own pipeline test split. The J1N2 and shalyhinpavel sets are independent of training data — see [`BENCHMARKS.md`](./BENCHMARKS.md). Independent runs on [Lakera PINT](https://github.com/lakeraai/pint-benchmark) and [AgentDojo](https://agentdojo.spylab.ai/) are planned for a later release.
 
 ## How it works
 
@@ -117,17 +117,16 @@ Set `JAILGUARD_MODEL_DIR` to control where the model is cached (default: `~/.cac
 
 ## Measurements
 
-Measured by the [`jailguard_dataset`](https://github.com/yfedoseev/jailguard_dataset)
-benchmark runner on Apple M3, last revalidated 2026-05-03. The pipeline test
+Measured on Apple M3, last revalidated 2026-05-03. The pipeline test
 split is in-distribution (held-out from the same training pipeline). J1N2 and
 shalyhinpavel are external datasets, neither used during training. Independent
 runs against PINT, AgentDojo, and other published detectors are planned for a
-later release; see [`BENCHMARKS.md`](https://github.com/yfedoseev/jailguard_dataset/blob/main/BENCHMARKS.md)
+later release; see [`BENCHMARKS.md`](./BENCHMARKS.md)
 for the full breakdown including head-to-head latency vs. competitors.
 
 | Test set | Samples | Accuracy | Precision | Recall | F1 |
 |----------|---------|----------|-----------|--------|-----|
-| Pipeline (in-distribution) | 5,945 | **99.34%** | 97.52% | 99.54% | 0.985 |
+| Pipeline (in-distribution) | 7,049 | **98.40%** | 98.56% | 97.98% | 0.983 |
 | J1N2 mix (OOD) | 5,000 | **99.38%** | 98.09% | 99.94% | 0.990 |
 | shalyhinpavel hard-negatives (OOD) | 147 | **89.12%** | 76.60% | 87.80% | 0.818 |
 
@@ -155,13 +154,9 @@ in the repository:
   report. Same script runs on Linux x86_64, Linux aarch64, macOS Intel,
   macOS Apple Silicon, and Chromebook Crostini.
 
-Independent-benchmark scaffolding (PINT, AgentDojo, head-to-head vs.
-`protectai/deberta-v3-base-prompt-injection`, Meta `PromptGuard`,
-Rebuff) lives in the companion repo `jailguard-datasets/`, under
-`evaluation/external/` and `benchmark/`. The current iter-9
-methodology + four-eval comparison + head-to-head table vs three open-
-source CPU baselines (protectai-base, deepset, madhurjindal) is in
-[`jailguard-datasets/BENCHMARKS.md`](https://github.com/yfedoseev/jailguard-datasets/blob/main/BENCHMARKS.md).
+Full methodology, four-eval comparison, and head-to-head table vs
+three open-source CPU baselines (protectai-base, deepset, madhurjindal)
+are in [`BENCHMARKS.md`](./BENCHMARKS.md).
 
 ## Attack categories covered in training
 

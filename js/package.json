@@ -1,7 +1,7 @@
 {
   "name": "@jailguard/jailguard",
   "version": "0.1.0",
-  "description": "Fast prompt-injection detection — Rust core, Node.js + WASM bindings",
+  "description": "Fast prompt-injection detection — Rust core, Node.js bindings",
   "license": "MIT OR Apache-2.0",
   "author": "Yury Fedoseev",
   "homepage": "https://github.com/yfedoseev/jailguard",
@@ -25,16 +25,10 @@
       "types": "./lib/index.d.ts",
       "import": "./lib/index.js",
       "default": "./lib/index.js"
-    },
-    "./wasm": {
-      "types": "./wasm/jailguard.d.ts",
-      "import": "./wasm/jailguard.js",
-      "default": "./wasm/jailguard.js"
     }
   },
   "files": [
     "lib/",
-    "wasm/",
     "src/",
     "README.md",
     "LICENSE-APACHE",
@@ -45,13 +39,12 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/build-native.mjs",
-    "build:wasm": "node scripts/build-wasm.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "biome check .",
     "format": "biome format --write .",
     "type-check": "tsc -p tsconfig.json --noEmit",
-    "clean": "rm -rf lib build wasm/jailguard*"
+    "clean": "rm -rf lib build"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",

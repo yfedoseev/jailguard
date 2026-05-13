@@ -57,7 +57,7 @@ flags; datasets and data-prep scripts are not distributed with the crate.
 ```
                     ┌───────────────────────────────┐
 first detect()  ──► │ EmbeddedDetector::new()       │
-                    │  • ensure_model()              │
+                    │  • download_model()              │
                     │  • Session::from_file(...)     │
                     │  • Tokenizer::from_bytes(...)  │
                     │  • serde_json::from_str(...)   │
@@ -79,7 +79,7 @@ lock-free reads.
 src/
 ├── lib.rs           — re-exports, feature gating
 ├── embedded.rs      — detect / is_injection / score / detect_batch, RiskLevel
-├── model_manager.rs — ensure_model(), cache resolution, download
+├── model_manager.rs — download_model(), cache resolution, download
 ├── network.rs       — NeuralBinaryNetwork forward_eval (inference only)
 └── error.rs         — Error, Result
 ```

@@ -10,7 +10,7 @@ loads the session. Move that cost out of the hot path:
 
 ```rust
 fn main() -> anyhow::Result<()> {
-    jailguard::ensure_model()?;            // download if needed
+    jailguard::download_model()?;            // download if needed
     let _ = jailguard::detect("warm up");  // build the session now
     serve()?;
     Ok(())

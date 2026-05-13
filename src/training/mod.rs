@@ -12,6 +12,7 @@
 #![allow(clippy::unnecessary_wraps)]
 
 pub mod adam_optimizer;
+pub mod multitask_sample;
 pub mod adversarial;
 pub mod adversarial_batch_mixer;
 pub mod adversarial_trainer;
@@ -49,7 +50,7 @@ pub use adversarial_training::{
     AdversarialConfig as AdvConfig, AdversarialDatasetMixer, AdversarialGenerator as AdvGenerator,
     AugmentationStats,
 };
-pub use buffer::ExperienceBuffer;
+pub use buffer::{Experience, ExperienceBuffer};
 pub use calibration::CalibrationConfig;
 pub use calibration::{CalibrationMetrics, CalibrationValidator, TemperatureScaling};
 pub use early_stopping::{Checkpoint, CheckpointManager, EarlyStopper, EarlyStoppingConfig};
@@ -66,6 +67,7 @@ pub use multitask_learning::{
     AttackType, MultiTaskConfig, MultiTaskLearner, MultiTaskResult, RiskLevel,
 };
 pub use multitask_trainer::{MultiTaskMetrics, MultiTaskTrainer, MultiTaskTrainingConfig};
+pub use multitask_sample::MultiTaskSample;
 pub use neural_binary_network::{AdamState, NeuralBinaryNetwork};
 pub use neural_data_loader::{NeuralDataLoader, NeuralEmbeddingSample};
 #[allow(deprecated)]
@@ -83,81 +85,3 @@ pub use robust_multilabel_trainer::{
 };
 pub use trainable_heads::TrainableLinearHead;
 
-use crate::agent::Experience;
-use crate::error::Result;
-
-/// Configuration for the trainer.
-#[derive(Debug, Clone)]
-pub struct TrainerConfig {
-    /// Batch size for training
-    pub batch_size: usize,
-    /// Number of epochs per training session
-    pub epochs: usize,
-    /// Whether to shuffle experiences
-    pub shuffle: bool,
-    /// Reward configuration
-    pub reward_config: RewardConfig,
-}
-
-impl Default for TrainerConfig {
-    fn default() -> Self {
-        Self {
-            batch_size: 32,
-            epochs: 10,
-            shuffle: true,
-            reward_config: RewardConfig::default(),
-        }
-    }
-}
-
-/// Trainer for RL agents.
-pub struct Trainer {
-    /// Experience replay buffer
-    buffer: ExperienceBuffer,
-    /// Training configuration
-    config: TrainerConfig,
-    /// Reward shaper
-    reward_shaper: RewardShaper,
-}
-
-impl Trainer {
-    /// Create a new trainer.
-    pub fn new(config: TrainerConfig) -> Self {
-        Self {
-            buffer: ExperienceBuffer::new(10000),
-            reward_shaper: RewardShaper::new(config.reward_config.clone()),
-            config,
-        }
-    }
-
-    /// Add an experience to the buffer.
-    pub fn add_experience(&mut self, experience: Experience) {
-        self.buffer.push(experience);
-    }
-
-    /// Sample experiences from the buffer.
-    pub fn sample_experiences(&self) -> Vec<Experience> {
-        self.buffer.sample(self.config.batch_size)
-    }
-
-    /// Get the reward shaper.
-    pub fn reward_shaper(&self) -> &RewardShaper {
-        &self.reward_shaper
-    }
-
-    /// Get the current buffer size.
-    pub fn buffer_size(&self) -> usize {
-        self.buffer.len()
-    }
-
-    /// Clear the experience buffer.
-    pub fn clear_buffer(&mut self) {
-        self.buffer.clear();
-    }
-
-    /// Save training state.
-    pub fn save(&self, _path: &str) -> Result<()> {
-        // TODO: Implement state saving
-        Ok(())
-    }
-}

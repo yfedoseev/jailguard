@@ -8,12 +8,5 @@ build/
 *.node
 prebuilds/
 
-# wasm-pack output
-wasm/jailguard.js
-wasm/jailguard_bg.wasm
-wasm/jailguard.d.ts
-wasm/package.json
-wasm/.gitignore
-
 # vitest
 coverage/

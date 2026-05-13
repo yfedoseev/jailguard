@@ -44,7 +44,7 @@ This Code of Conduct applies to:
 
 ## Enforcement
 
-Instances of unacceptable behavior may be reported to the project maintainers responsible for enforcement at [contact info to be added]. All complaints will be reviewed and investigated promptly and fairly.
+Instances of unacceptable behavior may be reported to the project maintainer **Yury Fedoseev**. All complaints will be reviewed and investigated promptly and fairly.
 
 ## Enforcement Guidelines
 

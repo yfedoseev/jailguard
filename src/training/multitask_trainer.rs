@@ -1,6 +1,6 @@
 //! Multi-task trainer for prompt injection detection.
 
-use crate::dataset::MultiTaskSample;
+use crate::training::multitask_sample::MultiTaskSample;
 use crate::detection::TransformerDetector;
 
 use super::MultiTaskLoss;

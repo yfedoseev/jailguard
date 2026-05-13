@@ -1,6 +1,6 @@
 //! Feedback collection for online learning and continuous model improvement.
 
-use crate::dataset::MultiTaskSample;
+use crate::training::multitask_sample::MultiTaskSample;
 use crate::detection::MultiTaskDetectionResult;
 use std::collections::VecDeque;
 use std::time::SystemTime;

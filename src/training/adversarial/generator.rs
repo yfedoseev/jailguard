@@ -5,7 +5,7 @@
 use super::char_substitution::CharSubstitutionAttack;
 use super::encoding_attack::EncodingAttack;
 use super::paraphrase_attack::ParaphraseAttack;
-use crate::dataset::MultiTaskSample;
+use crate::training::multitask_sample::MultiTaskSample;
 
 /// Configuration for adversarial generation (supports both old and new API)
 #[derive(Debug, Clone)]

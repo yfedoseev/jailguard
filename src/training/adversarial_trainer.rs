@@ -2,7 +2,7 @@
 //!
 //! Trains the detector on both clean and adversarial examples to improve robustness.
 
-use crate::dataset::MultiTaskSample;
+use crate::training::multitask_sample::MultiTaskSample;
 use crate::detection::TransformerDetector;
 use crate::training::{MultiTaskMetrics, MultiTaskTrainer, MultiTaskTrainingConfig};
 

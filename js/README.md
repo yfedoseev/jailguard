@@ -1,7 +1,7 @@
 # JailGuard for JavaScript / TypeScript
 
 Fast prompt-injection detection for Node.js. Pure-Rust core via napi-rs N-API
-native module. WASM build is available as alpha (see [WASM status](#wasm-status)).
+native module.
 
 > **Part of the [JailGuard](https://github.com/yfedoseev/jailguard) toolkit.**
 > Same Rust core as the [Rust crate](https://crates.io/crates/jailguard),
@@ -61,16 +61,6 @@ npm test            # vitest, 16 tests
 `scripts/build-native.mjs` runs `cargo build --release --features napi` from the
 repo root, then copies the resulting `libjailguard.{so,dylib,dll}` to
 `build/jailguard.node` for Node to require.
-
-## WASM status
-
-The package ships a WASM entry at `@jailguard/jailguard/wasm` for browsers, Deno, and Cloudflare Workers. **Status: alpha.** The Rust ONNX runtime we use (`ort`) doesn't yet compile to `wasm32-unknown-unknown`, so the WASM build exposes the public API surface but every detection call returns an error explaining the gap.
-
-For production WASM deployments, the path forward is one of:
-1. Switch to `tract` (pure-Rust ONNX runtime, slower but WASM-friendly)
-2. Defer to ORT-Web via JS interop
-
-Tracked in [issue #N](https://github.com/yfedoseev/jailguard/issues). For now, use the Node.js binding for browser-side workloads via a small server proxy.
 
 ## Thread safety
 

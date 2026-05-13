@@ -1,7 +1,76 @@
 //! Calibrated detector with temperature scaling for reliable confidence scores.
 
 use crate::detection::TransformerDetector;
-use crate::training::calibration::TemperatureScaling;
+
+/// Temperature scaling for calibrating neural network confidence scores.
+///
+/// Divides raw confidence by a learned scalar T so that stated probabilities
+/// match empirical accuracy (T > 1 reduces overconfidence, T < 1 increases it).
+#[derive(Debug, Clone)]
+pub struct TemperatureScaling {
+    temperature: f32,
+}
+
+impl TemperatureScaling {
+    /// Create with default temperature 1.0 (identity — no adjustment).
+    pub fn new() -> Self {
+        Self { temperature: 1.0 }
+    }
+
+    /// Create with a fixed temperature value.
+    pub fn with_temperature(temperature: f32) -> Self {
+        Self { temperature }
+    }
+
+    /// Return the current temperature.
+    pub fn temperature(&self) -> f32 {
+        self.temperature
+    }
+
+    /// Override the temperature directly.
+    pub fn set_temperature(&mut self, temperature: f32) {
+        self.temperature = temperature;
+    }
+
+    /// Apply temperature scaling to a raw confidence value.
+    pub fn scale_confidence(&self, confidence: f32) -> f32 {
+        (confidence / self.temperature).clamp(0.0, 1.0)
+    }
+
+    /// Fit temperature via grid search to minimise NLL on a validation set.
+    pub fn calibrate(&mut self, predictions: &[f32], targets: &[bool]) {
+        if predictions.is_empty() {
+            return;
+        }
+        let mut best_temp = self.temperature;
+        let mut best_nll = Self::compute_nll(predictions, targets, best_temp);
+        let mut t = 0.1f32;
+        while t <= 10.0 {
+            let nll = Self::compute_nll(predictions, targets, t);
+            if nll < best_nll {
+                best_nll = nll;
+                best_temp = t;
+            }
+            t += 0.1;
+        }
+        self.temperature = best_temp;
+    }
+
+    fn compute_nll(predictions: &[f32], targets: &[bool], temperature: f32) -> f32 {
+        let mut total = 0.0f32;
+        for (pred, &target) in predictions.iter().zip(targets.iter()) {
+            let scaled = (pred / temperature).clamp(1e-7, 1.0 - 1e-7);
+            total += if target { -scaled.ln() } else { -(1.0 - scaled).ln() };
+        }
+        total / predictions.len() as f32
+    }
+}
+
+impl Default for TemperatureScaling {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 /// Calibrated detector with temperature-scaled confidence scores.
 ///
@@ -215,16 +284,8 @@ mod tests {
     #[test]
     fn test_custom_temperature_scaling() {
         let detector = TransformerDetector::new().expect("Failed to create detector");
-        let ts = crate::training::TemperatureScaling::with_config(
-            crate::training::calibration::TemperatureScalingConfig {
-                initial_temperature: 1.5,
-                learning_rate: 0.01,
-                num_steps: 100,
-            },
-        );
-
+        let ts = TemperatureScaling::with_temperature(1.5);
         let calibrated = CalibratedDetector::with_temperature_scaling(detector, ts);
-
         assert_eq!(calibrated.temperature(), 1.5);
     }
 }

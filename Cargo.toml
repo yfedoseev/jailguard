@@ -12,12 +12,7 @@ keywords = ["security", "llm", "prompt-injection", "jailbreak", "ai-safety"]
 categories = ["security", "machine-learning"]
 
 # Only the embedded-detector sources ship on crates.io.
-# Feature-gated research modules (src/training, src/collection, src/agent,
-# src/api, src/dataset, src/detection, src/embeddings, src/ensemble,
-# src/evaluation, src/feedback, src/heuristics, src/inference, src/jailguard,
-# src/model, src/monitoring, src/output_validation, src/performance,
-# src/pretrained, src/privilege, src/spotlighting, src/task_tracking,
-# src/tokenizer, src/validation, src/advanced_ensemble, src/attention_tracker)
+# Feature-gated modules (src/training and the full-feature surface)
 # live in the git repo but are NOT distributed in the published crate.
 # Enabling `--features full` against the crates.io release will fail to
 # compile — clone the git repo if you want the research surface.
@@ -67,10 +62,6 @@ pyo3 = { version = "0.22", features = ["abi3-py38"], optional = true }
 napi = { version = "2", default-features = false, features = ["napi8"], optional = true }
 napi-derive = { version = "2", optional = true }
 
-# WASM bindings (wasm-bindgen). Browser / Deno / Cloudflare Workers.
-wasm-bindgen = { version = "0.2", optional = true }
-js-sys = { version = "0.3", optional = true }
-
 # Feature-gated dependencies (only pulled in under `--features full` or friends).
 burn = { version = "0.20", default-features = false, optional = true }
 burn-ndarray = { version = "0.20", default-features = false, optional = true }
@@ -102,13 +93,6 @@ python = ["pyo3"]
 c-api = []
 # Node.js native module via napi-rs / N-API.
 napi = ["dep:napi", "dep:napi-derive", "dep:napi-build"]
-# Browser / Deno / Cloudflare Workers via wasm-bindgen. Note: ONNX
-# inference is NOT yet supported under the `wasm32-unknown-unknown`
-# target (`ort` doesn't compile there). This feature compiles the
-# public-API surface but the runtime functions return an error
-# explaining the gap. Full ONNX-in-WASM via `tract` or ORT-Web is
-# tracked for a future release.
-wasm = ["dep:wasm-bindgen", "dep:js-sys"]
 full = [
   "dep:burn",
   "dep:burn-ndarray",
@@ -121,6 +105,9 @@ full = [
   "dep:lru",
   "dep:regex",
 ]
+# Training infrastructure — not part of the public API.
+# Used by upstream training tooling to access NeuralBinaryNetwork / NeuralDataLoader.
+training = ["full", "dep:rand"]
 download = ["full", "dep:reqwest", "dep:tokio", "dep:csv"]
 # Legacy feature names retained for cfg compatibility in `full`-gated source.
 cpu = []
@@ -145,28 +132,8 @@ path = "examples/ensemble_demo.rs"
 required-features = ["full"]
 
 [[example]]
-name = "full_pipeline"
-path = "examples/full_pipeline.rs"
-required-features = ["full"]
-
-[[example]]
 name = "unified_api_ensemble_demo"
 path = "examples/unified_api_ensemble_demo.rs"
-required-features = ["full"]
-
-[[example]]
-name = "onnx_embedding_generation"
-path = "train/onnx_embedding_generation.rs"
-required-features = ["full"]
-
-[[example]]
-name = "train_neural_binary"
-path = "train/train_neural_binary.rs"
-required-features = ["full"]
-
-[[example]]
-name = "evaluate_on_test_set"
-path = "train/evaluate_on_test_set.rs"
 required-features = ["full"]
 
 [[example]]

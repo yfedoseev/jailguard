@@ -1,9 +1,7 @@
 /**
  * JailGuard — fast prompt-injection detection.
  *
- * Pure-Rust core; this entry point loads the napi-rs Node addon. For
- * browsers / Deno / Cloudflare Workers, import from `@jailguard/jailguard/wasm`
- * instead.
+ * Pure-Rust core; this entry point loads the napi-rs Node addon.
  *
  * @example
  * ```ts

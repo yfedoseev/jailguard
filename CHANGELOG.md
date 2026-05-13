@@ -18,7 +18,7 @@ Initial public release.
   - `is_injection(text) -> bool`
   - `score(text) -> f32`
   - `detect_batch(texts) -> Vec<DetectionOutput>`
-  - `ensure_model() -> Result<PathBuf>` for pre-warming the ONNX cache.
+  - `download_model() -> Result<PathBuf>` for pre-warming the ONNX cache.
 - **Embedded 200K classifier.** A ~130K-parameter MLP (`384 → 256 → 128 → 1`)
   trained on 200,000 balanced samples from 14 public datasets. The classifier
   weights (`models/neural_binary_200k.json`, 1.5 MB) ship inside the crate and
@@ -42,15 +42,14 @@ weighted BCE (injection_weight=2.5). Re-validated 2026-05-03.
 
 | Test set | Samples | Accuracy | Precision | Recall | F1 |
 |----------|---------|----------|-----------|--------|-----|
-| Pipeline (in-distribution) | 5,945 | 99.34% | 97.52% | 99.54% | 0.985 |
+| Pipeline (in-distribution) | 7,049 | 98.40% | 98.56% | 97.98% | 0.983 |
 | J1N2 mix (OOD) | 5,000 | 99.38% | 98.09% | 99.94% | 0.990 |
 | shalyhinpavel hard-negatives (OOD) | 147 | 89.12% | 76.60% | 87.80% | 0.818 |
 
 CPU latency: p50 18 ms, p99 35 ms (Apple M3, single thread).
 
 The pipeline test split is in-distribution. J1N2 and shalyhinpavel are
-held outside the training data — see
-[`BENCHMARKS.md`](https://github.com/yfedoseev/jailguard_dataset/blob/main/BENCHMARKS.md).
+held outside the training data — see [`BENCHMARKS.md`](./BENCHMARKS.md).
 Evaluation on PINT, AgentDojo, and DataSentinel is planned for a later
 release.
 
@@ -58,7 +57,7 @@ release.
 
 - Not yet evaluated on Lakera PINT, AgentDojo, or DataSentinel benchmarks.
 - First call to `detect()` without a cached ONNX model triggers a 90 MB
-  download from HuggingFace. Call `ensure_model()` at startup to avoid this.
+  download from HuggingFace. Call `download_model()` at startup to avoid this.
 - Indirect injection (tool-output contamination) is not a dedicated category
   in the current binary classifier.
 

@@ -41,12 +41,13 @@ apply a custom threshold or route borderline cases to a stricter check.
 Convenience wrapper that calls `detect` on each input sequentially while
 reusing the same detector instance. No tensor-level batching yet.
 
-### `ensure_model() -> Result<PathBuf, Error>`
+### `download_model() -> Result<PathBuf, Error>`
 
 Resolve the cache directory (`$JAILGUARD_MODEL_DIR` or `$HOME/.cache/jailguard/`),
 download the ONNX model if it is missing, and return the absolute path.
 Idempotent. Call this at application startup to avoid a download on the first
 request.
+
 
 ## Types
 

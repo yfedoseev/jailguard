@@ -4,8 +4,8 @@
 //! # `JailGuard` — Prompt Injection Detection
 //!
 //! Fast, accurate prompt injection detection with a simple API.
-//! The 200K-trained model (99.07% accuracy) is embedded in the library —
-//! no external files or setup required.
+//! The iter-9 model (98.40% accuracy on the in-domain test set) is
+//! embedded in the library — no external files or setup required.
 //!
 //! ## Quick Start
 //!
@@ -24,7 +24,7 @@
 //!
 //! ## Features
 //!
-//! - **99.07% Accuracy**: Trained on 200K samples from 14 real datasets
+//! - **98.40% Accuracy**: iter-9 model trained on the 17-source public pipeline
 //! - **Real ML**: ONNX embeddings (all-MiniLM-L6-v2) + neural classifier
 //! - **Auto-setup**: ONNX model auto-downloaded on first use (~90 MB, cached)
 //! - **Simple API**: `is_injection()`, `detect()`, `score()`
@@ -59,24 +59,10 @@ pub mod c_api;
 #[cfg(feature = "napi")]
 pub mod napi;
 
-/// WASM bindings via wasm-bindgen. Compiled only when the `wasm` feature
-/// is enabled (typically via `wasm-pack build`). Status: alpha — see
-/// `src/wasm.rs` for the gap explanation.
-#[cfg(feature = "wasm")]
-pub mod wasm;
-
 // Primary API at crate root
 pub use embedded::{detect, detect_batch, is_injection, score, DetectionOutput, RiskLevel};
 pub use error::{Error, Result};
 pub use model_manager::download_model;
-
-/// Deprecated alias for [`download_model`]. Retained so the companion
-/// `jailguard-datasets/pipeline` and other downstream code that pinned the
-/// 0.1 API keep compiling. New code should call `download_model` directly.
-#[deprecated(since = "0.2.0", note = "use `download_model` instead")]
-pub fn ensure_model() -> Result<std::path::PathBuf> {
-    download_model()
-}
 
 // ============================================================================
 // Feature-gated modules
@@ -88,15 +74,9 @@ mod python;
 #[cfg(feature = "full")]
 pub mod advanced_ensemble;
 #[cfg(feature = "full")]
-pub mod agent;
-#[cfg(feature = "full")]
 pub mod api;
 #[cfg(feature = "full")]
 pub mod attention_tracker;
-#[cfg(feature = "full")]
-pub mod collection;
-#[cfg(feature = "full")]
-pub mod dataset;
 #[cfg(feature = "full")]
 pub mod detection;
 #[cfg(feature = "full")]
@@ -132,9 +112,14 @@ pub mod task_tracking;
 #[cfg(feature = "full")]
 pub mod tokenizer;
 #[cfg(feature = "full")]
-pub mod training;
-#[cfg(feature = "full")]
 pub mod validation;
+
+// Training infrastructure — not part of the public library API.
+// Gated behind the `training` feature so external training tooling can
+// access NeuralBinaryNetwork / NeuralDataLoader without exposing them to
+// end users.
+#[cfg(feature = "training")]
+pub mod training;
 
 // ============================================================================
 // Feature-gated re-exports
@@ -173,11 +158,8 @@ pub use jailguard::{
     SessionStats,
 };
 
-#[cfg(feature = "full")]
-pub use agent::{AgentConfig, DQNAgent, DQNConfig, Experience, PPOAgent, PPOConfig};
-
-#[cfg(feature = "full")]
-pub use training::{Trainer, TrainerConfig, TrainingMetrics};
+#[cfg(feature = "training")]
+pub use training::{NeuralBinaryNetwork, NeuralDataLoader, TrainingMetrics};
 
 #[cfg(feature = "full")]
 pub use monitoring::{

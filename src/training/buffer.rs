@@ -2,7 +2,22 @@
 
 use rand::prelude::IndexedRandom;
 
-use crate::agent::Experience;
+/// A single RL training transition.
+#[derive(Debug, Clone)]
+pub struct Experience {
+    /// State embedding
+    pub state: Vec<f32>,
+    /// Action taken
+    pub action: usize,
+    /// Reward received
+    pub reward: f32,
+    /// Next state embedding
+    pub next_state: Vec<f32>,
+    /// Whether this is a terminal transition
+    pub done: bool,
+    /// Log-probability of the action (for PPO)
+    pub log_prob: f32,
+}
 
 /// Circular experience replay buffer.
 pub struct ExperienceBuffer {

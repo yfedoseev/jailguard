@@ -96,13 +96,12 @@ Async equivalents: `detect_async`, `is_injection_async`, `score_async`,
 
 ## Performance
 
-99.34% accuracy on the in-distribution pipeline test split,
+98.40% accuracy on the in-distribution pipeline test split,
 99.38% on the J1N2 OOD benchmark, 89.12% on the shalyhinpavel
 hard-negative holdout. p50 latency 18 ms / p99 35 ms (Apple M3,
 single CPU thread). Full benchmark methodology and head-to-head
-numbers vs. ProtectAI / Deepset / Jailbreak-Detector live in the
-main repo's
-[`jailguard-datasets/BENCHMARKS.md`](https://github.com/yfedoseev/jailguard-datasets/blob/main/BENCHMARKS.md).
+numbers vs. ProtectAI / Deepset / Jailbreak-Detector are in
+[`BENCHMARKS.md`](../BENCHMARKS.md).
 
 ## License
 

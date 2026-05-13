@@ -11,8 +11,8 @@ auto-downloaded and cached on first use.
 jailguard = "0.1"
 ```
 
-Minimum supported Rust version: **1.70** (for `std::sync::OnceLock` and the
-`ort` crate's requirements).
+Minimum supported Rust version: **1.85** (matches `rust-version` in
+`Cargo.toml`; required by the `ort` crate and edition-2021 features).
 
 No feature flags are required for the default detection API.
 
@@ -40,19 +40,19 @@ downloaded from HuggingFace (~90 MB) to `~/.cache/jailguard/`.
 
 ## Pre-warming for production
 
-To avoid a cold-start download on the first request, call `ensure_model()` at
+To avoid a cold-start download on the first request, call `download_model()` at
 startup:
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    jailguard::ensure_model()?;           // downloads if missing (blocking)
+    jailguard::download_model()?;           // downloads if missing (blocking)
     let _ = jailguard::detect("warm up"); // triggers model load
     // ... start serving traffic ...
     Ok(())
 }
 ```
 
-`ensure_model()` is idempotent — it returns immediately if the file already
+`download_model()` is idempotent — it returns immediately if the file already
 exists.
 
 ## Cache location
@@ -118,12 +118,12 @@ open an issue — batched ONNX inference is on the roadmap.
 **The first call panics with "Failed to initialize embedded detector".**
 The ONNX model could not be loaded. Most common causes:
 
-- No network at startup → call `ensure_model()` earlier, when network is up.
+- No network at startup → call `download_model()` earlier, when network is up.
 - `$HOME` is unset and `$JAILGUARD_MODEL_DIR` is not set → set one of them.
 - Disk full → free space or point `JAILGUARD_MODEL_DIR` at a larger volume.
 
 **First call is slow.**
-That's the 90 MB download. Pre-warm with `ensure_model()` at startup or ship
+That's the 90 MB download. Pre-warm with `download_model()` at startup or ship
 the file with your container image.
 
 **False positives on legitimate technical questions.**

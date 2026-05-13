@@ -5,7 +5,7 @@
 
 .PHONY: help \
         check check-all check-rust check-py check-js check-go \
-        build build-release build-py build-go build-js build-wasm \
+        build build-release build-py build-go build-js \
         test test-rust test-py test-js test-go test-doc \
         bench bench-build score-test \
         lint lint-rust lint-rust-full lint-py lint-py-fix lint-js \
@@ -30,13 +30,12 @@ help:
 	@echo "  make build-py         - maturin build --release (Python wheel)"
 	@echo "  make build-go         - cgo build of the Go bindings (Phase 3)"
 	@echo "  make build-js         - napi-rs build of the Node bindings (Phase 4)"
-	@echo "  make build-wasm       - wasm-pack build for browsers (Phase 4)"
 	@echo ""
 	@echo "Test:"
 	@echo "  make test             - Rust unit + integration + doc tests"
 	@echo "  make test-rust        - Rust tests only (default features)"
 	@echo "  make test-py          - Python pytest suite (Phase 2)"
-	@echo "  make test-js          - Node + WASM tests (Phase 4)"
+	@echo "  make test-js          - Node tests (Phase 4)"
 	@echo "  make test-go          - Go tests (Phase 3)"
 	@echo "  make test-doc         - Rust doc tests"
 	@echo ""
@@ -107,10 +106,6 @@ test-c-api: build-release
 
 build-js:
 	@cd js && npm install --silent && npm run build
-
-build-wasm:
-	@command -v wasm-pack >/dev/null || (echo "Install wasm-pack: cargo install wasm-pack"; exit 1)
-	wasm-pack build --release --target web --out-dir js/wasm -- --features wasm
 
 # ---------------------------------------------------------------------------
 # Test
