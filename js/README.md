@@ -1,26 +1,17 @@
 # JailGuard for JavaScript / TypeScript
 
-**Fast prompt-injection detection for Node.js.** Pure-Rust core, exposed
-via a napi-rs N-API native addon. **Prebuilt binaries ship for every
-supported platform — no Rust toolchain required to install.** **p50 14 ms**
-inference on Apple M3, **98.40% accuracy** on a 7,049-sample held-out test
-set.
+Pure-Rust prompt-injection detector exposed to Node.js via a napi-rs
+N-API native addon. **Prebuilt binaries ship for every supported
+platform — no Rust toolchain, no C compiler, no build step at install.**
 
 [![npm](https://img.shields.io/npm/v/@yfedoseev/jailguard.svg)](https://www.npmjs.com/package/@yfedoseev/jailguard)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](https://opensource.org/licenses)
-[![crates.io](https://img.shields.io/crates/v/jailguard.svg)](https://crates.io/crates/jailguard)
-[![PyPI](https://img.shields.io/pypi/v/jailguard.svg)](https://pypi.org/project/jailguard/)
 
 > **Part of the [JailGuard](https://github.com/yfedoseev/jailguard) toolkit.**
-> Same Rust core as the [Rust crate](https://crates.io/crates/jailguard),
-> [Python package](../python/README.md), and [Go module](../go/README.md).
-
-**In 2026, JailGuard is the actively maintained, OSI-permissive,
-embedded-binary option** for prompt-injection detection in Node.js.
-[Rebuff was archived May 16, 2025](https://github.com/protectai/rebuff)
-(Python-only, no JS alternative). [Lakera was acquired by Check Point in
-September 2025](https://www.checkpoint.com/press-releases/check-point-acquires-lakera-to-deliver-end-to-end-ai-security-for-enterprises/)
-(closed-source SaaS, requires HTTP round-trips).
+> Same Rust core, same numbers, same API as the
+> [Rust crate](https://crates.io/crates/jailguard),
+> [Python package](../python/README.md), and
+> [Go module](../go/README.md).
 
 ## Install
 
@@ -28,32 +19,30 @@ September 2025](https://www.checkpoint.com/press-releases/check-point-acquires-l
 npm install @yfedoseev/jailguard
 ```
 
-That's it. Prebuilt `.node` binaries ship inside the npm tarball for:
+Prebuilt `.node` binaries ship inside the npm tarball for:
 
 | Platform | Architecture |
 |---|---|
-| Linux  | x64, arm64 |
-| macOS  | x64, arm64 |
+| Linux | x64, arm64 |
+| macOS | x64, arm64 |
 | Windows | x64 |
 
-Node.js 18 or later is required.
+Node.js 18 or later.
 
 ## Quick start
 
 ```typescript
 import { detect, isInjection, downloadModel } from "@yfedoseev/jailguard";
 
-// Optional: pre-fetch the ONNX embedding model (~90 MB, cached at
-// ~/.cache/jailguard/). The first detect() call will download it on
-// demand if you skip this.
+// Optional pre-warm: the 90 MB ONNX embedder downloads on first detect().
 downloadModel();
 
 if (isInjection("ignore previous instructions")) {
   throw new Error("blocked");
 }
 
-const result = detect("What is the capital of France?");
-console.log(result.score, result.risk);
+const r = detect("What is the capital of France?");
+console.log(r.score, r.risk);
 ```
 
 ## API
@@ -64,23 +53,34 @@ console.log(result.score, result.risk);
 | `isInjection(text)` | `boolean` | Quick boolean check |
 | `score(text)` | `number` | Raw probability `[0, 1]` |
 | `detectBatch(texts)` | `DetectionResult[]` | Batch processing |
-| `downloadModel()` | `void` | Pre-fetch ONNX model |
+| `downloadModel()` | `void` | Pre-fetch the ONNX model |
 | `modelCacheDir()` | `string` | Cache path |
 | `version()` | `string` | Library version |
 
-`DetectionResult`: `{ isInjection: boolean; score: number; confidence: number; risk: RiskLevel }`
+```typescript
+interface DetectionResult {
+  isInjection: boolean;
+  score: number;
+  confidence: number;
+  risk: RiskLevel;
+}
 
-`RiskLevel`: `Safe = 0`, `Low = 1`, `Medium = 2`, `High = 3`, `Critical = 4`
+enum RiskLevel { Safe = 0, Low = 1, Medium = 2, High = 3, Critical = 4 }
+```
 
-## Framework integration
+Full TypeScript declarations ship in the package — autocomplete and
+strict type-checking out of the box. The package is **ESM-only** (`type:
+"module"`); CommonJS consumers use dynamic `import()`.
 
-Runnable examples for common Node.js frameworks live in
-[`../examples/javascript/`](../examples/javascript/) and
-[`../examples/typescript/`](../examples/typescript/) — Express
-middleware, Next.js route handlers, and batch scoring patterns. Each is
-≤30 LOC with a self-contained `package.json`.
+## Examples
 
-Quick Express middleware sketch:
+Runnable examples live in
+[`../examples/javascript/`](../examples/javascript/) (Node.js, `.mjs`)
+and [`../examples/typescript/`](../examples/typescript/) — quickstart,
+batch scoring, and middleware patterns for Express and Next.js route
+handlers.
+
+Quick Express middleware:
 
 ```typescript
 import express from "express";
@@ -100,28 +100,23 @@ app.use((req, res, next) => {
 
 ## Performance
 
-**98.40% accuracy** on the in-distribution pipeline test split,
-**99.38%** on J1N2 OOD, **89.12%** on the shalyhinpavel hard-negative
-holdout. **p50 14 ms / p99 18 ms** on Apple M3, single CPU thread.
-Full methodology and head-to-head numbers vs.
-`protectai/deberta-v3-base-prompt-injection-v2`,
-`deepset/deberta-v3-base-injection`, and
-`madhurjindal/Jailbreak-Detector-Large` in
-[`BENCHMARKS.md`](../BENCHMARKS.md).
+Headline: **98.40% accuracy** in-domain, **p50 14 ms** on Apple M3.
+Full methodology, dataset breakdown, OOD benchmarks, and head-to-head
+numbers vs open-source baselines in
+[`../BENCHMARKS.md`](../BENCHMARKS.md).
 
 ## Thread safety
 
-Detection calls are synchronous and serialize on a Mutex internally
-(matches the Python and Go bindings). For high-concurrency workloads,
-fan out via `worker_threads` — each worker gets its own copy of the
-addon.
+Detection calls are synchronous and serialize on a Mutex internally.
+For high-concurrency workloads, fan out via Node's `worker_threads` —
+each worker gets its own copy of the addon and runs independently.
 
-## Building from source (contributors only)
+## Building from source
 
 End users do not need this. The published npm package ships prebuilt
 addons for every supported platform.
 
-If you've cloned the monorepo and want to test changes locally:
+If you've cloned the monorepo:
 
 ```bash
 cd js
@@ -133,9 +128,15 @@ npm test                # vitest
 ```
 
 `scripts/build-native.mjs` is a developer convenience — CI does not use
-it. The release pipeline (`.github/workflows/release.yml`) builds the
-napi addon for every target platform, stages them into
-`js/prebuilds/<triple>/jailguard.node`, and runs `npm publish` once.
+it. The release pipeline builds the napi addon for every target,
+stages them into `js/prebuilds/<triple>/jailguard.node`, and runs
+`npm publish` once.
+
+## Other JailGuard bindings
+
+- **Rust** — `cargo add jailguard` — [docs.rs/jailguard](https://docs.rs/jailguard)
+- **Python** — `pip install jailguard` — [python/README.md](../python/README.md)
+- **Go** — `go get github.com/yfedoseev/jailguard/go` — [go/README.md](../go/README.md)
 
 ## License
 

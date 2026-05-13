@@ -1,41 +1,33 @@
 # JailGuard for Go
 
-**Fast prompt-injection detection for Go.** Pure-Rust core, exposed to
-Go through CGo **or** a pure-Go
-[purego](https://github.com/ebitengine/purego) backend (`CGO_ENABLED=0`).
-**p50 14 ms** inference on Apple M3, **98.40% accuracy** on a
-7,049-sample held-out test set.
+Pure-Rust prompt-injection detector exposed to Go through **CGo** (default,
+statically linked) or **purego** (`CGO_ENABLED=0`, dlopen at runtime).
+The purego backend supports Alpine/musl and cross-compilation without a
+C toolchain.
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/yfedoseev/jailguard/go.svg)](https://pkg.go.dev/github.com/yfedoseev/jailguard/go)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](https://opensource.org/licenses)
-[![crates.io](https://img.shields.io/crates/v/jailguard.svg)](https://crates.io/crates/jailguard)
-[![PyPI](https://img.shields.io/pypi/v/jailguard.svg)](https://pypi.org/project/jailguard/)
-[![npm](https://img.shields.io/npm/v/@yfedoseev/jailguard.svg)](https://www.npmjs.com/package/@yfedoseev/jailguard)
 
 > **Part of the [JailGuard](https://github.com/yfedoseev/jailguard) toolkit.**
-> Same Rust core as the [Rust crate](https://crates.io/crates/jailguard),
+> Same Rust core, same numbers, same API as the
+> [Rust crate](https://crates.io/crates/jailguard),
 > [Python package](../python/README.md), and
 > [JavaScript / TypeScript package](../js/README.md).
 
-**In 2026, JailGuard is the actively maintained, OSI-permissive,
-embedded-binary Go option** for prompt-injection detection. No mainstream
-Go-native alternative shipped during the 2025 vendor consolidation
-([Rebuff archived](https://github.com/protectai/rebuff) — Python-only;
-[Lakera acquired by Check Point](https://www.checkpoint.com/press-releases/check-point-acquires-lakera-to-deliver-end-to-end-ai-security-for-enterprises/) —
-SaaS-only).
+## Install
 
-## Quick start
+```sh
+go get github.com/yfedoseev/jailguard/go
+```
+
+Then download the native library once per machine:
 
 ### Option A — CGo (default, statically linked)
 
 ```sh
-go get github.com/yfedoseev/jailguard/go
-
-# One-time per machine: download the prebuilt staticlib + header.
 go run github.com/yfedoseev/jailguard/go/cmd/install@latest
 
-# The installer prints CGO_CFLAGS / CGO_LDFLAGS — paste them into your
-# shell. Linux example:
+# Installer prints CGO_CFLAGS / CGO_LDFLAGS. Linux example:
 export CGO_CFLAGS="-I$HOME/.cache/jailguard/v0.1.0/include"
 export CGO_LDFLAGS="$HOME/.cache/jailguard/v0.1.0/lib/linux_amd64/libjailguard.a -lm -lpthread -ldl -lrt -lgcc_s -lutil -lc"
 
@@ -44,25 +36,17 @@ go build ./...
 
 The cache directory follows `os.UserCacheDir()`:
 `~/.cache/jailguard/` on Linux, `~/Library/Caches/jailguard/` on macOS,
-`%LocalAppData%\jailguard\` on Windows. Override with `-dir`.
+`%LocalAppData%\jailguard\` on Windows. Override with `-dir`. Pin a
+specific version with `@v0.1.0`.
 
-Pin a specific version:
-
-```sh
-go run github.com/yfedoseev/jailguard/go/cmd/install@v0.1.0
-```
-
-### Option B — purego (CGO_ENABLED=0, no C toolchain)
+### Option B — purego (CGO_ENABLED=0)
 
 For Alpine/musl, cross-compilation, or any environment without a C
-compiler. The shared library is loaded at runtime via `dlopen`.
+compiler. The shared library is `dlopen`'d at runtime.
 
 ```sh
-go get github.com/yfedoseev/jailguard/go
-
 go run github.com/yfedoseev/jailguard/go/cmd/install@latest -shared
 
-# Installer prints:
 export CGO_ENABLED=0
 export JAILGUARD_LIB_PATH=$HOME/.cache/jailguard/v0.1.0/lib/linux_amd64/libjailguard.so
 
@@ -72,7 +56,7 @@ go build ./...
 The purego backend supports the full public API — every function works
 identically to the CGo backend, with the same error sentinels.
 
-## Hello, detector
+## Quick start
 
 ```go
 package main
@@ -118,12 +102,21 @@ func main() {
 
 `RiskLevel`: `RiskSafe = 0`, `RiskLow = 1`, `RiskMedium = 2`, `RiskHigh = 3`, `RiskCritical = 4`
 
-## Framework integration
+Errors are wrapped sentinels — use `errors.Is` to match:
 
-Runnable examples live in [`../examples/go/`](../examples/go/) — batch
-scoring, HTTP middleware patterns. Each is self-contained.
+```go
+if errors.Is(err, jailguard.ErrModelNotDownloaded) {
+    _ = jailguard.DownloadModel()
+}
+```
 
-Quick `net/http` middleware sketch:
+## Examples
+
+Runnable examples live in [`../examples/go/`](../examples/go/) —
+quickstart, batch scoring, and middleware patterns for `net/http`,
+`gin`, and `chi`.
+
+Quick `net/http` middleware:
 
 ```go
 import jailguard "github.com/yfedoseev/jailguard/go"
@@ -143,16 +136,18 @@ func guardMiddleware(next http.Handler) http.Handler {
 
 ## Performance
 
-**98.40% accuracy** on the in-distribution pipeline test split,
-**99.38%** on J1N2 OOD, **89.12%** on the shalyhinpavel hard-negative
-holdout. **p50 14 ms / p99 18 ms** on Apple M3, single CPU thread.
-Full methodology and head-to-head numbers vs.
-`protectai/deberta-v3-base-prompt-injection-v2`,
-`deepset/deberta-v3-base-injection`, and
-`madhurjindal/Jailbreak-Detector-Large` in
-[`BENCHMARKS.md`](../BENCHMARKS.md).
+Headline: **98.40% accuracy** in-domain, **p50 14 ms** on Apple M3.
+Full methodology, dataset breakdown, OOD benchmarks, and head-to-head
+numbers vs open-source baselines in
+[`../BENCHMARKS.md`](../BENCHMARKS.md).
 
-## Building inside the monorepo
+## Thread safety
+
+All exported functions are safe for concurrent use from multiple
+goroutines. The underlying Rust detector serializes ONNX session access
+internally; concurrent calls funnel through a single ONNX session.
+
+## Building from source
 
 Contributors building from a checkout of the parent `jailguard` repo
 don't need the installer. Use the `jailguard_dev` build tag — it points
@@ -167,11 +162,11 @@ go test  -tags jailguard_dev ./...
 
 Or just `make test-go` from the repo root, which automates the above.
 
-## Thread safety
+## Other JailGuard bindings
 
-All exported functions are safe for concurrent use from multiple
-goroutines. The underlying Rust detector serialises ONNX session access
-internally; concurrent calls funnel through a single ONNX session.
+- **Rust** — `cargo add jailguard` — [docs.rs/jailguard](https://docs.rs/jailguard)
+- **Python** — `pip install jailguard` — [python/README.md](../python/README.md)
+- **JavaScript / TypeScript** — `npm install @yfedoseev/jailguard` — [js/README.md](../js/README.md)
 
 ## License
 
