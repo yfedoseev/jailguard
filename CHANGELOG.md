@@ -29,8 +29,9 @@ Initial public release.
   environment variable.
 - **Feature flags.**
   - `default`: embedded detector only (minimal dependency set).
+  - `python`, `napi`: language bindings (pyo3 / napi-rs).
   - `full`: training, evaluation, ensemble, and experimental modules.
-  - `train`, `wgpu`, `download`: narrower opt-ins for training workflows.
+  - `training`, `download`: narrower opt-ins for training-pipeline tooling.
 - **Example.** `examples/quick_start.rs` demonstrates the three-function API.
 
 ### Measured
@@ -50,12 +51,9 @@ CPU latency: p50 18 ms, p99 35 ms (Apple M3, single thread).
 
 The pipeline test split is in-distribution. J1N2 and shalyhinpavel are
 held outside the training data — see [`BENCHMARKS.md`](./BENCHMARKS.md).
-Evaluation on PINT, AgentDojo, and DataSentinel is planned for a later
-release.
 
 ### Known limitations
 
-- Not yet evaluated on Lakera PINT, AgentDojo, or DataSentinel benchmarks.
 - First call to `detect()` without a cached ONNX model triggers a 90 MB
   download from HuggingFace. Call `download_model()` at startup to avoid this.
 - Indirect injection (tool-output contamination) is not a dedicated category

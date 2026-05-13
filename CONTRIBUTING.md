@@ -157,7 +157,7 @@ Interested in research? Relevant areas:
 - **Adversarial robustness** — test and improve attack resilience
 - **New architectures** — propose and implement new detection approaches
 - **Performance** — optimize for speed and memory
-- **Evaluation** — benchmark against PINT, AgentDojo, DataSentinel, etc.
+- **Evaluation** — design new held-out benchmarks; expand the OOD test mix.
 
 ## Development Guidelines
 

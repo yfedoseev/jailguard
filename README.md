@@ -15,7 +15,7 @@
 - **Small surface area.** Three functions: `detect()`, `is_injection()`, `score()`.
 - **Permissive.** MIT OR Apache-2.0.
 
-> In-distribution numbers are from the project's own pipeline test split. The J1N2 and shalyhinpavel sets are independent of training data — see [`BENCHMARKS.md`](./BENCHMARKS.md). Independent runs on [Lakera PINT](https://github.com/lakeraai/pint-benchmark) and [AgentDojo](https://agentdojo.spylab.ai/) are planned for a later release.
+> In-distribution numbers are from the project's own pipeline test split. The J1N2 and shalyhinpavel sets are independent of training data — see [`BENCHMARKS.md`](./BENCHMARKS.md).
 
 ## How it works
 
@@ -119,10 +119,9 @@ Set `JAILGUARD_MODEL_DIR` to control where the model is cached (default: `~/.cac
 
 Measured on Apple M3, last revalidated 2026-05-03. The pipeline test
 split is in-distribution (held-out from the same training pipeline). J1N2 and
-shalyhinpavel are external datasets, neither used during training. Independent
-runs against PINT, AgentDojo, and other published detectors are planned for a
-later release; see [`BENCHMARKS.md`](./BENCHMARKS.md)
-for the full breakdown including head-to-head latency vs. competitors.
+shalyhinpavel are external datasets, neither used during training.
+See [`BENCHMARKS.md`](./BENCHMARKS.md) for the full breakdown including
+head-to-head latency vs. competitors.
 
 | Test set | Samples | Accuracy | Precision | Recall | F1 |
 |----------|---------|----------|-----------|--------|-----|
