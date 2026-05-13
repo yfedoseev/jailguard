@@ -1,0 +1,22 @@
+name: "jailguard CodeQL config"
+
+# Exclude test/example/bench paths from analysis. These contain
+# deliberately-suspicious test strings (canonical prompt-injection
+# attempts, fake API keys, encoded payloads) that exist to exercise
+# the detector itself — CodeQL will flag them as
+# hard-coded-cryptographic-value or hard-coded-credentials, but
+# they're intentional test fixtures, not security defects.
+paths-ignore:
+  - "**/tests/**"
+  - "**/*test*.rs"
+  - "examples/**"
+  - "benches/**"
+  # The 1.5 MB classifier weights JSON; not source code.
+  - "models/**"
+
+# We deliberately keep src/output_validation/patterns.rs in scope —
+# those are the AWS key / API token regexes used by the output-
+# validation layer, and we want CodeQL to flag if any test value
+# accidentally lands in production code.
+
+query-filters: []

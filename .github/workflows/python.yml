@@ -99,6 +99,24 @@ jobs:
       - name: ruff lint
         run: ruff check . --output-format=github
 
+      - name: pip-audit (security scan of pyproject deps)
+        run: |
+          pip install pip-audit
+          # jailguard has zero runtime Python deps by design (the wheel is
+          # self-contained), but the dev/test deps are still scanned. The
+          # --strict flag fails on any vulnerability regardless of severity.
+          pip-audit --strict --requirement <(python -c "
+          import tomllib, sys
+          with open('pyproject.toml', 'rb') as f:
+              pp = tomllib.load(f)
+          for dep in pp['project'].get('dependencies', []):
+              print(dep)
+          for dep in pp['project'].get('optional-dependencies', {}).get('test', []):
+              print(dep)
+          for dep in pp['project'].get('optional-dependencies', {}).get('dev', []):
+              print(dep)
+          ") || true   # informational only — gate to required once stable
+
   # ---------------------------------------------------------------------------
   # Linux wheel matrix — manylinux + musllinux, x86_64 + aarch64.
   # Uses PyO3/maturin-action which cross-compiles via Docker + zig.
