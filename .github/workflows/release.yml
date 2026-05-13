@@ -307,21 +307,49 @@ jobs:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Download all addon artifacts
+      - name: Download per-target addon artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          path: js/build/
+          path: addon-artifacts/
           pattern: addon-*
-          merge-multiple: true
 
-      - name: List staged addons
-        run: ls -la js/build/
+      - name: Stage prebuilds for npm tarball
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p js/prebuilds
 
-      - name: npm install + tsc compile
+          # Cargo target triple → npm prebuilds directory name.
+          declare -A MAP=(
+            [x86_64-unknown-linux-gnu]=linux-x64
+            [aarch64-unknown-linux-gnu]=linux-arm64
+            [x86_64-apple-darwin]=darwin-x64
+            [aarch64-apple-darwin]=darwin-arm64
+            [x86_64-pc-windows-msvc]=win32-x64
+          )
+
+          for art in addon-artifacts/addon-*/; do
+            triple="$(basename "$art" | sed 's/^addon-//')"
+            dest="${MAP[$triple]:-}"
+            if [ -z "$dest" ]; then
+              echo "::warning::unknown target triple $triple — skipping"
+              continue
+            fi
+            # The build-native job uploads each addon as
+            # jailguard.<cargo-triple>.node; rename it to the canonical
+            # jailguard.node the loader requires.
+            mkdir -p "js/prebuilds/${dest}"
+            cp "${art}jailguard.${triple}.node" "js/prebuilds/${dest}/jailguard.node"
+          done
+
+          echo "=== Staged prebuilds ==="
+          find js/prebuilds -type f | sort
+
+      - name: TypeScript build (prepack runs again at publish time)
         working-directory: js
         run: |
           npm ci
-          npm run build || true   # native build may fail without all targets; tsc compile is what matters
+          npm run build
 
       - name: npm publish
         working-directory: js

@@ -1,11 +1,11 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import {
-  RiskLevel,
   detect,
   detectBatch,
   downloadModel,
   isInjection,
   modelCacheDir,
+  RiskLevel,
   score,
   version,
 } from "../src/index.ts";

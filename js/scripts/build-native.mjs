@@ -1,22 +1,33 @@
 #!/usr/bin/env node
-// Build the napi-rs Node.js native module by invoking cargo with the
-// `napi` feature, then copying the resulting cdylib into ./build/ as a
-// .node file Node can require().
+// Local-development build helper for the napi addon.
 //
-// This is the dev path — the published wheel will use prebuilt binaries
-// uploaded as release artifacts (handled in phase 5).
+// Builds the napi-rs Node.js native module by invoking cargo with the
+// `napi` feature, then copies the resulting cdylib into the prebuilds/
+// directory at the path the loader expects:
+//
+//   prebuilds/<platform>-<arch>/jailguard.node
+//
+// CI does NOT use this script — the release pipeline downloads per-target
+// build artifacts and stages them into prebuilds/ directly (see
+// `.github/workflows/release.yml` → publish-npm). This script exists so
+// contributors can do `npm run build:native && npm test` from a clean
+// checkout without configuring CGO_* env vars or running cargo manually.
 
 import { execSync } from "node:child_process";
-import { existsSync, mkdirSync, copyFileSync } from "node:fs";
-import { dirname, resolve, join } from "node:path";
+import { copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { arch, platform } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { platform, arch } from "node:os";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const jsDir = resolve(here, "..");
 const repoRoot = resolve(jsDir, "..");
 const targetDir = resolve(repoRoot, "target", "release");
-const outDir = resolve(jsDir, "build");
+
+// Map Node's os.arch() to the directory naming the loader uses.
+// (Node uses 'x64', 'arm64'; same convention as the prebuilds layout.)
+const triple = `${platform()}-${arch()}`;
+const prebuildDir = resolve(jsDir, "prebuilds", triple);
 
 console.log("→ Compiling Rust + napi feature (this takes ~30s on a clean build)...");
 execSync("cargo build --release --features napi", {
@@ -24,9 +35,7 @@ execSync("cargo build --release --features napi", {
   stdio: "inherit",
 });
 
-const platform_arch = `${platform()}-${arch()}`;
-const ext =
-  platform() === "darwin" ? ".dylib" : platform() === "win32" ? ".dll" : ".so";
+const ext = platform() === "darwin" ? ".dylib" : platform() === "win32" ? ".dll" : ".so";
 const prefix = platform() === "win32" ? "" : "lib";
 const sourceLib = join(targetDir, `${prefix}jailguard${ext}`);
 
@@ -35,13 +44,9 @@ if (!existsSync(sourceLib)) {
   process.exit(1);
 }
 
-mkdirSync(outDir, { recursive: true });
-const targetNode = join(outDir, `jailguard.${platform_arch}.node`);
-copyFileSync(sourceLib, targetNode);
+mkdirSync(prebuildDir, { recursive: true });
+const dest = join(prebuildDir, "jailguard.node");
+copyFileSync(sourceLib, dest);
 
-// Also write a generic jailguard.node symlink for dev convenience.
-const genericNode = join(outDir, "jailguard.node");
-copyFileSync(sourceLib, genericNode);
-
-console.log(`✓ Wrote ${targetNode}`);
-console.log(`✓ Wrote ${genericNode} (dev convenience copy)`);
+console.log(`✓ Wrote ${dest}`);
+console.log(`  Loader will find this automatically at runtime.`);

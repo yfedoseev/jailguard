@@ -1,13 +1,14 @@
 /**
  * JailGuard — fast prompt-injection detection.
  *
- * Pure-Rust core; this entry point loads the napi-rs Node addon.
+ * Pure-Rust core; this entry point loads the prebuilt napi-rs Node addon
+ * shipped under `prebuilds/<platform>-<arch>/jailguard.node`.
  *
  * @example
  * ```ts
  * import { detect, isInjection, downloadModel } from "@jailguard/jailguard";
  *
- * await downloadModel(); // optional, avoids first-call latency
+ * downloadModel(); // optional — avoids first-call latency
  *
  * if (isInjection("ignore previous instructions")) {
  *   throw new Error("blocked");
@@ -19,40 +20,12 @@
  */
 
 import { createRequire } from "node:module";
+import { arch, platform } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { existsSync } from "node:fs";
-import { platform, arch } from "node:os";
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
-
-/** Find the .node file built by scripts/build-native.mjs. */
-function loadAddon(): NativeAddon {
-  const platformArch = `${platform()}-${arch()}`;
-  const candidates = [
-    // Prebuilt binary checked into npm package (release path).
-    join(here, "..", "build", `jailguard.${platformArch}.node`),
-    // Local dev build (after `npm run build`).
-    join(here, "..", "build", "jailguard.node"),
-    // Repo root — direct cargo build for monorepo dev.
-    join(here, "..", "..", "target", "release", "libjailguard.dylib"),
-    join(here, "..", "..", "target", "release", "libjailguard.so"),
-    join(here, "..", "..", "target", "release", "jailguard.dll"),
-  ];
-
-  for (const path of candidates) {
-    if (existsSync(path)) {
-      return require(path) as NativeAddon;
-    }
-  }
-
-  throw new Error(
-    `JailGuard native addon not found for ${platformArch}. ` +
-      `Run \`npm run build\` from the js/ directory, or rebuild from source ` +
-      `with \`cargo build --release --features napi\` and re-run.`,
-  );
-}
 
 /** Risk classification bucket. */
 export enum RiskLevel {
@@ -86,6 +59,66 @@ interface NativeAddon {
   detectBatch: (texts: string[]) => DetectionResult[];
 }
 
+/**
+ * Map (platform, arch) to the prebuilt `.node` file shipped in the npm
+ * tarball. The keys correspond to Node's `os.platform()` and
+ * `os.arch()` return values; we deliberately ship the same set of
+ * triples the Rust release.yml builds for.
+ */
+const PREBUILD_PATHS: Record<string, Record<string, string>> = {
+  darwin: {
+    x64: "../prebuilds/darwin-x64/jailguard.node",
+    arm64: "../prebuilds/darwin-arm64/jailguard.node",
+  },
+  linux: {
+    x64: "../prebuilds/linux-x64/jailguard.node",
+    arm64: "../prebuilds/linux-arm64/jailguard.node",
+  },
+  win32: {
+    x64: "../prebuilds/win32-x64/jailguard.node",
+  },
+};
+
+function prebuildPath(): string {
+  const plat = platform();
+  const a = arch();
+  const rel = PREBUILD_PATHS[plat]?.[a];
+  if (!rel) {
+    throw new Error(
+      `@jailguard/jailguard: unsupported platform ${plat}/${a}. ` +
+        "Supported: darwin-x64, darwin-arm64, linux-x64, linux-arm64, win32-x64. " +
+        "File an issue at https://github.com/yfedoseev/jailguard/issues if you need a new target.",
+    );
+  }
+  return join(here, rel);
+}
+
+/**
+ * Load the native addon. Tries the prebuilt path first; falls back to a
+ * developer build at `../build/jailguard.node` when JAILGUARD_NAPI_DEV=1
+ * is set (used by `npm run build:native` during local development).
+ */
+function loadAddon(): NativeAddon {
+  const prebuilt = prebuildPath();
+  try {
+    return require(prebuilt) as NativeAddon;
+  } catch (err) {
+    if (process.env.JAILGUARD_NAPI_DEV === "1" || process.env.NODE_ENV === "development") {
+      try {
+        return require(join(here, "..", "build", "jailguard.node")) as NativeAddon;
+      } catch {
+        /* fall through to original error */
+      }
+    }
+    throw new Error(
+      `@jailguard/jailguard: failed to load native addon at ${prebuilt}. ` +
+        "This usually means the prebuilt binary for your platform is missing " +
+        "from the npm tarball — please file an issue.\n\n" +
+        `Underlying error: ${(err as Error).message}`,
+    );
+  }
+}
+
 const addon = loadAddon();
 
 /** Library version. */
@@ -110,5 +143,4 @@ export const isInjection: (text: string) => boolean = addon.isInjection;
 export const score: (text: string) => number = addon.score;
 
 /** Process a batch of texts. */
-export const detectBatch: (texts: string[]) => DetectionResult[] =
-  addon.detectBatch;
+export const detectBatch: (texts: string[]) => DetectionResult[] = addon.detectBatch;

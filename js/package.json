@@ -29,7 +29,7 @@
   },
   "files": [
     "lib/",
-    "src/",
+    "prebuilds/",
     "README.md",
     "LICENSE-APACHE",
     "LICENSE-MIT"
@@ -38,21 +38,20 @@
     "node": ">=18"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && node scripts/build-native.mjs",
+    "build": "tsc -p tsconfig.json",
+    "build:native": "node scripts/build-native.mjs",
+    "prepack": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "biome check .",
     "format": "biome format --write .",
     "type-check": "tsc -p tsconfig.json --noEmit",
-    "clean": "rm -rf lib build"
+    "clean": "rm -rf lib build prebuilds"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",
     "@types/node": "^22.0.0",
     "typescript": "^5.5.0",
     "vitest": "^2.0.0"
-  },
-  "optionalDependencies": {
-    "@napi-rs/cli": "^3.0.0"
   }
 }
