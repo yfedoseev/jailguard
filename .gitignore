@@ -90,3 +90,5 @@ examples/javascript/*/node_modules/
 examples/typescript/*/node_modules/
 examples/python/*/__pycache__/
 examples/go/*/go.sum
+/go/install
+/go/cmd/install/install

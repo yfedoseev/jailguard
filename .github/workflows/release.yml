@@ -349,12 +349,103 @@ jobs:
           git push origin "go/v${VERSION}"
 
   # ===========================================================================
+  # Package per-platform Go FFI tarballs (static + shared library variants).
+  # Consumed by the Go installer at runtime
+  # (go/cmd/install) — see go/README.md.
+  # ===========================================================================
+  package-go-ffi:
+    name: package Go FFI tarballs
+    runs-on: ubuntu-latest
+    needs: [preflight, build-native]
+    if: needs.preflight.outputs.is_dry_run == 'false'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Download every native-lib artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: native-libs/
+          pattern: native-*
+
+      - name: List native artifacts
+        run: find native-libs/ -type f | sort
+
+      - name: Pack Go FFI tarballs
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$PWD/go-ffi-out"
+          mkdir -p "$OUT"
+
+          pack_static() {
+            local platform="$1" target="$2"
+            local src="native-libs/native-${target}"
+            local tmp; tmp="$(mktemp -d)"
+            mkdir -p "$tmp/lib/$platform" "$tmp/include"
+
+            if [ ! -f "$src/libjailguard.a" ]; then
+              echo "::error::missing libjailguard.a for $target"
+              return 1
+            fi
+            cp "$src/libjailguard.a" "$tmp/lib/$platform/libjailguard.a"
+            cp "$src/jailguard.h"    "$tmp/include/jailguard.h"
+
+            local slug="${platform/_/-}"
+            local tgz="$OUT/jailguard-go-ffi-${slug}.tar.gz"
+            tar -C "$tmp" -czf "$tgz" lib include
+            (cd "$OUT" && sha256sum "jailguard-go-ffi-${slug}.tar.gz" > "jailguard-go-ffi-${slug}.tar.gz.sha256")
+            rm -rf "$tmp"
+          }
+
+          pack_shared() {
+            local platform="$1" target="$2" libfile="$3"
+            local src="native-libs/native-${target}"
+            local tmp; tmp="$(mktemp -d)"
+            mkdir -p "$tmp/lib/$platform" "$tmp/include"
+
+            if [ ! -f "$src/$libfile" ]; then
+              echo "::error::missing $libfile for $target"
+              return 1
+            fi
+            cp "$src/$libfile"    "$tmp/lib/$platform/$libfile"
+            cp "$src/jailguard.h" "$tmp/include/jailguard.h"
+
+            local slug="${platform/_/-}"
+            local tgz="$OUT/jailguard-go-ffi-shared-${slug}.tar.gz"
+            tar -C "$tmp" -czf "$tgz" lib include
+            (cd "$OUT" && sha256sum "jailguard-go-ffi-shared-${slug}.tar.gz" > "jailguard-go-ffi-shared-${slug}.tar.gz.sha256")
+            rm -rf "$tmp"
+          }
+
+          # Static (.a) — for the CGo backend, statically linked.
+          pack_static linux_amd64   x86_64-unknown-linux-gnu
+          pack_static linux_arm64   aarch64-unknown-linux-gnu
+          pack_static darwin_amd64  x86_64-apple-darwin
+          pack_static darwin_arm64  aarch64-apple-darwin
+          pack_static windows_amd64 x86_64-pc-windows-msvc
+
+          # Shared (.so/.dylib/.dll) — for the purego backend, dlopen'd at runtime.
+          pack_shared linux_amd64   x86_64-unknown-linux-gnu  libjailguard.so
+          pack_shared linux_arm64   aarch64-unknown-linux-gnu libjailguard.so
+          pack_shared darwin_amd64  x86_64-apple-darwin       libjailguard.dylib
+          pack_shared darwin_arm64  aarch64-apple-darwin      libjailguard.dylib
+          pack_shared windows_amd64 x86_64-pc-windows-msvc    jailguard.dll
+
+          ls -la "$OUT"
+
+      - name: Upload Go FFI tarballs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: go-ffi
+          path: go-ffi-out/
+
+  # ===========================================================================
   # GitHub Release — collect all artifacts, attach to a release
   # ===========================================================================
   github-release:
     name: GitHub release
     runs-on: ubuntu-latest
-    needs: [preflight, build-native, build-wheels-linux, build-wheels-macos, build-wheels-windows, build-sdist]
+    needs: [preflight, build-native, build-wheels-linux, build-wheels-macos, build-wheels-windows, build-sdist, package-go-ffi]
     if: needs.preflight.outputs.is_dry_run == 'false'
     permissions:
       contents: write

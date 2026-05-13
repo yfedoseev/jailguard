@@ -1,6 +1,4 @@
-# go workspace artifacts
-go.sum
-
 # binaries
 *.test
 *.out
+install
