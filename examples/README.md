@@ -64,7 +64,7 @@ finds it without flags.
 ## JavaScript (Node.js)
 
 ```bash
-npm install @jailguard/jailguard
+npm install @yfedoseev/jailguard
 node examples/javascript/01-quick-start/index.mjs
 ```
 
@@ -76,7 +76,7 @@ node examples/javascript/01-quick-start/index.mjs
 ## TypeScript
 
 ```bash
-npm install @jailguard/jailguard
+npm install @yfedoseev/jailguard
 npx tsx examples/typescript/01-quick-start/index.ts
 ```
 

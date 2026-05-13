@@ -6,7 +6,7 @@
  *
  * @example
  * ```ts
- * import { detect, isInjection, downloadModel } from "@jailguard/jailguard";
+ * import { detect, isInjection, downloadModel } from "@yfedoseev/jailguard";
  *
  * downloadModel(); // optional — avoids first-call latency
  *
@@ -85,7 +85,7 @@ function prebuildPath(): string {
   const rel = PREBUILD_PATHS[plat]?.[a];
   if (!rel) {
     throw new Error(
-      `@jailguard/jailguard: unsupported platform ${plat}/${a}. ` +
+      `@yfedoseev/jailguard: unsupported platform ${plat}/${a}. ` +
         "Supported: darwin-x64, darwin-arm64, linux-x64, linux-arm64, win32-x64. " +
         "File an issue at https://github.com/yfedoseev/jailguard/issues if you need a new target.",
     );
@@ -111,7 +111,7 @@ function loadAddon(): NativeAddon {
       }
     }
     throw new Error(
-      `@jailguard/jailguard: failed to load native addon at ${prebuilt}. ` +
+      `@yfedoseev/jailguard: failed to load native addon at ${prebuilt}. ` +
         "This usually means the prebuilt binary for your platform is missing " +
         "from the npm tarball — please file an issue.\n\n" +
         `Underlying error: ${(err as Error).message}`,

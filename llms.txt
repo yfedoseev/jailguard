@@ -10,7 +10,7 @@
 
 - [Rust](https://github.com/yfedoseev/jailguard/blob/main/docs/GETTING_STARTED.md): `cargo add jailguard` — three functions: `detect()`, `is_injection()`, `score()`.
 - [Python](https://github.com/yfedoseev/jailguard/blob/main/python/README.md): `pip install jailguard` — same surface via pyo3 + maturin.
-- [JavaScript / TypeScript](https://github.com/yfedoseev/jailguard/blob/main/js/README.md): `npm install @jailguard/jailguard` — prebuilt napi addons ship in the tarball, no Rust toolchain needed.
+- [JavaScript / TypeScript](https://github.com/yfedoseev/jailguard/blob/main/js/README.md): `npm install @yfedoseev/jailguard` — prebuilt napi addons ship in the tarball, no Rust toolchain needed.
 - [Go](https://github.com/yfedoseev/jailguard/blob/main/go/README.md): `go get github.com/yfedoseev/jailguard/go` then `go run github.com/yfedoseev/jailguard/go/cmd/install@latest` — CGo + purego backends.
 
 ## Reference

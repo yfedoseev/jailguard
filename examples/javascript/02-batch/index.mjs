@@ -5,10 +5,10 @@
 // it shares the ONNX session across all inputs.
 //
 // Run:
-//   npm install @jailguard/jailguard
+//   npm install @yfedoseev/jailguard
 //   node index.mjs
 
-import { detectBatch, downloadModel, RiskLevel } from "@jailguard/jailguard";
+import { detectBatch, downloadModel, RiskLevel } from "@yfedoseev/jailguard";
 
 downloadModel();
 

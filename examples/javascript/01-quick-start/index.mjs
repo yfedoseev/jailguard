@@ -2,7 +2,7 @@
 // 01-quick-start — boolean check + detailed result.
 //
 // Run:
-//   npm install @jailguard/jailguard
+//   npm install @yfedoseev/jailguard
 //   node index.mjs
 
 import {
@@ -13,7 +13,7 @@ import {
   RiskLevel,
   score,
   version,
-} from "@jailguard/jailguard";
+} from "@yfedoseev/jailguard";
 
 // Optional: pre-fetch the ONNX model (idempotent).
 downloadModel();

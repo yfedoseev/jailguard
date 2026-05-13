@@ -4,7 +4,7 @@ Fast prompt-injection detection for Node.js. Pure-Rust core, exposed via
 a napi-rs N-API native addon. **Prebuilt binaries ship for every
 supported platform — no Rust toolchain required to install.**
 
-[![npm version](https://img.shields.io/npm/v/@jailguard/jailguard.svg)](https://www.npmjs.com/package/@jailguard/jailguard)
+[![npm version](https://img.shields.io/npm/v/@yfedoseev/jailguard.svg)](https://www.npmjs.com/package/@yfedoseev/jailguard)
 
 > **Part of the [JailGuard](https://github.com/yfedoseev/jailguard) toolkit.**
 > Same Rust core as the [Rust crate](https://crates.io/crates/jailguard),
@@ -13,7 +13,7 @@ supported platform — no Rust toolchain required to install.**
 ## Install
 
 ```bash
-npm install @jailguard/jailguard
+npm install @yfedoseev/jailguard
 ```
 
 That's it. Prebuilt `.node` binaries ship inside the npm tarball for:
@@ -29,7 +29,7 @@ Node.js 18 or later is required.
 ## Quick start
 
 ```typescript
-import { detect, isInjection, downloadModel } from "@jailguard/jailguard";
+import { detect, isInjection, downloadModel } from "@yfedoseev/jailguard";
 
 // Optional: pre-fetch the ONNX embedding model (~90 MB, cached at
 // ~/.cache/jailguard/). The first detect() call will download it on

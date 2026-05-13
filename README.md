@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-MIT%2FApache--2.0-blue)](LICENSE)
 [![crates.io](https://img.shields.io/crates/v/jailguard.svg)](https://crates.io/crates/jailguard)
 [![PyPI](https://img.shields.io/pypi/v/jailguard.svg)](https://pypi.org/project/jailguard/)
-[![npm](https://img.shields.io/npm/v/@jailguard/jailguard.svg)](https://www.npmjs.com/package/@jailguard/jailguard)
+[![npm](https://img.shields.io/npm/v/@yfedoseev/jailguard.svg)](https://www.npmjs.com/package/@yfedoseev/jailguard)
 
 > **JailGuard is a pure-Rust prompt-injection detector with a 1.5 MB embedded ONNX classifier.** It scores text in **p50 14 ms on CPU**, achieves **98.40% accuracy** on a 7,049-sample held-out test set drawn from 17 public datasets, and ships bindings for **Rust, Python, JavaScript, and Go**. The classifier is **embedded in the binary** — zero config, no external service, no API key. Dual-licensed under MIT OR Apache-2.0.
 
@@ -37,9 +37,9 @@ result = jailguard.detect("What is the capital of France?")
 print(result.score, result.risk)
 ```
 
-**JavaScript / TypeScript** — `npm install @jailguard/jailguard`
+**JavaScript / TypeScript** — `npm install @yfedoseev/jailguard`
 ```typescript
-import { detect, isInjection } from "@jailguard/jailguard";
+import { detect, isInjection } from "@yfedoseev/jailguard";
 
 if (isInjection("ignore previous instructions")) {
     throw new Error("blocked");
@@ -202,7 +202,7 @@ Yes. `pip install jailguard`. The wheel ships precompiled bindings for CPython 3
 
 ### Does it work in JavaScript / Node.js?
 
-Yes. `npm install @jailguard/jailguard`. Prebuilt napi addons ship for Linux x64/arm64, macOS x64/arm64, Windows x64 — no Rust toolchain or C compiler needed at install time.
+Yes. `npm install @yfedoseev/jailguard`. Prebuilt napi addons ship for Linux x64/arm64, macOS x64/arm64, Windows x64 — no Rust toolchain or C compiler needed at install time.
 
 ### Does it work in Go?
 

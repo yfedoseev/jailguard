@@ -4,7 +4,7 @@ JailGuard ships four artifacts from a single tag:
 
 1. **Rust crate** → [crates.io/crates/jailguard](https://crates.io/crates/jailguard)
 2. **Python wheel** (`jailguard`) → [pypi.org/project/jailguard](https://pypi.org/project/jailguard/)
-3. **Node.js package** (`@jailguard/jailguard`) → [npm](https://www.npmjs.com/package/@jailguard/jailguard)
+3. **Node.js package** (`@yfedoseev/jailguard`) → [npm](https://www.npmjs.com/package/@yfedoseev/jailguard)
 4. **Go module** (`github.com/yfedoseev/jailguard/go`) → [pkg.go.dev](https://pkg.go.dev/github.com/yfedoseev/jailguard/go)
 
 All four are produced by `.github/workflows/release.yml` from a single
@@ -75,7 +75,7 @@ gh run watch
 # 7. Post-release verification.
 cargo install jailguard --version 0.1.1
 pip install jailguard==0.1.1
-npm view @jailguard/jailguard@0.1.1 version
+npm view @yfedoseev/jailguard@0.1.1 version
 GOPROXY=https://proxy.golang.org go install github.com/yfedoseev/jailguard/go@v0.1.1
 ```
 
@@ -117,6 +117,6 @@ If you ship a broken artifact:
 cargo yank --version 0.1.1
 pip --user uninstall jailguard
 # (PyPI doesn't support yanking; release a 0.1.2 quickly)
-npm deprecate @jailguard/jailguard@0.1.1 "use 0.1.2 instead"
+npm deprecate @yfedoseev/jailguard@0.1.1 "use 0.1.2 instead"
 # Go modules can't be yanked; release a fixed 0.1.2 and update go.sum
 ```

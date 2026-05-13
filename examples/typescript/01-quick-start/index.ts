@@ -2,7 +2,7 @@
 // 01-quick-start (TypeScript) — boolean check + detailed result.
 //
 // Run:
-//   npm install @jailguard/jailguard
+//   npm install @yfedoseev/jailguard
 //   npx tsx index.ts
 //
 // Or compile to JS first:
@@ -18,7 +18,7 @@ import {
   modelCacheDir,
   score,
   version,
-} from "@jailguard/jailguard";
+} from "@yfedoseev/jailguard";
 
 downloadModel();
 

@@ -2,7 +2,7 @@
 // 02-batch (TypeScript) — process many prompts in one call.
 //
 // Run:
-//   npm install @jailguard/jailguard
+//   npm install @yfedoseev/jailguard
 //   npx tsx index.ts
 
 import {
@@ -10,7 +10,7 @@ import {
   RiskLevel,
   detectBatch,
   downloadModel,
-} from "@jailguard/jailguard";
+} from "@yfedoseev/jailguard";
 
 downloadModel();
 
