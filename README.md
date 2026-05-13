@@ -216,7 +216,7 @@ Yes. Rebuff was [archived by ProtectAI on May 16, 2025](https://github.com/prote
 
 Lakera Guard is a closed-source SaaS API. Check Point announced its acquisition of Lakera on September 16, 2025 (~$300M, closing Q4 2025); Lakera Guard remains SaaS-only. JailGuard runs locally with **no network call**: p50 14 ms on CPU versus ~150–300 ms RTT for an HTTP round-trip to Lakera. No API key, no rate limit, no data ever leaves your process.
 
-Lakera scores 95.22% on its own PINT benchmark; PINT is not open-source so we don't publish a PINT number for JailGuard. We benchmark on a 7,049-sample mix of public datasets instead (see [`BENCHMARKS.md`](BENCHMARKS.md)).
+Direct head-to-head accuracy comparison isn't possible — Lakera's evaluation methodology and test data are closed. We benchmark JailGuard on a 7,049-sample mix of public datasets and against locally-runnable open-source models (see [`BENCHMARKS.md`](BENCHMARKS.md)).
 
 ### How does JailGuard compare to ProtectAI's deberta-v3 detector?
 
@@ -274,7 +274,6 @@ See [`CITATION.cff`](CITATION.cff) (GitHub's "Cite this repository" button uses 
 ## References
 
 - [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) — sentence embeddings
-- [Lakera PINT benchmark](https://github.com/lakeraai/pint-benchmark)
 - [PromptGuard (Meta)](https://github.com/meta-llama/PurpleLlama)
 - [Rebuff](https://github.com/protectai/rebuff) (archived)
 - [Sentinel: SOTA model to protect against prompt injections](https://arxiv.org/abs/2506.05446)

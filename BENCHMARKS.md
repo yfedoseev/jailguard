@@ -127,32 +127,33 @@ false-positive rate substantially: see over-defense table below.
 > ~93% of injections, confirming that keyword matching alone is insufficient
 > for production use.
 
-### Published numbers for API-based competitors
+### Published numbers from competitor model cards
 
-The table below combines the **PINT leaderboard** (Lakera, 2025-05-02) with
-published in-domain numbers from each vendor's model card. PINT is a
-neutral 4,314-sample benchmark with 20.9% hard negatives (benign prompts
-containing suspicious words like "ignore"), which causes significant drops
-from in-domain accuracy.
+Each vendor evaluates on its own test set, so the in-domain accuracies
+below are **not directly comparable** — they're cited only to give a
+sense of where each model claims to land on its own data. For
+apples-to-apples numbers see the local-CPU head-to-head sections below,
+which run every model on the same public datasets.
 
-| Model | In-domain accuracy | PINT score | Mechanism | Latency (CPU) |
-|---|---|---|---|---|
-| **JailGuard iter-9 (this repo)** | **98.40%** *(pipeline test set, 7,049 samples)* | *not yet evaluated* | Local ONNX + MLP, Rust | **p50 14 ms, p99 18 ms** |
-| Lakera Guard | not published | **95.22%** | Closed source API | ~150–300 ms |
-| AWS Bedrock Guardrails | not published | **89.24%** | Closed source API | ~200–400 ms |
-| Azure Prompt Shields | ~98.3% acc, 58.5% recall¹ | **89.12%** | Closed source API | ~200–600 ms RTT |
-| protectai/deberta-v3-base-prompt-injection-v2 | 95.25%² | **79.14%** | 184 M DeBERTa, HF API | 104–212 ms³ |
-| Llama Prompt Guard 2 86M (Meta) | 97.5% recall@1% FPR | **78.76%** | 86 M mDeBERTa, API/local | 92 ms (A100 GPU)⁴ |
-| Google Model Armor | not published | **70.07%** | Closed source API | not published |
-| Llama Prompt Guard 1 (Meta) | ~41.6%⁵ | **61.82%** | 86 M mDeBERTa | same as PG2 |
+| Model | Vendor-published in-domain accuracy | Mechanism | Latency (CPU) |
+|---|---|---|---|
+| **JailGuard iter-9 (this repo)** | **98.40%** *(7,049-sample held-out test split)* | Local ONNX + MLP, Rust | **p50 14 ms, p99 18 ms** |
+| Lakera Guard | not published | Closed source API | ~150–300 ms |
+| AWS Bedrock Guardrails | not published | Closed source API | ~200–400 ms |
+| Azure Prompt Shields | ~98.3% acc, 58.5% recall¹ | Closed source API | ~200–600 ms RTT |
+| protectai/deberta-v3-base-prompt-injection-v2 | 95.25%² | 184 M DeBERTa, HF API | 104–212 ms³ |
+| Llama Prompt Guard 2 86M (Meta) | 97.5% recall@1% FPR | 86 M mDeBERTa, API/local | 92 ms (A100 GPU)⁴ |
+| Google Model Armor | not published | Closed source API | not published |
+| Llama Prompt Guard 1 (Meta) | ~41.6%⁵ | 86 M mDeBERTa | same as PG2 |
 
 ¹ From arxiv:2502.15427 Table 2, in-distribution evaluation.  
 ² From HuggingFace model card; tested on 20 K unseen prompts.  
 ³ Per LLM Guard docs: AWS m5.xlarge CPU 212 ms, CPU+ONNX export 104 ms,
   GPU (g5.xlarge) 7.65 ms. Source: [LLM Guard benchmarks](https://protectai.github.io/llm-guard/input_scanners/prompt_injection/).  
 ⁴ Published GPU figure. CPU estimate: 200–400 ms (mDeBERTa is larger than MiniLM).  
-⁵ InjecGuard paper (arxiv:2410.22770): PG1 has ~99% FPR on benign prompts
-  containing the word "ignore". Average across in/out-of-distribution: 41.6%.
+⁵ InjecGuard paper (arxiv:2410.22770) measured PG1's false-positive rate as
+  ~99% on benign prompts containing the word "ignore"; averaged accuracy across
+  in/out-of-distribution is ~41.6%.
 
 ### Local CPU head-to-head — iter-7 (no mosscap) — measured 2026-05-05
 
@@ -367,11 +368,13 @@ Both rollbacks are ~1.5 hr pipeline reruns.
 
 ### Important caveats
 
-**In-domain vs. PINT.** JailGuard iter-9's 98.40% is measured on its own test
-split, which shares the same distribution as its training data. PINT's 20.9%
-hard negatives (benign prompts containing injection-like words) will likely
-lower the PINT score — this is the primary open question. A PINT download
-attempt was rate-limited (HTTP 429); see [Roadmap](#roadmap) for status.
+**In-domain vs out-of-distribution.** JailGuard iter-9's 98.40% is measured
+on its own test split, which shares the same distribution as its training
+data. Out-of-distribution holdouts (J1N2, shalyhinpavel) are reported
+separately above and remain the honest measure of generalization. Any
+single-number "best model" claim across vendors should be treated with
+skepticism — each vendor evaluates on their own data with their own
+preprocessing.
 
 **Over-defense problem.**  The InjecGuard paper (arxiv:2410.22770) measured
 false-positive rates on 339 benign prompts containing injection-like words:
@@ -531,8 +534,6 @@ cargo run --release --example cold_start_bench  # Cold-start measurement
 
 ## Roadmap
 
-- [ ] **PINT evaluation** — run JailGuard on the full PINT 4,314-sample benchmark
-  and submit to the [public leaderboard](https://github.com/lakeraai/pint-benchmark)
 - [x] **Hard-negatives FPR test** — shalyhinpavel validation holdout (147 samples)
   measures FPR on security-adjacent benign text; reduced from ~27% to ~10.4%
   after adding the train split to training data
@@ -540,8 +541,9 @@ cargo run --release --example cold_start_bench  # Cold-start measurement
   trained and deployed (iter-9); model achieves 98.40% accuracy, 97.98% recall on
   7,049-sample in-domain test set; 86.96% on shalyhinpavel OOD holdout
 - [ ] **AgentDojo APR** — indirect injection benchmark against tool-return content
-- [ ] **Multi-language evaluation** — PINT includes 24+ languages; MiniLM is
-  English-centric so non-English accuracy is expected to degrade
+- [ ] **Multi-language evaluation** — MiniLM-L6-v2 is English-weighted; non-English
+  accuracy is expected to degrade. Build a held-out multilingual eval set from
+  public sources.
 - [ ] **Batched ONNX inference** — enable true batching in the ONNX session for
   higher GPU throughput
 - [ ] **GPU latency numbers** — measure on a GPU instance (CUDA / Metal) to
@@ -551,7 +553,6 @@ cargo run --release --example cold_start_bench  # Cold-start measurement
 
 ## References
 
-- [PINT Benchmark](https://github.com/lakeraai/pint-benchmark) — Lakera AI, CC-BY-NC-4.0
 - [LLM Guard PromptInjectionScanner](https://protectai.github.io/llm-guard/input_scanners/prompt_injection/)
 - [protectai/deberta-v3-base-prompt-injection-v2 model card](https://huggingface.co/protectai/deberta-v3-base-prompt-injection-v2)
 - [Llama Prompt Guard 2 model card](https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-86M)

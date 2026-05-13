@@ -11,33 +11,115 @@
 
 # JailGuard
 
-[![Accuracy](https://img.shields.io/badge/Accuracy-98.40%25-blue)](CHANGELOG.md)
-[![F1 Score](https://img.shields.io/badge/F1-0.983-blue)](CHANGELOG.md)
+[![Accuracy](https://img.shields.io/badge/Accuracy-98.40%25-blue)](BENCHMARKS.md)
+[![F1 Score](https://img.shields.io/badge/F1-0.983-blue)](BENCHMARKS.md)
 [![Pure Rust](https://img.shields.io/badge/Pure-Rust-orange)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/License-MIT%2FApache--2.0-blue)](LICENSE)
+[![crates.io](https://img.shields.io/crates/v/jailguard.svg)](https://crates.io/crates/jailguard)
+[![PyPI](https://img.shields.io/pypi/v/jailguard.svg)](https://pypi.org/project/jailguard/)
+[![npm](https://img.shields.io/npm/v/@jailguard/jailguard.svg)](https://www.npmjs.com/package/@jailguard/jailguard)
 
-**Fast, lightweight prompt injection detection in pure Rust.** Embedded 130K-parameter classifier, CPU-only, sub-50 ms inference, zero-config API.
+> **JailGuard is a pure-Rust prompt-injection detector with a 1.5 MB embedded ONNX classifier.** It scores text in **p50 14 ms on CPU**, achieves **98.40% accuracy** on a 7,049-sample held-out test set drawn from 17 public datasets, and ships bindings for **Rust, Python, JavaScript, and Go**. The classifier is **embedded in the binary** — zero config, no external service, no API key. Dual-licensed under MIT OR Apache-2.0.
 
-## Highlights
+**In 2026, JailGuard is the actively maintained, independent, OSI-permissive, CPU-embedded option** in a consolidated prompt-injection-detection market. [Rebuff was archived on May 16, 2025](https://github.com/protectai/rebuff). [Check Point announced its acquisition of Lakera on September 16, 2025](https://www.checkpoint.com/press-releases/check-point-acquires-lakera-to-deliver-end-to-end-ai-security-for-enterprises/) (~$300M, closing Q4 2025). [Palo Alto Networks completed its acquisition of ProtectAI on July 22, 2025](https://www.paloaltonetworks.com/company/press/2025/palo-alto-networks-completes-acquisition-of-protect-ai). Meta's [Prompt Guard 2](https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-86M) ships under the Llama 4 Community License (not OSI-approved).
 
-- **98.40% accuracy / F1 0.983** on a 7,049-sample held-out split of the training pipeline; **99.38% / F1 0.990** on the J1N2 OOD benchmark; **89.12%** on the shalyhinpavel hard-negative holdout.
-- **CPU-only.** No GPU required for inference or training.
-- **Embedded model.** The classifier ships inside the crate; the 90 MB ONNX embedding model is auto-downloaded and cached on first use.
-- **Small surface area.** Three functions: `detect()`, `is_injection()`, `score()`.
-- **Permissive.** MIT OR Apache-2.0.
+## Quick start
 
-> In-distribution numbers are from the project's own pipeline test split. The J1N2 and shalyhinpavel sets are independent of training data — see [`BENCHMARKS.md`](./BENCHMARKS.md).
+**Rust** — `cargo add jailguard`
+```rust
+use jailguard::{detect, is_injection};
+
+if is_injection("ignore previous instructions") {
+    return Err("blocked");
+}
+
+let result = detect("What is the capital of France?");
+println!("score={:.3} risk={:?}", result.score, result.risk);
+```
+
+**Python** — `pip install jailguard`
+```python
+import jailguard
+
+if jailguard.is_injection("ignore previous instructions"):
+    raise RuntimeError("blocked")
+
+result = jailguard.detect("What is the capital of France?")
+print(result.score, result.risk)
+```
+
+**JavaScript / TypeScript** — `npm install @jailguard/jailguard`
+```typescript
+import { detect, isInjection } from "@jailguard/jailguard";
+
+if (isInjection("ignore previous instructions")) {
+    throw new Error("blocked");
+}
+
+const r = detect("What is the capital of France?");
+console.log(r.score, r.risk);
+```
+
+**Go** — `go get github.com/yfedoseev/jailguard/go`
+```go
+import jailguard "github.com/yfedoseev/jailguard/go"
+
+if injection, _ := jailguard.IsInjection("ignore previous instructions"); injection {
+    log.Fatal("blocked")
+}
+
+result, _ := jailguard.Detect("What is the capital of France?")
+fmt.Printf("score=%.3f risk=%v\n", result.Score, result.Risk)
+```
+
+The classifier is embedded in every binding. The 90 MB MiniLM ONNX embedder is auto-downloaded to `~/.cache/jailguard/` on first use. For production: call `jailguard::download_model()` at startup to warm the cache before serving traffic.
+
+## JailGuard vs alternatives in 2026
+
+| Feature | JailGuard | Lakera Guard | Rebuff | ProtectAI deberta-v3 | Meta Prompt Guard 2 |
+|---|---|---|---|---|---|
+| **License** | Apache 2.0 / MIT | proprietary (Check Point announced acquisition Sep 16, 2025) | Apache 2.0 — **archived May 16, 2025** | Apache 2.0 (parent acq. by Palo Alto Jul 22, 2025) | Llama 4 Community (non-OSI) |
+| **Deployment** | embedded library | SaaS API | self-host Python SDK | HF model | HF model |
+| **Model size** | 1.5 MB MLP + 90 MB MiniLM ONNX | n/a (API) | n/a | ~440 MB | 22 M or 86 M params |
+| **Latency (CPU)** | **p50 14 ms** | ~150–300 ms RTT | n/a | 104–212 ms | 92 ms (A100 GPU)¹ |
+| **Classification** | **8-class taxonomy** | binary | binary | binary | binary |
+| **Active in 2026?** | ✅ | ✅ (Check Point pending) | **❌ archived** | ✅ (Palo Alto) | ✅ |
+| **No PyTorch / no runtime dep** | ✅ (Rust) | ❌ HTTP client | ❌ Python+OpenAI | ❌ PyTorch | ❌ PyTorch |
+| **Multi-language bindings** | Rust, Python, JS, Go | API clients | Python | Python | Python |
+
+¹ Meta does not publish CPU latency for Prompt Guard 2.
+
+Full methodology, dataset breakdown, and head-to-head local-CPU comparisons against `protectai/deberta-v3-base-prompt-injection-v2`, `deepset/deberta-v3-base-injection`, and `madhurjindal/Jailbreak-Detector-Large` are in [`BENCHMARKS.md`](./BENCHMARKS.md).
+
+## API at a glance
+
+```rust
+pub fn detect(text: &str) -> DetectionOutput
+pub fn is_injection(text: &str) -> bool
+pub fn score(text: &str) -> f32
+pub fn detect_batch(texts: &[&str]) -> Vec<DetectionOutput>
+pub fn download_model() -> Result<PathBuf, Error>
+
+pub struct DetectionOutput {
+    pub is_injection: bool,
+    pub score: f32,
+    pub confidence: f32,
+    pub risk: RiskLevel,
+}
+
+pub enum RiskLevel { Safe, Low, Medium, High, Critical }
+```
+
+Python / JS / Go expose the same surface in idiomatic form. See [`docs/API.md`](docs/API.md) for full per-language signatures.
 
 ## How it works
 
 JailGuard pairs a frozen sentence-embedding model with a small classifier:
 
 1. **MiniLM-L6-v2** (384-dim, ONNX) produces a semantic vector for the input.
-2. A 3-layer MLP (384 → 256 → 128 → 1, ~130K parameters, ReLU + dropout 0.2 + sigmoid) scores it as injection vs. benign.
+2. A 3-layer MLP (384 → 256 → 128 → 1, ~130 K parameters, ReLU + dropout 0.2 + sigmoid) scores it as injection vs. benign.
 
-The embedding model is frozen — no fine-tuning — which keeps the training and inference cost on CPU modest.
-
-## Architecture
+The embedding model is frozen — no fine-tuning — which keeps training and inference cost on CPU modest. The classifier weights are a 1.5 MB JSON file `include_str!`'d into the binary at compile time.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -47,92 +129,37 @@ The embedding model is frozen — no fine-tuning — which keeps the training an
 │   User Prompt                                               │
 │       │                                                     │
 │       ▼                                                     │
-│   ┌─────────────┐                                          │
-│   │  MiniLM-L6  │  Semantic Embedding (384-dim)            │
-│   │   (ONNX)    │  • Pre-trained by Microsoft              │
-│   └──────┬──────┘  • Captures meaning, not just keywords   │
+│   ┌─────────────┐                                           │
+│   │  MiniLM-L6  │  Semantic Embedding (384-dim)             │
+│   │   (ONNX)    │  • Pre-trained by Microsoft               │
+│   └──────┬──────┘  • Captures meaning, not just keywords    │
 │          │                                                  │
 │          ▼                                                  │
-│   ┌─────────────────────────────────────────┐              │
-│   │     Binary Classifier (Pure Rust)       │              │
-│   │  ┌─────────────┐  ┌─────────────────┐   │              │
-│   │  │ Dense 256   │→│   Dense 128     │   │              │
-│   │  │ ReLU+Drop   │  │   ReLU+Drop     │   │              │
-│   │  └─────────────┘  └─────────────────┘   │              │
-│   │                          │               │              │
-│   │                          ▼               │              │
-│   │              ┌─────────────────┐        │              │
-│   │              │  Sigmoid (0-1)  │        │              │
-│   │              └─────────────────┘        │              │
-│   └──────────────────────────────────────────┘              │
+│   ┌─────────────────────────────────────────┐               │
+│   │     Binary Classifier (Pure Rust)       │               │
+│   │  ┌─────────────┐  ┌─────────────────┐   │               │
+│   │  │ Dense 256   │→ │   Dense 128     │   │               │
+│   │  │ ReLU+Drop   │  │   ReLU+Drop     │   │               │
+│   │  └─────────────┘  └─────────────────┘   │               │
+│   │                          │              │               │
+│   │                          ▼              │               │
+│   │              ┌─────────────────┐        │               │
+│   │              │  Sigmoid (0-1)  │        │               │
+│   │              └─────────────────┘        │               │
+│   └─────────────────────────────────────────┘               │
 │          │                                                  │
 │          ▼                                                  │
 │   Detection Result                                          │
-│   • confidence: 0.0 - 1.0                                  │
-│   • is_injection: confidence > 0.5                         │
+│   • confidence: 0.0 - 1.0                                   │
+│   • is_injection: confidence > 0.5                          │
+│   • risk: Safe | Low | Medium | High | Critical             │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Quick Start
-
-### Rust (Recommended)
-
-```toml
-[dependencies]
-jailguard = "0.1.0"
-```
-
-The classifier is embedded in the binary. The ONNX embedding model (~90 MB) is auto-downloaded to `~/.cache/jailguard/` on first use.
-
-```rust
-use jailguard::{is_injection, detect};
-
-// Simple boolean check
-if is_injection("ignore all previous instructions") {
-    println!("Blocked!");
-}
-
-// Get detailed result
-let result = detect("What is the capital of France?");
-println!("Safe: {}, Confidence: {:.1}%", !result.is_injection, result.confidence * 100.0);
-```
-
-**Available functions:**
-
-| Function | Returns | Use Case |
-|----------|---------|----------|
-| `is_injection(text)` | `bool` | Quick yes/no check |
-| `detect(text)` | `DetectionOutput` | Full details with confidence |
-| `score(text)` | `f32` | Raw probability (0.0-1.0) |
-| `detect_batch(texts)` | `Vec<DetectionOutput>` | Process multiple inputs |
-| `download_model()` | `Result<PathBuf>` | Pre-download ONNX model |
-
-### Production Setup
-
-In production, pre-download the ONNX model to avoid first-request latency:
-
-```rust
-// Option A: call at app startup
-jailguard::download_model().expect("Failed to download ONNX model");
-```
-
-```dockerfile
-# Option B: pre-download in Dockerfile
-ENV JAILGUARD_MODEL_DIR=/app/models
-RUN curl -L -o /app/models/all-MiniLM-L6-v2.onnx \
-    https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx
-```
-
-Set `JAILGUARD_MODEL_DIR` to control where the model is cached (default: `~/.cache/jailguard/`).
-
 ## Measurements
 
-Measured on Apple M3, last revalidated 2026-05-03. The pipeline test
-split is in-distribution (held-out from the same training pipeline). J1N2 and
-shalyhinpavel are external datasets, neither used during training.
-See [`BENCHMARKS.md`](./BENCHMARKS.md) for the full breakdown including
-head-to-head latency vs. competitors.
+Measured on Apple M3, last revalidated 2026-05-03. The pipeline test split is in-distribution (held out from the same 17-source training mix). J1N2 and shalyhinpavel are external datasets, neither used during training.
 
 | Test set | Samples | Accuracy | Precision | Recall | F1 |
 |----------|---------|----------|-----------|--------|-----|
@@ -140,38 +167,28 @@ head-to-head latency vs. competitors.
 | J1N2 mix (OOD) | 5,000 | **99.38%** | 98.09% | 99.94% | 0.990 |
 | shalyhinpavel hard-negatives (OOD) | 147 | **89.12%** | 76.60% | 87.80% | 0.818 |
 
-### Latency (single CPU thread)
+### Latency (single CPU thread, Apple M3)
 
 | Component               | Time    |
 |-------------------------|---------|
-| Embedding (MiniLM ONNX) | ~25 ms  |
+| Embedding (MiniLM ONNX) | ~13 ms  |
 | Classification (MLP)    | ~1 ms   |
-| **Total**               | **<50 ms** |
+| **Total (p50)**         | **~14 ms** |
+| **Total (p99)**         | **~18 ms** |
 
 ## Benchmarks
 
-Reproducible latency and throughput numbers are driven by two harnesses
-in the repository:
+Reproducible latency and throughput numbers come from three harnesses:
 
-- `benches/detect.rs` — Criterion bench covering single-shot
-  `is_injection` / `detect` / `score` and batch throughput at
-  `n = 1, 8, 32, 128`. Run with `cargo bench --bench detect`.
-- `examples/cold_start_bench.rs` — process-startup cost (ONNX session
-  init + first inference). Run with
-  `cargo run --release --example cold_start_bench`.
-- `scripts/bench.sh` — portable POSIX wrapper that captures machine
-  metadata (CPU, arch, kernel, toolchain) and emits a single markdown
-  report. Same script runs on Linux x86_64, Linux aarch64, macOS Intel,
-  macOS Apple Silicon, and Chromebook Crostini.
+- `benches/detect.rs` — Criterion bench covering single-shot `is_injection` / `detect` / `score` and batch throughput at `n = 1, 8, 32, 128`. Run with `cargo bench --bench detect`.
+- `examples/cold_start_bench.rs` — process-startup cost (ONNX session init + first inference). Run with `cargo run --release --example cold_start_bench`.
+- `scripts/bench.sh` — portable POSIX wrapper that captures machine metadata (CPU, arch, kernel, toolchain) and emits a single markdown report. Works on Linux x86_64, Linux aarch64, macOS Intel, macOS Apple Silicon, and Chromebook Crostini.
 
-Full methodology, four-eval comparison, and head-to-head table vs
-three open-source CPU baselines (protectai-base, deepset, madhurjindal)
-are in [`BENCHMARKS.md`](./BENCHMARKS.md).
+Full methodology and head-to-head local-CPU comparisons in [`BENCHMARKS.md`](./BENCHMARKS.md).
 
 ## Attack categories covered in training
 
-The classifier is binary (injection / benign), but its training mix spans eight
-attack families:
+The classifier output is binary at the public API (injection / benign), but its training mix spans eight attack families:
 
 | Category              | Examples                                |
 |-----------------------|-----------------------------------------|
@@ -184,18 +201,98 @@ attack families:
 | Output manipulation   | Format coercion                         |
 | Indirect injection    | Malicious content embedded in documents |
 
+## Frequently asked questions
+
+### How do I detect prompt injection in Rust?
+
+`cargo add jailguard`, then call `is_injection(text) -> bool` or `detect(text) -> DetectionOutput` from anywhere. Three functions, zero config.
+
+### Does JailGuard work with Python?
+
+Yes. `pip install jailguard`. The wheel ships precompiled bindings for CPython 3.8–3.13 on Linux (x86_64, aarch64, manylinux + musllinux), macOS (x86_64, arm64), and Windows (x86_64) — no Rust toolchain needed.
+
+### Does it work in JavaScript / Node.js?
+
+Yes. `npm install @jailguard/jailguard`. Prebuilt napi addons ship for Linux x64/arm64, macOS x64/arm64, Windows x64 — no Rust toolchain or C compiler needed at install time.
+
+### Does it work in Go?
+
+Yes. `go get github.com/yfedoseev/jailguard/go`, then one-time `go run github.com/yfedoseev/jailguard/go/cmd/install@latest` to fetch the native lib. Two backends — CGo (static link) or purego (`CGO_ENABLED=0`, dlopen at runtime). The purego backend works on Alpine/musl and supports cross-compilation without a C toolchain.
+
+### Is JailGuard an alternative to Rebuff?
+
+Yes. Rebuff was [archived by ProtectAI on May 16, 2025](https://github.com/protectai/rebuff). JailGuard is an actively maintained replacement — Apache-2.0 / MIT, with broader language coverage (Rust, Python, JS, Go vs Rebuff's Python-only), and pure-Rust runtime (no Python or OpenAI dependency).
+
+### How does JailGuard compare to Lakera Guard?
+
+Lakera Guard is a closed-source SaaS API. Check Point announced its acquisition of Lakera on September 16, 2025 (~$300M, closing Q4 2025); Lakera Guard remains SaaS-only. JailGuard runs locally with **no network call**: p50 14 ms on CPU versus ~150–300 ms RTT for an HTTP round-trip to Lakera. No API key, no rate limit, no data ever leaves your process.
+
+Direct head-to-head accuracy comparison isn't possible — Lakera's evaluation methodology and test data are closed. We benchmark JailGuard on a 7,049-sample mix of public datasets and against locally-runnable open-source models (see [`BENCHMARKS.md`](BENCHMARKS.md)).
+
+### How does JailGuard compare to ProtectAI's deberta-v3 detector?
+
+Three differences:
+
+1. **Size.** JailGuard's classifier is 1.5 MB; `protectai/deberta-v3-base-prompt-injection-v2` is ~440 MB.
+2. **Dependencies.** JailGuard runs without PyTorch (`ort` Rust crate, statically linked); ProtectAI requires PyTorch or onnxruntime-py.
+3. **Taxonomy.** JailGuard's training classifier separates 8 attack categories (RolePlay, InstructionOverride, ContextManipulation, OutputManipulation, EncodingAttack, JailbreakPattern, PromptLeaking, and Benign); ProtectAI is a binary classifier.
+
+Palo Alto Networks completed its acquisition of ProtectAI on July 22, 2025. The deberta-v3 model remains on HuggingFace under Apache-2.0.
+
+### How does JailGuard compare to Meta Prompt Guard 2?
+
+Prompt Guard 2 ships in 22M-param and 86M-param variants under the **Llama 4 Community License** (not OSI-approved — has commercial-use restrictions). JailGuard is dual-licensed under MIT OR Apache-2.0 (OSI-approved permissive). JailGuard's classifier is **130 K parameters** (frozen MiniLM embedder is 33 M, downloaded on first use); Prompt Guard 2 is 22M–86M params and bundles its own DeBERTa weights. Prompt Guard 2 is binary; JailGuard's training distinguishes 8 attack categories.
+
+### Does JailGuard work CPU-only?
+
+Yes. The classifier is a 130 K-parameter MLP running ~1 ms per call. The 90 MB MiniLM ONNX embedder is the dominant cost (~13 ms p50 on Apple M3). No GPU is needed for inference *or* training.
+
+### How big is the model?
+
+Two artifacts:
+
+- **Classifier** (1.5 MB JSON, `include_str!`-embedded in the binary): the 130 K-parameter MLP we trained.
+- **Sentence embedder** (90 MB ONNX, `all-MiniLM-L6-v2`): downloaded to `~/.cache/jailguard/` on first use, never bundled into the crate/wheel/npm package.
+
+### Can I use JailGuard offline?
+
+After the one-time ONNX download (or by pre-staging it via `jailguard::download_model()`), yes. Detection runs entirely offline.
+
+### Should I use JailGuard as my only defense?
+
+**No.** Prompt-injection detection should be one layer in defense-in-depth. Pair JailGuard with: input sanitization, structured output parsing, least-privilege tool permissions, separate trust-domains for user-controlled and system-controlled text. Treat JailGuard's score as advisory — a high-confidence injection signal warrants blocking; a low-confidence signal warrants logging.
+
+### Does JailGuard support languages other than English?
+
+The embedder (`all-MiniLM-L6-v2`) is multilingual-capable but English-weighted in training. The JailGuard classifier was trained on predominantly English public datasets. Multilingual evaluation is on the roadmap; today, expect best results on English text.
+
+### Is there a hosted API?
+
+No. JailGuard is library-only, by design. If you want a hosted prompt-injection-detection API, look at Lakera Guard or AWS Bedrock Guardrails.
+
+### Where do the training datasets come from?
+
+A deduplicated mix of 17 public HuggingFace datasets (deepset, xTRam1, jackhhao, rubend18, ALERT adversarial/regular, LMSYS Toxic Chat, JailbreakBench, Alpaca, Dolly, BeaverTails, hh-rlhf, OpenAssistant, shalyhinpavel, JailbreakV-28K, SPML). Full inventory and per-source role in [`BENCHMARKS.md`](BENCHMARKS.md).
+
+### Can I retrain the model on my own data?
+
+The training pipeline is not part of the published crate. The model weights file is plain JSON — drop a new file into `models/neural_binary_200k.json` and rebuild. The pipeline that produces these weights lives in a sibling repo and is not redistributed.
+
+### Where can I cite JailGuard?
+
+See [`CITATION.cff`](CITATION.cff) (GitHub's "Cite this repository" button uses it) and the BibTeX block at the bottom of this README.
+
 ## References
 
 - [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) — sentence embeddings
 - [PromptGuard (Meta)](https://github.com/meta-llama/PurpleLlama)
-- [Lakera Guard](https://www.lakera.ai/) and the [PINT benchmark](https://github.com/lakeraai/pint-benchmark)
-- [Rebuff](https://github.com/protectai/rebuff)
+- [Rebuff](https://github.com/protectai/rebuff) (archived)
 - [Sentinel: SOTA model to protect against prompt injections](https://arxiv.org/abs/2506.05446)
 - [Not What You've Signed Up For — indirect injection](https://arxiv.org/abs/2302.12173)
 
 ## Citation
 
-If you use JailGuard in research, please cite:
+If you use JailGuard in research or production, please cite:
 
 ```bibtex
 @software{jailguard,
@@ -206,9 +303,11 @@ If you use JailGuard in research, please cite:
 }
 ```
 
+A machine-readable [`CITATION.cff`](CITATION.cff) is also available.
+
 ## License
 
-MIT OR Apache-2.0
+Dual-licensed under MIT OR Apache-2.0 — your choice.
 
 ---
 
@@ -529,32 +628,33 @@ false-positive rate substantially: see over-defense table below.
 > ~93% of injections, confirming that keyword matching alone is insufficient
 > for production use.
 
-### Published numbers for API-based competitors
+### Published numbers from competitor model cards
 
-The table below combines the **PINT leaderboard** (Lakera, 2025-05-02) with
-published in-domain numbers from each vendor's model card. PINT is a
-neutral 4,314-sample benchmark with 20.9% hard negatives (benign prompts
-containing suspicious words like "ignore"), which causes significant drops
-from in-domain accuracy.
+Each vendor evaluates on its own test set, so the in-domain accuracies
+below are **not directly comparable** — they're cited only to give a
+sense of where each model claims to land on its own data. For
+apples-to-apples numbers see the local-CPU head-to-head sections below,
+which run every model on the same public datasets.
 
-| Model | In-domain accuracy | PINT score | Mechanism | Latency (CPU) |
-|---|---|---|---|---|
-| **JailGuard iter-9 (this repo)** | **98.40%** *(pipeline test set, 7,049 samples)* | *not yet evaluated* | Local ONNX + MLP, Rust | **p50 14 ms, p99 18 ms** |
-| Lakera Guard | not published | **95.22%** | Closed source API | ~150–300 ms |
-| AWS Bedrock Guardrails | not published | **89.24%** | Closed source API | ~200–400 ms |
-| Azure Prompt Shields | ~98.3% acc, 58.5% recall¹ | **89.12%** | Closed source API | ~200–600 ms RTT |
-| protectai/deberta-v3-base-prompt-injection-v2 | 95.25%² | **79.14%** | 184 M DeBERTa, HF API | 104–212 ms³ |
-| Llama Prompt Guard 2 86M (Meta) | 97.5% recall@1% FPR | **78.76%** | 86 M mDeBERTa, API/local | 92 ms (A100 GPU)⁴ |
-| Google Model Armor | not published | **70.07%** | Closed source API | not published |
-| Llama Prompt Guard 1 (Meta) | ~41.6%⁵ | **61.82%** | 86 M mDeBERTa | same as PG2 |
+| Model | Vendor-published in-domain accuracy | Mechanism | Latency (CPU) |
+|---|---|---|---|
+| **JailGuard iter-9 (this repo)** | **98.40%** *(7,049-sample held-out test split)* | Local ONNX + MLP, Rust | **p50 14 ms, p99 18 ms** |
+| Lakera Guard | not published | Closed source API | ~150–300 ms |
+| AWS Bedrock Guardrails | not published | Closed source API | ~200–400 ms |
+| Azure Prompt Shields | ~98.3% acc, 58.5% recall¹ | Closed source API | ~200–600 ms RTT |
+| protectai/deberta-v3-base-prompt-injection-v2 | 95.25%² | 184 M DeBERTa, HF API | 104–212 ms³ |
+| Llama Prompt Guard 2 86M (Meta) | 97.5% recall@1% FPR | 86 M mDeBERTa, API/local | 92 ms (A100 GPU)⁴ |
+| Google Model Armor | not published | Closed source API | not published |
+| Llama Prompt Guard 1 (Meta) | ~41.6%⁵ | 86 M mDeBERTa | same as PG2 |
 
 ¹ From arxiv:2502.15427 Table 2, in-distribution evaluation.  
 ² From HuggingFace model card; tested on 20 K unseen prompts.  
 ³ Per LLM Guard docs: AWS m5.xlarge CPU 212 ms, CPU+ONNX export 104 ms,
   GPU (g5.xlarge) 7.65 ms. Source: [LLM Guard benchmarks](https://protectai.github.io/llm-guard/input_scanners/prompt_injection/).  
 ⁴ Published GPU figure. CPU estimate: 200–400 ms (mDeBERTa is larger than MiniLM).  
-⁵ InjecGuard paper (arxiv:2410.22770): PG1 has ~99% FPR on benign prompts
-  containing the word "ignore". Average across in/out-of-distribution: 41.6%.
+⁵ InjecGuard paper (arxiv:2410.22770) measured PG1's false-positive rate as
+  ~99% on benign prompts containing the word "ignore"; averaged accuracy across
+  in/out-of-distribution is ~41.6%.
 
 ### Local CPU head-to-head — iter-7 (no mosscap) — measured 2026-05-05
 
@@ -769,11 +869,13 @@ Both rollbacks are ~1.5 hr pipeline reruns.
 
 ### Important caveats
 
-**In-domain vs. PINT.** JailGuard iter-9's 98.40% is measured on its own test
-split, which shares the same distribution as its training data. PINT's 20.9%
-hard negatives (benign prompts containing injection-like words) will likely
-lower the PINT score — this is the primary open question. A PINT download
-attempt was rate-limited (HTTP 429); see [Roadmap](#roadmap) for status.
+**In-domain vs out-of-distribution.** JailGuard iter-9's 98.40% is measured
+on its own test split, which shares the same distribution as its training
+data. Out-of-distribution holdouts (J1N2, shalyhinpavel) are reported
+separately above and remain the honest measure of generalization. Any
+single-number "best model" claim across vendors should be treated with
+skepticism — each vendor evaluates on their own data with their own
+preprocessing.
 
 **Over-defense problem.**  The InjecGuard paper (arxiv:2410.22770) measured
 false-positive rates on 339 benign prompts containing injection-like words:
@@ -933,8 +1035,6 @@ cargo run --release --example cold_start_bench  # Cold-start measurement
 
 ## Roadmap
 
-- [ ] **PINT evaluation** — run JailGuard on the full PINT 4,314-sample benchmark
-  and submit to the [public leaderboard](https://github.com/lakeraai/pint-benchmark)
 - [x] **Hard-negatives FPR test** — shalyhinpavel validation holdout (147 samples)
   measures FPR on security-adjacent benign text; reduced from ~27% to ~10.4%
   after adding the train split to training data
@@ -942,8 +1042,9 @@ cargo run --release --example cold_start_bench  # Cold-start measurement
   trained and deployed (iter-9); model achieves 98.40% accuracy, 97.98% recall on
   7,049-sample in-domain test set; 86.96% on shalyhinpavel OOD holdout
 - [ ] **AgentDojo APR** — indirect injection benchmark against tool-return content
-- [ ] **Multi-language evaluation** — PINT includes 24+ languages; MiniLM is
-  English-centric so non-English accuracy is expected to degrade
+- [ ] **Multi-language evaluation** — MiniLM-L6-v2 is English-weighted; non-English
+  accuracy is expected to degrade. Build a held-out multilingual eval set from
+  public sources.
 - [ ] **Batched ONNX inference** — enable true batching in the ONNX session for
   higher GPU throughput
 - [ ] **GPU latency numbers** — measure on a GPU instance (CUDA / Metal) to
@@ -953,7 +1054,6 @@ cargo run --release --example cold_start_bench  # Cold-start measurement
 
 ## References
 
-- [PINT Benchmark](https://github.com/lakeraai/pint-benchmark) — Lakera AI, CC-BY-NC-4.0
 - [LLM Guard PromptInjectionScanner](https://protectai.github.io/llm-guard/input_scanners/prompt_injection/)
 - [protectai/deberta-v3-base-prompt-injection-v2 model card](https://huggingface.co/protectai/deberta-v3-base-prompt-injection-v2)
 - [Llama Prompt Guard 2 model card](https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-86M)

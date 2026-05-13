@@ -101,4 +101,4 @@ What's *not* yet covered (planned for later):
 - Streaming / single-request HTTP server integration
 - Sub-process / worker pool patterns beyond the Python `AsyncDetector`
 - Browser / Deno / Cloudflare Workers (not currently supported — `ort` doesn't yet target `wasm32-unknown-unknown`)
-- Scoring against a public benchmark dataset (PINT, AgentDojo) — see [`BENCHMARKS.md`](../BENCHMARKS.md)
+- Multilingual evaluation and indirect-injection evaluation — see [`BENCHMARKS.md`](../BENCHMARKS.md) roadmap.
