@@ -16,9 +16,7 @@ spread between a premium chip and a 4-year-old low-power mobile CPU.
 | Hardware | Apple M3, 16 GB RAM | Intel Core i5-10210U @ 1.60 GHz (4c/8t, Comet Lake-U, 2019) |
 | OS | macOS Darwin 25.4.0 | Linux 6.6 (ChromeOS Crostini) |
 | RAM | 16 GB | 14.8 GB, no swap |
-| Rust | 1.85 (release build) | 1.95 (release build) |
 | JailGuard | v0.1.0 | v0.1.0 |
-| Date | 2026-04-30 | 2026-05-13 |
 
 ---
 
