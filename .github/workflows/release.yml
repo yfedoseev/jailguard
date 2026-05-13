@@ -358,6 +358,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [preflight, build-native, build-wheels-linux, build-wheels-macos, build-wheels-windows]
     if: needs.preflight.outputs.is_dry_run == 'false'
+    environment:
+      name: release-crates-io
+      url: https://crates.io/crates/jailguard/${{ needs.preflight.outputs.version }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
@@ -368,6 +371,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [preflight, build-wheels-linux, build-wheels-macos, build-wheels-windows, build-sdist, smoke-test-wheels]
     if: needs.preflight.outputs.is_dry_run == 'false'
+    environment:
+      name: release-pypi
+      url: https://pypi.org/project/jailguard/${{ needs.preflight.outputs.version }}/
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
@@ -386,6 +392,9 @@ jobs:
     if: needs.preflight.outputs.is_dry_run == 'false'
     permissions:
       id-token: write   # npm provenance
+    environment:
+      name: release-npm
+      url: https://www.npmjs.com/package/@yfedoseev/jailguard/v/${{ needs.preflight.outputs.version }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - uses: actions/setup-node@v6
@@ -596,6 +605,9 @@ jobs:
     if: needs.preflight.outputs.is_dry_run == 'false'
     permissions:
       contents: write
+    environment:
+      name: release-github
+      url: https://github.com/yfedoseev/jailguard/releases/tag/${{ github.ref_name }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
