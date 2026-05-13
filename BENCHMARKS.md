@@ -62,17 +62,13 @@ to reducing false positives on benign-but-harmful phrasing.
 ### Training dataset stats
 
 ```
-Total normalized samples  : 59,447
-  — Injection             : 15,653  (26.3%)
-  — Benign                : 43,794  (73.7%)
+Total normalized samples  : 70,479
+  — Injection             : 31,716  (45.0%)
+  — Benign                : 38,763  (55.0%)
 
-Embeddings computed       : 79,626  (including augmented injection samples)
-  — Original              :  59,447
-  — Augmented (injection) :  20,179  (injection samples upsampled to ~45%)
-
-Test split (10% of originals, deterministic): 5,945 samples
-  — Injection             : 1,303  (21.9%)
-  — Benign                : 4,642  (78.1%)
+Test split (10% of originals, deterministic): 7,049 samples
+  — Injection             : 3,275  (46.5%)
+  — Benign                : 3,774  (53.5%)
 ```
 
 The test split uses the last 10% of a deterministically-shuffled slice of
