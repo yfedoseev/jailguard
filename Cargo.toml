@@ -1,6 +1,6 @@
 [package]
 name = "jailguard"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.85"
 license = "MIT OR Apache-2.0"
@@ -18,24 +18,24 @@ categories = ["text-processing", "science"]
 # Enabling `--features full` against the crates.io release will fail to
 # compile — clone the git repo if you want the research surface.
 include = [
-  "src/lib.rs",
-  "src/embedded.rs",
-  "src/error.rs",
-  "src/model_manager.rs",
-  "src/network.rs",
-  "src/python.rs",
-  "src/c_api.rs",
-  "models/neural_binary_200k.json",
-  "models/tokenizer.json",
-  "Cargo.toml",
-  "build.rs",
-  "cbindgen.toml",
-  "LICENSE-MIT",
-  "LICENSE-APACHE",
-  "README.md",
-  "CHANGELOG.md",
-  "examples/quick_start.rs",
-  "python/",
+    "src/lib.rs",
+    "src/embedded.rs",
+    "src/error.rs",
+    "src/model_manager.rs",
+    "src/network.rs",
+    "src/python.rs",
+    "src/c_api.rs",
+    "models/neural_binary_200k.json",
+    "models/tokenizer.json",
+    "Cargo.toml",
+    "build.rs",
+    "cbindgen.toml",
+    "LICENSE-MIT",
+    "LICENSE-APACHE",
+    "README.md",
+    "CHANGELOG.md",
+    "examples/quick_start.rs",
+    "python/",
 ]
 
 [lib]
@@ -51,14 +51,20 @@ thiserror = "2"
 # ONNX inference (default — required for real ML pipeline).
 # Pinned to rc.9 — rc.10+ requires glibc 2.38+; this dev box has 2.36.
 # Bumping requires verifying the target deployment glibc.
+# `ort-sys` is also pinned because pinning only `ort` lets transitive
+# resolution pick a newer ort-sys (rc.12 requires a `ureq::tls` API
+# not present in our ureq 3.x), which breaks tools that bypass the
+# lockfile (cargo-semver-checks does this for its baseline-vs-current
+# API comparison).
 ort = "=2.0.0-rc.9"
+ort-sys = "=2.0.0-rc.9"
 tokenizers = "0.23"
 ndarray = "0.16"
 ureq = "3"
 sha2 = "0.11"
 
 # Python bindings (pyo3 + maturin)
-pyo3 = { version = "0.22", features = ["abi3-py38", "extension-module"], optional = true }
+pyo3 = { version = "0.24", features = ["abi3-py38", "extension-module"], optional = true }
 
 # Node.js bindings (napi-rs / N-API)
 napi = { version = "2", default-features = false, features = ["napi8"], optional = true }
@@ -96,16 +102,16 @@ c-api = []
 # Node.js native module via napi-rs / N-API.
 napi = ["dep:napi", "dep:napi-derive", "dep:napi-build"]
 full = [
-  "dep:burn",
-  "dep:burn-ndarray",
-  "dep:parking_lot",
-  "dep:tracing",
-  "dep:unicode-segmentation",
-  "dep:rand",
-  "dep:uuid",
-  "dep:dirs",
-  "dep:lru",
-  "dep:regex",
+    "dep:burn",
+    "dep:burn-ndarray",
+    "dep:parking_lot",
+    "dep:tracing",
+    "dep:unicode-segmentation",
+    "dep:rand",
+    "dep:uuid",
+    "dep:dirs",
+    "dep:lru",
+    "dep:regex",
 ]
 # Training infrastructure — not part of the public API.
 # Used by upstream training tooling to access NeuralBinaryNetwork / NeuralDataLoader.
@@ -142,6 +148,14 @@ required-features = ["full"]
 name = "score_test"
 path = "examples/score_test.rs"
 required-features = ["full"]
+
+[package.metadata.cargo-shear]
+# `ort-sys` is intentionally declared as a direct dep solely to pin its
+# version (see comment in [dependencies]). We never `use ort_sys::*` in
+# code — the `ort` crate uses it internally — so cargo-shear flags it
+# as unused. Ignore here is the standard escape hatch for version-pin
+# deps.
+ignored = ["ort-sys"]
 
 [lints.rust]
 unsafe_code = "warn"

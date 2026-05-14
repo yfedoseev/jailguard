@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.1] - 2026-05-14
+
+Release-pipeline fixes only. No runtime/API changes — all detector
+behavior, accuracy, and embedded model assets are identical to 0.1.0.
+
+The v0.1.0 release pipeline shipped `cargo` + `npm` + the Go module
+tag, but the PyPI publish, Go FFI binary tarballs, and GitHub Release
+were silently skipped because the Linux wheel **smoke test** failed
+and didn't fail-stop the publish jobs that should have depended on it.
+0.1.1 fixes the smoke test itself, the Go FFI packaging step that
+also failed, and the dependency wiring so a smoke failure now blocks
+every downstream publish.
+
+### Fixed (release pipeline)
+
+- **`smoke-test-wheels`**: the previous step inlined Python source
+  inside a YAML `run: |` heredoc and `python -c "..."`. The 12-space
+  YAML indentation became part of the Python string, producing
+  `IndentationError: unexpected indent` on `import jailguard` inside
+  both `debian:bookworm-slim` and `amazonlinux:2023`. Extracted the
+  smoke test to `.github/scripts/smoke-test.py` (real file, column-0
+  source) and mounted into the container via `docker -v`.
+- **`package-go-ffi` (verify checksums step)**: invalid bash
+  substitution `${$(ls *.tar.gz | wc -l)}` → `count=$(ls *.tar.gz | wc -l)`.
+  All 8 tarballs (4 static + 4 shared) verified fine; the failure
+  was only in the final summary echo, but it failed the job and
+  cascaded into the GitHub-release skip.
+- **Publish-job gating**: `publish-crates-io`, `publish-npm`,
+  `publish-go`, `package-go-ffi`, and `github-release` now all
+  `needs: smoke-test-wheels` in addition to their build deps. v0.1.0
+  shipped to `crates.io`, `npm`, and the Go module tag despite the
+  smoke failure because none of those jobs depended on the smoke
+  step. From v0.1.1 on, a smoke failure fail-stops every publish —
+  no asymmetric releases.
+
+### Changed (release pipeline only)
+
+- `release.yml` build-wheels-linux matrix no longer includes the
+  `musllinux_1_2` rows; `ort-sys 2.0.0-rc.9` does not ship prebuilt
+  onnxruntime for `*-unknown-linux-musl`. Matches the parallel
+  removal already done in `python.yml`. Re-enable when upstream
+  publishes musl binaries or we vendor our own.
+
+### Distribution status
+
+The v0.1.0 partial release stays as-is on `crates.io` (cannot delete)
+and `npm` (we are within the 72-hour window, but leaving in place
+since the artifact itself is correct — only PyPI was missing). The
+v0.1.1 tag will publish a full set across all five channels:
+`crates.io`, `PyPI`, `npm`, the `go/v0.1.1` module tag, and the
+GitHub Release with the Go FFI tarballs.
+
+---
+
 ## [0.1.0] - 2026-04-21
 
 Initial public release.
@@ -71,4 +125,5 @@ live outside the published crate.
 
 ---
 
+[0.1.1]: https://github.com/yfedoseev/jailguard/releases/tag/v0.1.1
 [0.1.0]: https://github.com/yfedoseev/jailguard/releases/tag/v0.1.0

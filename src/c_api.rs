@@ -21,10 +21,10 @@
 //!
 //! # Memory ownership
 //!
-//! - Strings returned by [`jailguard_model_cache_dir`] and
-//!   [`jailguard_version`]'s `cache_dir` style functions are owned by
-//!   the caller and must be freed with [`jailguard_free_string`].
-//! - Static strings (e.g. [`jailguard_version`]) are owned by the library
+//! - Strings returned by `jailguard_model_cache_dir` and
+//!   `jailguard_version`'s `cache_dir` style functions are owned by
+//!   the caller and must be freed with `jailguard_free_string`.
+//! - Static strings (e.g. `jailguard_version`) are owned by the library
 //!   and must NOT be freed.
 //! - Output structs (`jailguard_detection_result_t`) are written
 //!   in-place by the library; the caller owns the storage.
@@ -84,8 +84,8 @@ pub const JAILGUARD_INTERNAL_ERROR: c_int = 99;
 
 // ─── Risk-level enum (mirrors Rust + Python) ─────────────────────────────────
 
-/// Risk classification bucket. Matches the Rust [`RiskLevel`] and the
-/// Python `RiskLevel` enum value-for-value.
+/// Risk classification bucket. Matches the Rust [`crate::RiskLevel`]
+/// and the Python `RiskLevel` enum value-for-value.
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum jailguard_risk_t {
@@ -179,7 +179,7 @@ pub extern "C" fn jailguard_download_model() -> c_int {
 /// Get the path to the ONNX model cache directory.
 ///
 /// The returned string is owned by the caller and must be freed with
-/// [`jailguard_free_string`]. Returns null on internal error.
+/// `jailguard_free_string`. Returns null on internal error.
 #[unsafe(no_mangle)]
 pub extern "C" fn jailguard_model_cache_dir() -> *mut c_char {
     let Ok(dir) = crate::model_manager::cache_dir_string() else {

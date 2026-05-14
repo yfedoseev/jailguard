@@ -1,13 +1,7 @@
 # taplo TOML formatter configuration
 # https://taplo.tamasfe.dev/configuration/file.html
 
-include = [
-    "Cargo.toml",
-    "deny.toml",
-    "rust-toolchain.toml",
-    "pyproject.toml",
-    ".taplo.toml",
-]
+include = ["Cargo.toml", "deny.toml", "rust-toolchain.toml", "pyproject.toml", ".taplo.toml"]
 
 exclude = [
     # Vendored / generated

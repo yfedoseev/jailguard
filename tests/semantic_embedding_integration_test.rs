@@ -1,4 +1,5 @@
-#![cfg(feature = "full")]
+// Exercises the SemanticEmbedder directly; needs both features.
+#![cfg(all(feature = "full", feature = "semantic-embeddings"))]
 
 //! Integration test verifying semantic embeddings work with the detector.
 //!

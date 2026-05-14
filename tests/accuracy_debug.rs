@@ -1,4 +1,8 @@
-#![cfg(feature = "full")]
+// The test exercises MultiLabelDetector → SemanticEmbedder, which
+// requires both `full` and `semantic-embeddings`. Gate both so the
+// test is skipped (not run + panicking) when the feature set is
+// just `full,python,c-api` (the CI test matrix).
+#![cfg(all(feature = "full", feature = "semantic-embeddings"))]
 
 //! Debug accuracy issue - see what the detector is actually returning
 
