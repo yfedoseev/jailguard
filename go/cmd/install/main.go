@@ -33,7 +33,7 @@ const (
 	// fallbackVersion is used when debug.ReadBuildInfo() does not yield
 	// a usable module version (e.g. when running inside the source tree
 	// without a module-pinned execution). Keep in sync with Cargo.toml.
-	fallbackVersion = "0.1.0"
+	fallbackVersion = "0.1.1"
 )
 
 // supportedPlatforms lists every GOOS/GOARCH the release pipeline builds

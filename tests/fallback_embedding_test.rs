@@ -1,4 +1,5 @@
-#![cfg(feature = "full")]
+// Uses MultiLabelDetector → SemanticEmbedder; needs both features.
+#![cfg(all(feature = "full", feature = "semantic-embeddings"))]
 
 //! Test to verify that the fallback embedding mechanism works correctly
 //! for unknown texts that aren't in the lookup table.

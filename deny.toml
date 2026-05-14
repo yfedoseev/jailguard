@@ -3,10 +3,10 @@
 
 [graph]
 targets = [
-  "x86_64-unknown-linux-gnu",
-  "x86_64-apple-darwin",
-  "aarch64-apple-darwin",
-  "x86_64-pc-windows-msvc",
+    "x86_64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin",
+    "x86_64-pc-windows-msvc",
 ]
 # We audit the shipped library surface (default features) only. The `full`
 # feature pulls in the research stack (burn, reqwest, tokio, tar-based
@@ -24,14 +24,10 @@ yanked = "deny"
 # reachable only through `--features full` (burn ecosystem) is out of scope
 # by design and does not need to be listed here.
 ignore = [
-  # `paste` is archived by dtolnay (not a security vulnerability). Reached
-  # transitively via tokenizers 0.21.x; revisit when tokenizers drops it.
-  # https://rustsec.org/advisories/RUSTSEC-2024-0436
-  "RUSTSEC-2024-0436",
-  # `number_prefix` is unmaintained (not a security vulnerability). Reached
-  # transitively via tokenizers → indicatif.
-  # https://rustsec.org/advisories/RUSTSEC-2025-0119
-  "RUSTSEC-2025-0119",
+    # `paste` is archived by dtolnay (not a security vulnerability). Reached
+    # transitively via tokenizers 0.21.x; revisit when tokenizers drops it.
+    # https://rustsec.org/advisories/RUSTSEC-2024-0436
+    "RUSTSEC-2024-0436",
 ]
 
 [licenses]
@@ -43,20 +39,20 @@ version = 2
 # in principle but causes friction for some downstream legal teams. If a
 # future feature requires a Mozilla-stack crate, revisit this decision.
 allow = [
-  "MIT",
-  "Apache-2.0",
-  "Apache-2.0 WITH LLVM-exception",
-  "Unicode-3.0",
-  "Zlib",
-  "BSD-2-Clause",
-  "BSD-3-Clause",
-  "ISC",
-  "CC0-1.0",
-  "BSL-1.0",
-  "0BSD",
-  "Unlicense",
-  # Permissive data license used by webpki-roots (transitive via ureq).
-  "CDLA-Permissive-2.0",
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "Unicode-3.0",
+    "Zlib",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "CC0-1.0",
+    "BSL-1.0",
+    "0BSD",
+    "Unlicense",
+    # Permissive data license used by webpki-roots (transitive via ureq).
+    "CDLA-Permissive-2.0",
 ]
 
 [bans]
@@ -74,18 +70,32 @@ skip = [
     # `spm_precompiled` (via tokenizers) still uses base64 0.13; `ureq`
     # uses 0.22. Resolves when tokenizers upgrades spm_precompiled.
     { crate = "base64@0.13.1" },
+    # digest 0.10.x family — tokenizers (and its sha-using transitives)
+    # still pin digest 0.10, while our top-level `sha2 = "0.11"` brings
+    # in the new 0.11 family. Both coexist in the tree. Resolves when
+    # tokenizers upgrades to digest 0.11.
+    { crate = "block-buffer@0.10.4" },
+    { crate = "cpufeatures@0.2.17" },
+    { crate = "crypto-common@0.1.7" },
+    { crate = "digest@0.10.7" },
+    { crate = "sha2@0.10.9" },
     # `ring` (via ureq → rustls) pins getrandom 0.2; newer crates use 0.3.
     # Resolves when ring releases with getrandom 0.3.
     { crate = "getrandom@0.2.16" },
-    # Windows-only build-time shims pulled in via tar → ort-sys build-dep.
-    # Two versions coexist because different crates in that tree pin
-    # different windows-sys majors. Not present at runtime on the Linux
-    # x86_64-unknown-linux-gnu target. Resolves when the older consumer
-    # (errno/console/indicatif) bumps its windows-sys range.
-    { crate = "windows-sys@0.59.0" },
-    { crate = "windows-targets@0.52.6" },
-    { crate = "windows_x86_64_gnu@0.52.6" },
-    { crate = "windows_x86_64_msvc@0.52.6" },
+    # `ort-sys` 2.0.0-rc.9 build script uses ureq 2.x; we use ureq 3.x
+    # at runtime. The 2.x is only present at build time of ort-sys.
+    # Resolves when ort-sys updates to ureq 3.
+    { crate = "ureq@2.12.1" },
+    # `webpki-roots` 0.26 is pulled in by ureq 2.x (ort-sys build dep);
+    # 1.0 by ureq 3.x. Resolves with the ureq dedup above.
+    { crate = "webpki-roots@0.26.11" },
+    # `windows-sys` has three versions in the tree (0.52.0 via ureq 2 /
+    # ring tree; 0.60.2 via filetime → tar → ort-sys build; 0.61.2 via
+    # console → indicatif → tokenizers + rustix → errno). Skip the two
+    # older ones; 0.61.2 stays as canonical. Resolves when the older
+    # consumers upgrade their windows-sys range.
+    { crate = "windows-sys@0.52.0" },
+    { crate = "windows-sys@0.60.2" },
 ]
 
 # API stability: semver, deprecations land as `#[deprecated]` on the symbol.

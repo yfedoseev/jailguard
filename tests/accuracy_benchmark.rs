@@ -1,4 +1,5 @@
-#![cfg(feature = "full")]
+// Uses the detector pipeline that requires SemanticEmbedder.
+#![cfg(all(feature = "full", feature = "semantic-embeddings"))]
 
 //! Accuracy benchmark for JailGuard detector on real prompt injection examples
 

@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "jailguard"
-version = "0.1.0"
+version = "0.1.1"
 authors = [{ name = "Yury Fedoseev" }]
 description = "Pure-Rust prompt-injection detector with 1.5MB embedded MLP classifier. 98.40% accuracy, p50 14ms CPU inference. Apache-2.0/MIT alternative to Rebuff (archived 2025) and Lakera Guard."
 readme = "README.md"
@@ -69,24 +69,14 @@ features = ["python"]
 # ---------------------------------------------------------------------------
 
 [project.optional-dependencies]
-test = [
-    "pytest>=8.0",
-    "pytest-asyncio>=0.23",
-]
-dev = [
-    "pytest>=8.0",
-    "pytest-asyncio>=0.23",
-    "ruff>=0.6",
-    "maturin>=1.0,<2.0",
-]
+test = ["pytest>=8.0", "pytest-asyncio>=0.23"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.6", "maturin>=1.0,<2.0"]
 
 [tool.pytest.ini_options]
 testpaths = ["python/tests"]
 addopts = ["-v", "--tb=short", "--strict-markers"]
 asyncio_mode = "auto"
-markers = [
-    "slow: tests that take > 1s (deselect with '-m \"not slow\"')",
-]
+markers = ["slow: tests that take > 1s (deselect with '-m \"not slow\"')"]
 
 # ---------------------------------------------------------------------------
 # Ruff (linter + formatter)
@@ -95,32 +85,26 @@ markers = [
 [tool.ruff]
 line-length = 100
 target-version = "py38"
-extend-exclude = [
-    "target/",
-    "dist/",
-    "build/",
-    ".venv/",
-    "venv/",
-]
+extend-exclude = ["target/", "dist/", "build/", ".venv/", "venv/"]
 
 [tool.ruff.lint]
 select = [
-    "E",    # pycodestyle errors
-    "F",    # pyflakes
-    "I",    # isort
-    "W",    # pycodestyle warnings
-    "B",    # flake8-bugbear
-    "UP",   # pyupgrade
-    "C4",   # flake8-comprehensions
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "I",  # isort
+    "W",  # pycodestyle warnings
+    "B",  # flake8-bugbear
+    "UP", # pyupgrade
+    "C4", # flake8-comprehensions
 ]
 ignore = [
-    "E501",  # line too long — handled by formatter
+    "E501", # line too long — handled by formatter
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "python/tests/*" = [
-    "B011",  # don't lint asserts in tests
+    "B011", # don't lint asserts in tests
 ]
 "python/jailguard/_jailguard.pyi" = [
-    "F401",  # stubs deliberately re-export names
+    "F401", # stubs deliberately re-export names
 ]

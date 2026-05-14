@@ -256,7 +256,13 @@ mod tests {
         let timer = Timer::start();
         std::thread::sleep(std::time::Duration::from_millis(10));
         let elapsed = timer.elapsed_us();
-        // Allow some timing variance
-        assert!(elapsed >= 8000 && elapsed <= 20000);
+        // sleep(10ms) is a lower bound, not a precise duration. CI runners
+        // (especially macOS under load) can take 30–100ms before the thread
+        // wakes up. We only assert that *some* time has passed; precise
+        // timer behavior is the OS scheduler's domain, not ours.
+        assert!(
+            elapsed >= 8000,
+            "timer elapsed {elapsed}us < 8000us (clock ran backwards?)"
+        );
     }
 }
