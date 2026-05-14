@@ -1,0 +1,48 @@
+version: "2"
+
+run:
+  timeout: 5m
+  build-tags: []
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - errcheck
+    - errorlint
+    - gosec
+    - govet
+    - ineffassign
+    - misspell
+    - nilerr
+    - revive
+    - staticcheck
+    - unconvert
+    - unused
+  disable:
+    # cgo-heavy code triggers many false positives in these
+    - gocyclo
+    - dupl
+
+  settings:
+    revive:
+      rules:
+        - name: exported
+          arguments: ["disableStutteringCheck"]
+        - name: package-comments
+        - name: var-naming
+        - name: indent-error-flow
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
+issues:
+  max-same-issues: 50
+  max-issues-per-linter: 50
+
+# golangci-lint v2 moved file-exclusion under `run.skip-files` (yaml)
+# or `run.skip-dirs`. The `issues.exclude-files` key from v1 is no
+# longer valid and trips schema validation. We have no generated .pb.go
+# in this repo, so we just drop the exclusion rather than port it.

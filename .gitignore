@@ -1,0 +1,92 @@
+# Build artifacts
+/target
+*.pyc
+__pycache__/
+scripts/__pycache__/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code scratch
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Large data files (keep locally for development, don't commit)
+data/*.json
+data/*.csv
+data/expansion/
+data/training/
+data/baseline/
+data/deepset/
+data/collected_samples/
+!data/README.md
+
+# Large dataset splits (for training, not in version control)
+splits_200k/
+
+# Models — only the embedded classifier and tokenizer are tracked.
+# Large ONNX model is auto-downloaded at runtime; safetensors live in the dataset repo.
+models/*.onnx
+models/*.safetensors
+
+# Development
+.env
+.env.local
+
+# Paper drafts (private until publication)
+docs/paper/
+
+# Internal docs: training, dataset curation, historical release notes.
+# Kept locally for reference; not part of the open-source release.
+docs/internal/
+
+# Training and benchmark logs
+data/*.log
+
+# Diagnostic / one-off scripts
+examples/score_test_long.rs
+
+# Stray multilingual experiment artifacts left over locally
+# (the canonical home for multilingual work is jailguard_dataset/MULTILINGUAL.md)
+data/combined_v*.json
+data/combined_*_embeddings*.json
+data/combined_multilingual*.json
+data/combined_injection_dataset.json
+data/pipeline_dataset_v4fmt.json
+models/neural_binary_v4*.json
+models/neural_binary_pipeline_l12.json
+models/neural_binary_multilingual.json
+models/neural_binary_en.json
+
+# Playwright MCP working dir
+.playwright-mcp/
+
+# maturin develop output
+python/jailguard/*.so
+python/jailguard/*.pyd
+python/jailguard/__pycache__/
+python/tests/__pycache__/
+
+# JS bindings build artifacts
+js/node_modules/
+js/lib/
+js/build/
+js/wasm/jailguard*
+js/coverage/
+
+# Example-local install artifacts (each example installs its package on demand)
+examples/javascript/*/node_modules/
+examples/typescript/*/node_modules/
+examples/python/*/__pycache__/
+examples/go/*/go.sum
+/go/install
+/go/cmd/install/install
+docs/seo/

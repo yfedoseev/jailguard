@@ -1,0 +1,387 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  merge_group:
+
+# Cancel superseded runs on the same PR ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  RUST_BACKTRACE: "1"
+
+jobs:
+  # -------------------------------------------------------------------------
+  # Formatting — fast, runs on stable with rustfmt.
+  # -------------------------------------------------------------------------
+  fmt:
+    name: rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all --check
+
+  # -------------------------------------------------------------------------
+  # TOML formatting (taplo). Catches drift in Cargo.toml, deny.toml,
+  # .typos.toml, etc. Sub-second job.
+  # -------------------------------------------------------------------------
+  taplo:
+    name: taplo (TOML fmt)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: taplo-cli
+      - run: taplo fmt --check
+
+  # -------------------------------------------------------------------------
+  # Typo check — zero-false-positive text linter, sub-second runtime.
+  # -------------------------------------------------------------------------
+  typos:
+    name: typos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: crate-ci/typos@master
+
+  # -------------------------------------------------------------------------
+  # Strict clippy on the default-feature surface — this is what ships on
+  # crates.io, so warnings here are errors. Research modules behind `full`
+  # are linted in a separate, informational job below.
+  # -------------------------------------------------------------------------
+  clippy:
+    name: clippy (default features)
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "-D warnings"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: clippy-default
+      - run: cargo clippy --all-targets --locked -- -D warnings
+
+  # Informational lint over the full research surface. Failures here do not
+  # block merges — the `full` feature is internal/experimental.
+  clippy-full:
+    name: clippy (all features, informational)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: clippy-full
+      - run: cargo clippy --all-targets --all-features --locked
+
+  # -------------------------------------------------------------------------
+  # MSRV — verifies the declared rust-version in Cargo.toml still compiles
+  # the default-feature library.
+  # -------------------------------------------------------------------------
+  msrv:
+    name: msrv
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Read MSRV from Cargo.toml
+        id: msrv
+        run: |
+          v=$(grep -E '^rust-version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.msrv.outputs.version }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: msrv
+      - run: cargo build --locked
+
+  # -------------------------------------------------------------------------
+  # Unused dependency detection. cargo-shear is the successor to
+  # cargo-machete with tighter static analysis.
+  # -------------------------------------------------------------------------
+  shear:
+    name: cargo-shear (unused deps)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: shear
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-shear
+      - run: cargo shear
+
+  # -------------------------------------------------------------------------
+  # Feature powerset: builds every combination of the library's features so
+  # a `#[cfg(feature = "foo")]` block that only works with `foo + bar`
+  # (but not `foo` alone) fails here instead of in someone's downstream
+  # build. `--no-dev-deps --lib` keeps the job focused on the published
+  # library surface.
+  # -------------------------------------------------------------------------
+  features-powerset:
+    name: feature powerset (cargo-hack)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: hack
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-hack
+      - run: cargo hack check --feature-powerset --no-dev-deps --lib
+
+  # -------------------------------------------------------------------------
+  # Build + test matrix (Linux / macOS / Windows; stable on each, beta +
+  # nightly on Linux only). Default-feature build runs with -D warnings;
+  # the all-features lane mirrors real development usage and keeps
+  # warnings as warnings. Nightly is `continue-on-error: true` because it
+  # tracks unreleased toolchains; we want the signal without the block.
+  # -------------------------------------------------------------------------
+  test:
+    name: test (${{ matrix.os }} / ${{ matrix.rust }})
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.rust == 'nightly' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Cross-arch coverage:
+        #   ubuntu-latest        → Linux x86_64
+        #   ubuntu-24.04-arm     → Linux aarch64 (Graviton, Raspberry Pi,
+        #                          Chromebook Crostini class devices)
+        #   macos-latest         → macOS aarch64 (Apple Silicon, as of
+        #                          the GitHub runner alias in 2025+)
+        #   macos-13             → macOS x86_64 (Intel generation; keeps
+        #                          the crate honest on that target)
+        #   windows-latest       → Windows x86_64
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-13, windows-latest]
+        rust: [stable]
+        include:
+          - os: ubuntu-latest
+            rust: beta
+          - os: ubuntu-latest
+            rust: nightly
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: test-${{ matrix.os }}-${{ matrix.rust }}
+      # Pre-cache the ONNX model so embedded-detector tests don't each fetch it.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/jailguard
+          key: jailguard-onnx-minilm-v1
+      - name: build (default features, strict)
+        env:
+          RUSTFLAGS: "-D warnings"
+        run: cargo build --locked --verbose
+      - name: test (default features, strict)
+        env:
+          RUSTFLAGS: "-D warnings"
+        run: cargo test --locked --verbose
+      - name: build (all features)
+        run: cargo build --locked --all-features --verbose
+      - name: test (all features)
+        run: cargo test --locked --all-features --verbose
+
+  # -------------------------------------------------------------------------
+  # Documentation build. Broken intra-doc links and missing docs are errors
+  # on the shipped library surface.
+  # -------------------------------------------------------------------------
+  docs:
+    name: rustdoc
+    runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: "-D warnings"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: docs
+      - run: cargo doc --no-deps --locked
+
+  # -------------------------------------------------------------------------
+  # Line coverage on the library. Informational for 0.1.x — we upload to
+  # Codecov (if a token is set) but don't enforce a threshold yet. Set a
+  # `--fail-under-lines` value here once a baseline is established.
+  # -------------------------------------------------------------------------
+  coverage:
+    name: coverage (informational)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: coverage
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/jailguard
+          key: jailguard-onnx-minilm-v1
+      - name: Generate coverage (default features)
+        run: |
+          cargo llvm-cov --lib --tests --lcov --output-path lcov.info
+      - name: Report coverage summary
+        run: cargo llvm-cov report --summary-only
+      - name: Upload to Codecov
+        if: always()
+        uses: codecov/codecov-action@v6
+        with:
+          files: ./lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+  # -------------------------------------------------------------------------
+  # API stability check. Only runs on PRs; compares against the base branch.
+  # -------------------------------------------------------------------------
+  semver-checks:
+    name: cargo-semver-checks
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: obi1kenobi/cargo-semver-checks-action@v2
+        with:
+          feature-group: default-features
+
+  # -------------------------------------------------------------------------
+  # Security: supply-chain advisories, licenses, bans, sources.
+  # -------------------------------------------------------------------------
+  deny:
+    name: cargo-deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check advisories bans licenses sources
+
+  audit:
+    name: cargo-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions-rust-lang/audit@v1
+
+  # -------------------------------------------------------------------------
+  # Bench compile gate — `cargo bench --no-run` catches API drift in the
+  # criterion harness without spending CI minutes on actual measurements.
+  # -------------------------------------------------------------------------
+  bench:
+    name: bench (compile)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: bench
+      - name: Build benches without running
+        run: cargo bench --locked --no-run --features full
+
+  # -------------------------------------------------------------------------
+  # Examples — guard against bit-rot in the demo / smoke surface. Real
+  # ONNX inference happens behind --features full; we only run the
+  # examples that don't need the model download in CI to keep this fast.
+  # -------------------------------------------------------------------------
+  rust-examples:
+    name: rust examples (compile + score test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: rust-examples
+      - name: Build all examples (default features)
+        run: cargo build --locked --release --examples
+      - name: Build all examples (full features)
+        run: cargo build --locked --release --examples --features full
+      - name: Run quick_start
+        run: cargo run --locked --release --example quick_start
+
+  # -------------------------------------------------------------------------
+  # DCO sign-off — every commit on a PR must carry a Signed-off-by line.
+  # Disabled until public contributor onboarding; flip `if: false` to
+  # `if: github.event_name == 'pull_request'` to enable.
+  # -------------------------------------------------------------------------
+  dco:
+    name: DCO sign-off
+    runs-on: ubuntu-latest
+    if: false # re-enable before opening to external contributors
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Check DCO sign-off
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          MISSING=0
+          while IFS= read -r sha; do
+            if ! git log -1 --pretty=full "$sha" | grep -q "^Signed-off-by:"; then
+              echo "::error::Commit $sha is missing a Signed-off-by trailer"
+              MISSING=$((MISSING+1))
+            fi
+          done < <(git log --pretty=format:"%H" "${BASE}..${HEAD}")
+          [ "$MISSING" -eq 0 ] || exit 1
+
+  # -------------------------------------------------------------------------
+  # Aggregate job that required-status-checks can gate on in branch protection.
+  # -------------------------------------------------------------------------
+  ci-success:
+    name: ci success
+    if: always()
+    needs:
+      - fmt
+      - taplo
+      - typos
+      - clippy
+      - msrv
+      - shear
+      - features-powerset
+      - test
+      - docs
+      - deny
+      - audit
+      - bench
+      - rust-examples
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any required dependency failed
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

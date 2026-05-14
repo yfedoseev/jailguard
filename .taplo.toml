@@ -1,0 +1,25 @@
+# taplo TOML formatter configuration
+# https://taplo.tamasfe.dev/configuration/file.html
+
+include = [
+    "Cargo.toml",
+    "deny.toml",
+    "rust-toolchain.toml",
+    "pyproject.toml",
+    ".taplo.toml",
+]
+
+exclude = [
+    # Vendored / generated
+    "target/**",
+    "**/node_modules/**",
+    ".venv/**",
+    "dist/**",
+]
+
+[formatting]
+column_width = 100
+indent_string = "    "
+reorder_keys = false
+trailing_newline = true
+align_entries = false

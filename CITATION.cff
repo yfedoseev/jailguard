@@ -1,0 +1,41 @@
+cff-version: 1.2.0
+title: "JailGuard"
+message: "If you use this software in research or production, please cite it as below."
+type: software
+authors:
+  - given-names: "Yury"
+    family-names: "Fedoseev"
+url: "https://github.com/yfedoseev/jailguard"
+repository-code: "https://github.com/yfedoseev/jailguard"
+abstract: >-
+  JailGuard is a pure-Rust prompt-injection detection library with a
+  1.5 MB embedded ONNX classifier. It classifies inputs across 8
+  attack categories (Benign, RolePlay, InstructionOverride,
+  ContextManipulation, OutputManipulation, EncodingAttack,
+  JailbreakPattern, PromptLeaking) with 98.40% accuracy on a
+  7,049-sample held-out test set drawn from 17 public datasets.
+  Runs CPU-only with sub-50ms inference, zero-config, with bindings
+  for Rust, Python, JavaScript, and Go.
+keywords:
+  - prompt-injection
+  - prompt-injection-detection
+  - llm-security
+  - ai-security
+  - guardrails
+  - jailbreak-detection
+  - rust
+  - onnx
+  - machine-learning
+license:
+  - MIT
+  - Apache-2.0
+version: "0.1.0"
+date-released: "2026-04-21"
+preferred-citation:
+  type: software
+  title: "JailGuard: Efficient Prompt Injection Detection via Pre-trained Embeddings"
+  authors:
+    - given-names: "Yury"
+      family-names: "Fedoseev"
+  year: 2026
+  url: "https://github.com/yfedoseev/jailguard"

@@ -1,0 +1,10 @@
+# Windows-MSVC: force dynamic CRT (/MD) for all C/C++ deps.
+#
+# ort-sys (ONNX Runtime) is dynamically linked and requires /MD. esaxx-rs
+# (transitive dep of tokenizers) defaults to /MT on older cc-rs, which
+# produces LNK2038 "RuntimeLibrary mismatch" at link time.
+#
+# Setting -crt-static makes CARGO_CFG_TARGET_FEATURE include -crt-static
+# explicitly, which cc-rs respects to pick /MD across all C/C++ deps.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=-crt-static"]

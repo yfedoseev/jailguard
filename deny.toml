@@ -1,0 +1,101 @@
+# cargo-deny configuration
+# https://embarkstudios.github.io/cargo-deny/
+
+[graph]
+targets = [
+  "x86_64-unknown-linux-gnu",
+  "x86_64-apple-darwin",
+  "aarch64-apple-darwin",
+  "x86_64-pc-windows-msvc",
+]
+# We audit the shipped library surface (default features) only. The `full`
+# feature pulls in the research stack (burn, reqwest, tokio, tar-based
+# downloaders) that is not distributed on crates.io and not reachable from
+# the public API of the published crate.
+all-features = false
+no-default-features = false
+
+[advisories]
+version = 2
+# Yanked crates are a supply-chain signal; block them hard.
+yanked = "deny"
+# Ignored advisories — each entry MUST have a link and a rationale.
+# Audit is scoped to default features (see `[graph]` above), so anything
+# reachable only through `--features full` (burn ecosystem) is out of scope
+# by design and does not need to be listed here.
+ignore = [
+  # `paste` is archived by dtolnay (not a security vulnerability). Reached
+  # transitively via tokenizers 0.21.x; revisit when tokenizers drops it.
+  # https://rustsec.org/advisories/RUSTSEC-2024-0436
+  "RUSTSEC-2024-0436",
+  # `number_prefix` is unmaintained (not a security vulnerability). Reached
+  # transitively via tokenizers → indicatif.
+  # https://rustsec.org/advisories/RUSTSEC-2025-0119
+  "RUSTSEC-2025-0119",
+]
+
+[licenses]
+version = 2
+# Allowed licenses — permissive only, no copyleft (no MPL/GPL/AGPL/SSPL).
+# cargo-deny [licenses] is allow-list only; anything not listed below fails.
+#
+# MPL-2.0 is intentionally excluded. MPL is file-level copyleft, workable
+# in principle but causes friction for some downstream legal teams. If a
+# future feature requires a Mozilla-stack crate, revisit this decision.
+allow = [
+  "MIT",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "Unicode-3.0",
+  "Zlib",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "CC0-1.0",
+  "BSL-1.0",
+  "0BSD",
+  "Unlicense",
+  # Permissive data license used by webpki-roots (transitive via ureq).
+  "CDLA-Permissive-2.0",
+]
+
+[bans]
+# Any duplicate version pair not explicitly skipped below fails CI.
+# Strict-by-default so a careless upgrade or new dep can't silently double
+# a transitive tree.
+multiple-versions = "deny"
+wildcards = "deny"
+deny = []
+
+# Known-duplicate transitive deps we cannot unify because upstream crates
+# pin different major versions. Each entry must cite a path and be
+# revisited when the upstream crate bumps its dep.
+skip = [
+    # `spm_precompiled` (via tokenizers) still uses base64 0.13; `ureq`
+    # uses 0.22. Resolves when tokenizers upgrades spm_precompiled.
+    { crate = "base64@0.13.1" },
+    # `ring` (via ureq → rustls) pins getrandom 0.2; newer crates use 0.3.
+    # Resolves when ring releases with getrandom 0.3.
+    { crate = "getrandom@0.2.16" },
+    # Windows-only build-time shims pulled in via tar → ort-sys build-dep.
+    # Two versions coexist because different crates in that tree pin
+    # different windows-sys majors. Not present at runtime on the Linux
+    # x86_64-unknown-linux-gnu target. Resolves when the older consumer
+    # (errno/console/indicatif) bumps its windows-sys range.
+    { crate = "windows-sys@0.59.0" },
+    { crate = "windows-targets@0.52.6" },
+    { crate = "windows_x86_64_gnu@0.52.6" },
+    { crate = "windows_x86_64_msvc@0.52.6" },
+]
+
+# API stability: semver, deprecations land as `#[deprecated]` on the symbol.
+# Breaking changes are reserved for major version bumps.
+
+[sources]
+# Deny crates from unknown registries
+unknown-registry = "deny"
+# Deny Git sources
+unknown-git = "deny"
+# Allow only crates.io
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

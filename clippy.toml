@@ -1,0 +1,29 @@
+# Clippy linting configuration
+# https://doc.rust-lang.org/clippy/lint_configuration.html
+
+# Cognitive complexity threshold (default: 25)
+cognitive-complexity-threshold = 25
+
+# Maximum number of single-char bindings a scope may have
+single-char-binding-names-threshold = 4
+
+# Maximum number of function arguments
+too-many-arguments-threshold = 7
+
+# Size in bytes of the smallest value to consider for pass-by-value
+trivial-copy-size-limit = 128
+
+# Maximum size of a value to consider for pass-by-value instead of by-reference
+pass-by-value-size-limit = 256
+
+# Size in bytes above which enum variants trigger large_enum_variant lint
+enum-variant-size-threshold = 200
+
+# Maximum type complexity score
+type-complexity-threshold = 250
+
+# Allow breaking exported API for stricter linting
+avoid-breaking-exported-api = false
+
+# Disallowed identifier names (placeholder names)
+disallowed-names = ["foo", "bar", "baz", "quux"]

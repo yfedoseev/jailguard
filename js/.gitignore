@@ -1,0 +1,12 @@
+node_modules/
+lib/
+build/
+*.log
+.DS_Store
+
+# napi-rs prebuilt artefacts
+*.node
+prebuilds/
+
+# vitest
+coverage/

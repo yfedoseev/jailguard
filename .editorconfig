@@ -1,0 +1,57 @@
+# EditorConfig for JailGuard
+# https://editorconfig.org
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.rs]
+indent_style = space
+indent_size = 4
+max_line_length = 100
+
+[*.toml]
+indent_style = space
+indent_size = 2
+
+[*.py]
+indent_style = space
+indent_size = 4
+max_line_length = 88
+
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+[*.json]
+indent_style = space
+indent_size = 2
+
+[*.md]
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = false
+max_line_length = 80
+
+[*.sh]
+indent_style = space
+indent_size = 2
+
+[*.{js,ts,jsx,tsx,mjs,cjs}]
+indent_style = space
+indent_size = 2
+
+[*.go]
+indent_style = tab
+indent_size = 4
+
+[Makefile]
+indent_style = tab
+
+[{target/**,dist/**,build/**,*.lock}]
+insert_final_newline = unset
+trim_trailing_whitespace = unset
