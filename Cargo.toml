@@ -62,7 +62,7 @@ pyo3 = { version = "0.22", features = ["abi3-py38"], optional = true }
 
 # Node.js bindings (napi-rs / N-API)
 napi = { version = "2", default-features = false, features = ["napi8"], optional = true }
-napi-derive = { version = "2", optional = true }
+napi-derive = { version = "3", optional = true }
 
 # Feature-gated dependencies (only pulled in under `--features full` or friends).
 burn = { version = "0.20", default-features = false, optional = true }
