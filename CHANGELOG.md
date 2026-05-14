@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## Unreleased
+
+### Added
+
+- Elixir source-built binding under `elixir/`, implemented as a C NIF over
+  the existing stable JailGuard C ABI. The initial port supports repo-local
+  Linux/macOS builds and exposes `detect`, `detect!`, `is_injection`, `score`,
+  `detect_batch`, `download_model`, `model_cache_dir`, and `version`.
+
+---
+
 ## [0.1.1] - 2026-05-14
 
 Release-pipeline fixes only. No runtime/API changes — all detector
