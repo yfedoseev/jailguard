@@ -196,7 +196,7 @@ jobs:
         with:
           key: test-${{ matrix.os }}-${{ matrix.rust }}
       # Pre-cache the ONNX model so embedded-detector tests don't each fetch it.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ~/.cache/jailguard
           key: jailguard-onnx-minilm-v1
@@ -248,7 +248,7 @@ jobs:
         with:
           key: coverage
       - uses: taiki-e/install-action@cargo-llvm-cov
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ~/.cache/jailguard
           key: jailguard-onnx-minilm-v1
