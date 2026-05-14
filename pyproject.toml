@@ -6,7 +6,7 @@ build-backend = "maturin"
 name = "jailguard"
 version = "0.1.0"
 authors = [{ name = "Yury Fedoseev" }]
-description = "Pure-Rust prompt-injection detector with 1.5MB embedded ONNX model. 98.40% accuracy, p50 14ms CPU inference. Apache-2.0/MIT alternative to Rebuff (archived 2025) and Lakera Guard."
+description = "Pure-Rust prompt-injection detector with 1.5MB embedded MLP classifier. 98.40% accuracy, p50 14ms CPU inference. Apache-2.0/MIT alternative to Rebuff (archived 2025) and Lakera Guard."
 readme = "README.md"
 license = { text = "MIT OR Apache-2.0" }
 requires-python = ">=3.8"

@@ -1,7 +1,7 @@
 {
   "name": "@yfedoseev/jailguard",
   "version": "0.1.0",
-  "description": "Pure-Rust prompt-injection detector with 1.5MB embedded ONNX model. 98.40% accuracy, p50 14ms CPU inference, prebuilt napi addons for Linux/macOS/Windows. Apache-2.0/MIT alternative to Rebuff and Lakera Guard.",
+  "description": "Pure-Rust prompt-injection detector with 1.5MB embedded MLP classifier. 98.40% accuracy, p50 14ms CPU inference, prebuilt napi addons for Linux/macOS/Windows. Apache-2.0/MIT alternative to Rebuff and Lakera Guard.",
   "license": "MIT OR Apache-2.0",
   "author": "Yury Fedoseev",
   "homepage": "https://github.com/yfedoseev/jailguard",

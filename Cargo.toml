@@ -5,7 +5,7 @@ edition = "2021"
 rust-version = "1.85"
 license = "MIT OR Apache-2.0"
 authors = ["Yury Fedoseev"]
-description = "Pure-Rust prompt-injection detector with 1.5MB embedded ONNX model. 98.40% accuracy, p50 14ms CPU inference, 8-class attack taxonomy. Apache-2.0/MIT alternative to Rebuff and Lakera Guard."
+description = "Pure-Rust prompt-injection detector with 1.5MB embedded MLP classifier. 98.40% accuracy, p50 14ms CPU inference, 8-class attack taxonomy. Apache-2.0/MIT alternative to Rebuff and Lakera Guard."
 repository = "https://github.com/yfedoseev/jailguard"
 readme = "README.md"
 documentation = "https://docs.rs/jailguard"
@@ -30,7 +30,8 @@ include = [
   "Cargo.toml",
   "build.rs",
   "cbindgen.toml",
-  "LICENSE",
+  "LICENSE-MIT",
+  "LICENSE-APACHE",
   "README.md",
   "CHANGELOG.md",
   "examples/quick_start.rs",

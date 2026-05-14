@@ -3,14 +3,12 @@
 [![Accuracy](https://img.shields.io/badge/Accuracy-98.40%25-blue)](BENCHMARKS.md)
 [![F1 Score](https://img.shields.io/badge/F1-0.983-blue)](BENCHMARKS.md)
 [![Pure Rust](https://img.shields.io/badge/Pure-Rust-orange)](https://www.rust-lang.org/)
-[![License](https://img.shields.io/badge/License-MIT%2FApache--2.0-blue)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT%2FApache--2.0-blue)](#license)
 [![crates.io](https://img.shields.io/crates/v/jailguard.svg)](https://crates.io/crates/jailguard)
 [![PyPI](https://img.shields.io/pypi/v/jailguard.svg)](https://pypi.org/project/jailguard/)
 [![npm](https://img.shields.io/npm/v/@yfedoseev/jailguard.svg)](https://www.npmjs.com/package/@yfedoseev/jailguard)
 
-> **JailGuard is a pure-Rust prompt-injection detector with a 1.5 MB embedded ONNX classifier.** It scores text in **p50 14 ms on CPU**, achieves **98.40% accuracy** on a 7,049-sample held-out test set drawn from 17 public datasets, and ships bindings for **Rust, Python, JavaScript, and Go**. The classifier is **embedded in the binary** — zero config, no external service, no API key. Dual-licensed under MIT OR Apache-2.0.
-
-**In 2026, JailGuard is the actively maintained, independent, OSI-permissive, CPU-embedded option** in a consolidated prompt-injection-detection market. [Rebuff was archived on May 16, 2025](https://github.com/protectai/rebuff). [Check Point announced its acquisition of Lakera on September 16, 2025](https://www.checkpoint.com/press-releases/check-point-acquires-lakera-to-deliver-end-to-end-ai-security-for-enterprises/) (~$300M, closing Q4 2025). [Palo Alto Networks completed its acquisition of ProtectAI on July 22, 2025](https://www.paloaltonetworks.com/company/press/2025/palo-alto-networks-completes-acquisition-of-protect-ai). Meta's [Prompt Guard 2](https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-86M) ships under the Llama 4 Community License (not OSI-approved).
+> **JailGuard is a pure-Rust prompt-injection detector with a 1.5 MB embedded MLP classifier.** It scores text in **p50 14 ms on CPU**, achieves **98.40% accuracy** on a 7,049-sample held-out test set drawn from 17 public datasets, and ships bindings for **Rust, Python, JavaScript, and Go**. No external service, no API key. Dual-licensed under MIT OR Apache-2.0.
 
 ## Quick start
 
@@ -212,7 +210,7 @@ If you use JailGuard in research or production, please cite:
 ```bibtex
 @software{jailguard,
   title = {JailGuard: Efficient Prompt Injection Detection via Pre-trained Embeddings},
-  author = {Fedoseev, Yury},
+  author = {Yury Fedoseev},
   year = {2026},
   url = {https://github.com/yfedoseev/jailguard}
 }
@@ -222,4 +220,4 @@ A machine-readable [`CITATION.cff`](CITATION.cff) is also available.
 
 ## License
 
-Dual-licensed under MIT OR Apache-2.0 — your choice.
+Dual-licensed under [MIT](LICENSE-MIT) OR [Apache-2.0](LICENSE-APACHE) at your option.

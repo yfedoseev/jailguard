@@ -7,7 +7,7 @@ agent comprehension: commands first, prose minimal, examples concrete.
 ## What this project is
 
 JailGuard is a pure-Rust prompt-injection detector with a 1.5 MB
-embedded ONNX classifier. The Rust core ships bindings for Python
+embedded MLP classifier. The Rust core ships bindings for Python
 (pyo3 + maturin), JavaScript (napi-rs), and Go (CGo + purego). 98.40%
 accuracy on the in-domain test set, p50 14 ms CPU inference on Apple M3.
 
