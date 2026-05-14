@@ -1,0 +1,7 @@
+# Default owner for everything
+* @yfedoseev
+
+# Language binding directories
+/python/  @yfedoseev
+/js/      @yfedoseev
+/go/      @yfedoseev
