@@ -7,14 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## Unreleased
+## [0.1.2] - 2026-05-14
 
 ### Added
 
-- Elixir source-built binding under `elixir/`, implemented as a C NIF over
-  the existing stable JailGuard C ABI. The initial port supports repo-local
-  Linux/macOS builds and exposes `detect`, `detect!`, `is_injection`, `score`,
-  `detect_batch`, `download_model`, `model_cache_dir`, and `version`.
+- **Elixir binding** (Hex package `jailguard`). Implemented as a Rustler NIF in
+  `elixir/native/jailguard_nif/` and shipped as precompiled artifacts via
+  `rustler_precompiled` for `x86_64-unknown-linux-gnu`,
+  `aarch64-unknown-linux-gnu`, `x86_64-apple-darwin`, `aarch64-apple-darwin`,
+  and `x86_64-pc-windows-msvc`. Exposes `detect`, `detect!`, `is_injection`,
+  `score`, `detect_batch`, `download_model`, `model_cache_dir`, and `version`.
+  Set `JAILGUARD_BUILD=1` to compile from source on unsupported targets.
+  Originally contributed as a C-NIF source-built port by @elchemista in #16;
+  reworked to Rustler + Hex publishing in this release.
+- **Windows (x86_64)** added to the release matrix for native `cdylib` /
+  `staticlib`, Python wheels, the NodeJS napi addon, and the Elixir NIFs.
+  Resolves the ort-sys (`/MD`) vs esaxx-rs (`/MT`) LNK2038 mismatch via the
+  pre-existing `.cargo/config.toml` `target-feature=-crt-static` pin combined
+  with `CFLAGS_x86_64_pc_windows_msvc: /MD` env vars in CI.
+- Public Rust API: `jailguard::model_cache_dir()` (re-export of
+  `model_manager::cache_dir_string`). Non-breaking addition.
+
+### Changed
+
+- Dependency bumps via Dependabot: `once_cell` 1.21.3→1.21.4,
+  `regex` 1.12.2→1.12.3, `reqwest` 0.12.28→0.13.3, `thiserror` 2.0.17→2.0.18,
+  `unicode-segmentation` 1.12.0→1.13.2.
 
 ---
 
