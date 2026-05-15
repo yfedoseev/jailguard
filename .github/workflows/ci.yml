@@ -192,11 +192,12 @@ jobs:
         #     extremely limited and being deprecated; jobs sit in the
         #     QUEUED state indefinitely. macos-latest (Apple Silicon)
         #     covers the macOS surface.
-        #   - windows-latest: LNK2038 CRT mismatch between ort-sys (/MD)
-        #     and esaxx-rs (/MT). Same reason go.yml / js.yml /
-        #     python.yml exclude Windows.
-        #   Both re-enable when their respective blockers clear.
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+        #
+        # Windows is enabled as of 0.1.2 — the LNK2038 CRT mismatch
+        # between ort-sys (/MD) and esaxx-rs (/MT) is resolved by the
+        # .cargo/config.toml `target-feature=-crt-static` pin plus the
+        # /MD env vars in the build step below.
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, windows-latest]
         rust: [stable]
         include:
           - os: ubuntu-latest
@@ -219,10 +220,16 @@ jobs:
       - name: build (default features, strict)
         env:
           RUSTFLAGS: "-D warnings"
+          # See .cargo/config.toml — Windows MSVC needs /MD across C/C++
+          # deps to match ort-sys's dynamic CRT linkage.
+          CFLAGS_x86_64_pc_windows_msvc: /MD
+          CXXFLAGS_x86_64_pc_windows_msvc: /MD
         run: cargo build --locked --verbose
       - name: test (default features, strict)
         env:
           RUSTFLAGS: "-D warnings"
+          CFLAGS_x86_64_pc_windows_msvc: /MD
+          CXXFLAGS_x86_64_pc_windows_msvc: /MD
         run: cargo test --locked --verbose
       # We test every feature combo except `napi` and `python`:
       #   - napi pulls in Node-loader-only symbols (napi_get_value_*)

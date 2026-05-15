@@ -55,7 +55,7 @@ pip install jailguard
 
 **JavaScript / TypeScript (npm)**
 ```bash
-npm install @jailguard/jailguard
+npm install @yfedoseev/jailguard
 ```
 
 **Go**
@@ -64,15 +64,22 @@ go get github.com/yfedoseev/jailguard/go
 go run github.com/yfedoseev/jailguard/go/cmd/install@latest
 ```
 
+**Elixir (Hex)**
+```elixir
+def deps do
+  [{:jailguard, "~> 0.1.2"}]
+end
+```
+
 ### Platform Support
 
 | Platform | Architecture | Bindings |
 |----------|--------------|----------|
-| Linux    | x86_64       | Rust, Python wheel, npm prebuild, Go FFI |
-| Linux    | aarch64      | Rust, Python wheel, npm prebuild, Go FFI |
-| macOS    | x86_64       | Rust, Python wheel, npm prebuild, Go FFI |
-| macOS    | aarch64      | Rust, Python wheel, npm prebuild, Go FFI |
-| Windows  | x86_64       | Rust, Python wheel, npm prebuild, Go FFI |
+| Linux    | x86_64       | Rust, Python wheel, npm prebuild, Go FFI, Hex NIF |
+| Linux    | aarch64      | Rust, Python wheel, npm prebuild, Go FFI, Hex NIF |
+| macOS    | x86_64       | Rust, Python wheel, npm prebuild, Go FFI, Hex NIF |
+| macOS    | aarch64      | Rust, Python wheel, npm prebuild, Go FFI, Hex NIF |
+| Windows  | x86_64       | Rust, Python wheel, npm prebuild, Go FFI, Hex NIF |
 
 ### Documentation
 

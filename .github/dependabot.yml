@@ -55,3 +55,27 @@ updates:
     labels:
       - "dependencies"
       - "javascript"
+
+  # Elixir Hex package
+  - package-ecosystem: "mix"
+    directory: "/elixir"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - "dependencies"
+      - "elixir"
+
+  # Rust crate that backs the Elixir NIF
+  - package-ecosystem: "cargo"
+    directory: "/elixir/native/jailguard_nif"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - "dependencies"
+      - "elixir"
+      - "rust"
+    open-pull-requests-limit: 5

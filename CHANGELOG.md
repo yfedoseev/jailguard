@@ -7,6 +7,105 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.2] - 2026-05-14
+
+> Elixir bindings + Windows support
+
+### Added
+
+- **Elixir binding** ([Hex package `jailguard`](https://hex.pm/packages/jailguard)).
+  Implemented as a Rustler NIF in `elixir/native/jailguard_nif/` and shipped
+  as precompiled artifacts via `rustler_precompiled` for
+  `x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`,
+  `x86_64-apple-darwin`, `aarch64-apple-darwin`, and `x86_64-pc-windows-msvc`.
+  Exposes `detect`, `detect!`, `is_injection`, `score`, `detect_batch`,
+  `download_model`, `model_cache_dir`, and `version`. Set `JAILGUARD_BUILD=1`
+  to compile from source on unsupported targets.
+  Originally contributed as a C-NIF source-built port by
+  [@elchemista](https://github.com/elchemista) in
+  [PR #16](https://github.com/yfedoseev/jailguard/pull/16); reworked to
+  Rustler + `rustler_precompiled` + Hex publishing for this release. See
+  the Community contributors section below for the full credit.
+- **Windows (x86_64) support** for the native `cdylib` / `staticlib`,
+  Python wheels, the NodeJS napi addon, and the Elixir NIFs — all built
+  for `x86_64-pc-windows-msvc` in the release matrix and exercised by
+  the per-binding CI workflows. Resolves the long-standing
+  ort-sys (`/MD`) vs esaxx-rs (`/MT`) LNK2038 mismatch by disabling
+  `tokenizers`'s `esaxx_fast` default feature — esaxx-rs's `build.rs`
+  hardcodes `cc::Build::new().static_crt(true)`, so the C++ blob can't
+  be persuaded to use `/MD` via rustflags or env vars. We don't use
+  Unigram-model suffix-array tokenization (only WordPiece for BERT-style
+  models), so dropping `esaxx_fast` removes the C++ dep at no functional
+  cost. `.cargo/config.toml` retains the `target-feature=-crt-static`
+  pin as defense-in-depth for any future `cc-rs` consumers.
+
+  Also fixes `model_manager::cache_dir()`, which previously errored with
+  "HOME environment variable not set" on Windows. The fallback chain is
+  now `JAILGUARD_MODEL_DIR` → `HOME` → `USERPROFILE` → `LOCALAPPDATA`.
+
+  **Go on Windows is deferred to a follow-up.** Go's `cgo` on Windows
+  uses mingw-gcc, which can't link MSVC-built libraries (jailguard.lib
+  carries MSVC-mangled C++ symbols from the bundled onnxruntime). The
+  proper fix is to ship a parallel `x86_64-pc-windows-gnu` artifact for
+  Go consumers; tracked separately for 0.1.3.
+- **Public Rust API**: `jailguard::model_cache_dir()` (re-export of
+  `model_manager::cache_dir_string`). Non-breaking addition that lets the
+  Elixir NIF — and any out-of-tree consumer — query the ONNX cache
+  directory without going through the C ABI.
+- **Hex publish pipeline** end-to-end: new `build-elixir-nifs` matrix
+  (philss/rustler-precompiled-action across 5 targets × NIF versions
+  2.16/2.17), new `smoke-test-nifs` job that loads the just-built NIF in
+  a real Mix project and runs `JailGuard.detect/1` on injection + benign
+  samples, new `publish-hex` job gated on the smoke test and the GitHub
+  release (so `mix rustler_precompiled.download` can fetch the attached
+  NIF tarballs to write the checksum file).
+- **`mix hex.outdated` monthly issue automation** in `outdated.yml`,
+  matching the existing `cargo outdated` job.
+
+### Changed
+
+- Dependency bumps via Dependabot: `once_cell` 1.21.3→1.21.4,
+  `regex` 1.12.2→1.12.3, `reqwest` 0.12.28→0.13.3, `thiserror` 2.0.17→2.0.18,
+  `unicode-segmentation` 1.12.0→1.13.2.
+- Dependabot now tracks Hex (`/elixir`) and the NIF cargo crate
+  (`/elixir/native/jailguard_nif`) in addition to the existing Rust /
+  Python / Node / Go / actions ecosystems.
+
+### Fixed
+
+- **`publish-pypi` actually publishes to PyPI now.** The earlier 0.1.0
+  and 0.1.1 release runs both failed silently at the publish step:
+  `actions/download-artifact` was unfiltered, so it pulled every
+  artifact (napi addons, `libjailguard.so/.a/.rlib`, `jailguard.h`, the
+  `SHA256SUMS` manifest) into `dist/` alongside the wheels. `twine check
+  dist/*` then rejected the upload with
+  `InvalidDistribution: Unknown distribution format: 'SHA256SUMS'`
+  before any wheel was actually transferred — PyPI never received the
+  package on either release. The job now filters the download to
+  `wheels-*` and `sdist` patterns only and adds a guard step that fails
+  the job if anything other than `.whl` / `.tar.gz` slips into `dist/`.
+
+### Community contributors
+
+- **[@elchemista](https://github.com/elchemista)** (Yuriy Zhar) — contributed
+  the initial Elixir binding in [PR #16](https://github.com/yfedoseev/jailguard/pull/16):
+  a complete C-NIF port of the JailGuard C ABI, the full Mix package
+  scaffold (mix.exs, `JailGuard` / `JailGuard.Result` / `JailGuard.Error`
+  modules), an 11-case ExUnit suite covering version/cache-dir lookup,
+  injection vs benign classification, `detect!`, batch ordering, invalid
+  inputs, and concurrent detection, plus repo wiring (Makefile targets,
+  CODEOWNERS, README, docs/API.md). Yuriy made the design choice to wrap
+  the existing stable C ABI rather than reaching into the Rust crate
+  directly, which gave the binding a clean three-layer split
+  (`JailGuard` → `JailGuard.Native` → C NIF) and idiomatic Elixir
+  `{:ok, _}/{:error, _}` ergonomics from day one. The Rustler +
+  precompiled-NIF + Hex-publishing layer in this release builds on top
+  of Yuriy's port — same public Elixir API surface, same test suite,
+  same module structure. Hex publishing wouldn't have been on the 0.1.2
+  scope without this initial contribution.
+
+---
+
 ## [0.1.1] - 2026-05-14
 
 Release-pipeline fixes only. No runtime/API changes — all detector

@@ -83,3 +83,82 @@ jobs:
             }
         env:
           REPORT: ${{ steps.outdated.outputs.report }}
+
+  hex-outdated:
+    name: mix hex.outdated
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Set up Elixir + OTP
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27"
+          elixir-version: "1.17"
+
+      - name: Install hex + rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Fetch deps
+        working-directory: elixir
+        run: mix deps.get
+
+      - name: Check for outdated Hex deps
+        id: hex_outdated
+        working-directory: elixir
+        run: |
+          # mix hex.outdated exits 1 when at least one dep can be upgraded
+          # to a non-pre-release version.
+          OUTPUT=$(mix hex.outdated 2>&1) && HAS=false || HAS=true
+          echo "$OUTPUT"
+          echo "has_outdated=$HAS" >> "$GITHUB_OUTPUT"
+          if [ "$HAS" = "true" ]; then
+            {
+              echo "report<<EOF"
+              echo "$OUTPUT"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open issue for outdated Hex deps
+        if: steps.hex_outdated.outputs.has_outdated == 'true'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+        with:
+          script: |
+            const title = `chore: outdated Elixir/Hex dependencies (${new Date().toISOString().slice(0,7)})`;
+            const body = [
+              "Monthly dependency freshness check found outdated Hex packages.\n",
+              "```",
+              process.env.REPORT,
+              "```",
+              "\nRun `mix deps.update <pkg>` or bump versions in `elixir/mix.exs`.",
+            ].join("\n");
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "dependencies",
+            });
+
+            const existing = issues.find(i => i.title.startsWith("chore: outdated Elixir/Hex dependencies"));
+            if (existing) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ["dependencies", "elixir"],
+              });
+            }
+        env:
+          REPORT: ${{ steps.hex_outdated.outputs.report }}

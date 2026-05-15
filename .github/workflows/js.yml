@@ -53,9 +53,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Windows deferred to a future release (LNK2038 CRT mismatch
-        # between ort-sys /MD and esaxx-rs /MT — see build-native comment).
-        os: [ubuntu-latest, macos-latest]
+        # Windows enabled as of 0.1.2 — same ort-sys/esaxx-rs CRT fix
+        # as ci.yml / go.yml / python.yml.
+        os: [ubuntu-latest, macos-latest, windows-latest]
         node: ['18', '20', '22']
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -79,6 +79,9 @@ jobs:
 
       - name: Build native addon (cargo + tsc)
         working-directory: js
+        env:
+          CFLAGS_x86_64_pc_windows_msvc: /MD
+          CXXFLAGS_x86_64_pc_windows_msvc: /MD
         run: |
           npm run build:native
           npm run build
@@ -106,9 +109,8 @@ jobs:
             os: macos-latest
           - target: aarch64-apple-darwin
             os: macos-latest
-          # Windows deferred to a future release: esaxx-rs (tokenizers
-          # C++ dep) compiles with /MT (static CRT) while ort-sys uses
-          # /MD (dynamic, links onnxruntime.dll). LNK2038 mismatch.
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 

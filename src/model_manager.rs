@@ -47,15 +47,44 @@ fn model_url() -> String {
 
 /// Return the cache directory for ONNX model files.
 ///
-/// Checks `JAILGUARD_MODEL_DIR` env var first, then falls back to `~/.cache/jailguard/`.
+/// Checks `JAILGUARD_MODEL_DIR` env var first, then falls back to:
+///   - Unix: `$HOME/.cache/jailguard`
+///   - Windows: `%USERPROFILE%\.cache\jailguard` (or `%LOCALAPPDATA%\jailguard`)
 fn cache_dir() -> Result<PathBuf, Error> {
     if let Ok(dir) = std::env::var("JAILGUARD_MODEL_DIR") {
         return Ok(PathBuf::from(dir));
     }
 
-    let home = std::env::var("HOME")
-        .map_err(|_| Error::Config("HOME environment variable not set".into()))?;
-    Ok(PathBuf::from(home).join(".cache").join("jailguard"))
+    // On Windows prefer USERPROFILE / LOCALAPPDATA over HOME. Python's
+    // venv tooling on Windows occasionally exports HOME as a Git-Bash
+    // path (`/c/Users/foo`) or even the literal `~`, neither of which
+    // Rust's PathBuf will expand. Reading USERPROFILE first avoids
+    // those landmines.
+    #[cfg(windows)]
+    {
+        if let Ok(profile) = std::env::var("USERPROFILE") {
+            return Ok(PathBuf::from(profile).join(".cache").join("jailguard"));
+        }
+        if let Ok(appdata) = std::env::var("LOCALAPPDATA") {
+            return Ok(PathBuf::from(appdata).join("jailguard"));
+        }
+    }
+
+    if let Ok(home) = std::env::var("HOME") {
+        return Ok(PathBuf::from(home).join(".cache").join("jailguard"));
+    }
+
+    // Last-ditch fallbacks (Unix runners shouldn't normally hit these).
+    if let Ok(profile) = std::env::var("USERPROFILE") {
+        return Ok(PathBuf::from(profile).join(".cache").join("jailguard"));
+    }
+    if let Ok(appdata) = std::env::var("LOCALAPPDATA") {
+        return Ok(PathBuf::from(appdata).join("jailguard"));
+    }
+
+    Err(Error::Config(
+        "no cache directory: set JAILGUARD_MODEL_DIR, HOME, USERPROFILE, or LOCALAPPDATA".into(),
+    ))
 }
 
 /// Public-API variant — returns the cache directory as a `String`.

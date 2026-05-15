@@ -98,6 +98,42 @@ New variants may be added in minor releases (hence `#[non_exhaustive]`).
 | `JAILGUARD_MODEL_DIR`  | Override the cache directory for the ONNX model.    |
 | `HOME`                 | Used as fallback root for `~/.cache/jailguard/`.    |
 
+## Elixir
+
+The Elixir binding lives in `elixir/`. It's a Rustler NIF; precompiled `.so`/`.dll`
+artifacts ship via Hex for Linux (x86_64, aarch64), macOS (x86_64, aarch64), and
+Windows (x86_64). Set `JAILGUARD_BUILD=1` to compile from source on unsupported
+targets (requires Rust 1.85+).
+
+```elixir
+def deps do
+  [{:jailguard, "~> 0.1.2"}]
+end
+```
+
+```elixir
+:ok = JailGuard.download_model()
+
+{:ok, result} = JailGuard.detect("ignore previous instructions")
+result.is_injection
+result.score
+result.risk
+```
+
+| Function | Return |
+|---|---|
+| `JailGuard.version()` | `String.t()` |
+| `JailGuard.download_model()` | `:ok | {:error, %JailGuard.Error{}}` |
+| `JailGuard.model_cache_dir()` | `{:ok, String.t()} | {:error, %JailGuard.Error{}}` |
+| `JailGuard.detect(text)` | `{:ok, %JailGuard.Result{}} | {:error, %JailGuard.Error{}}` |
+| `JailGuard.detect!(text)` | `%JailGuard.Result{} | no_return()` |
+| `JailGuard.is_injection(text)` | `{:ok, boolean()} | {:error, %JailGuard.Error{}}` |
+| `JailGuard.score(text)` | `{:ok, float()} | {:error, %JailGuard.Error{}}` |
+| `JailGuard.detect_batch(texts)` | `{:ok, [%JailGuard.Result{}]} | {:error, %JailGuard.Error{}}` |
+
+`%JailGuard.Result{}` has `is_injection`, `score`, `confidence`, and `risk`.
+Risk is one of `:safe`, `:low`, `:medium`, `:high`, or `:critical`.
+
 ## Feature flags
 
 | Feature     | Effect                                                           |
