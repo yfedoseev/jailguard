@@ -82,6 +82,10 @@ js/build/
 js/wasm/jailguard*
 js/coverage/
 
+# Elixir bindings build artifacts
+elixir/_build/
+elixir/deps/
+
 # Example-local install artifacts (each example installs its package on demand)
 examples/javascript/*/node_modules/
 examples/typescript/*/node_modules/

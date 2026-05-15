@@ -4,9 +4,9 @@
 # Run `make help` for a categorised list.
 
 .PHONY: help \
-        check check-all check-rust check-py check-js check-go \
-        build build-release build-py build-go build-js \
-        test test-rust test-py test-js test-go test-doc \
+        check check-all check-rust check-py check-js check-go check-elixir \
+        build build-release build-py build-go build-js build-elixir \
+        test test-rust test-py test-js test-go test-elixir test-doc \
         bench bench-build score-test \
         lint lint-rust lint-rust-full lint-py lint-py-fix lint-js \
         fmt fmt-rust fmt-py fmt-toml fmt-check \
@@ -30,6 +30,7 @@ help:
 	@echo "  make build-py         - maturin build --release (Python wheel)"
 	@echo "  make build-go         - cgo build of the Go bindings (Phase 3)"
 	@echo "  make build-js         - napi-rs build of the Node bindings (Phase 4)"
+	@echo "  make build-elixir     - source-built Elixir C NIF binding"
 	@echo ""
 	@echo "Test:"
 	@echo "  make test             - Rust unit + integration + doc tests"
@@ -37,6 +38,7 @@ help:
 	@echo "  make test-py          - Python pytest suite (Phase 2)"
 	@echo "  make test-js          - Node tests (Phase 4)"
 	@echo "  make test-go          - Go tests (Phase 3)"
+	@echo "  make test-elixir      - Elixir tests"
 	@echo "  make test-doc         - Rust doc tests"
 	@echo ""
 	@echo "Quality:"
@@ -44,6 +46,7 @@ help:
 	@echo "  make lint-rust-full   - cargo clippy --features full"
 	@echo "  make lint-py          - ruff check Python sources (Phase 2)"
 	@echo "  make lint-js          - biome check JS sources (Phase 4)"
+	@echo "  make check-elixir     - mix format check + compile warnings-as-errors + tests"
 	@echo "  make fmt              - cargo fmt + ruff format + taplo fmt"
 	@echo "  make fmt-check        - all formatters in --check mode"
 	@echo ""
@@ -56,7 +59,7 @@ help:
 	@echo "Aggregate:"
 	@echo "  make check-rust       - fmt-check + lint + test-rust + test-doc"
 	@echo "  make check-py         - fmt-py-check + lint-py + test-py"
-	@echo "  make check-all        - check-rust + check-py + check-js + check-go"
+	@echo "  make check-all        - check-rust + check-py + check-js + check-go + check-elixir"
 	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean            - remove build artifacts (target/, dist/, *.so, *.pyd)"
@@ -107,6 +110,9 @@ test-c-api: build-release
 build-js:
 	@cd js && npm install --silent && npm run build
 
+build-elixir:
+	@cd elixir && mix deps.get && mix compile
+
 # ---------------------------------------------------------------------------
 # Test
 # ---------------------------------------------------------------------------
@@ -131,6 +137,9 @@ test-go: build-release
 	    DYLD_LIBRARY_PATH=$(CURDIR)/target/release \
 	    LD_LIBRARY_PATH=$(CURDIR)/target/release \
 	    go test -v -timeout 60s ./...
+
+test-elixir:
+	@cd elixir && mix deps.get && mix test
 
 # ---------------------------------------------------------------------------
 # Bench / smoke
@@ -220,9 +229,12 @@ check-go: build-release
 	    gofmt -l . | tee /tmp/gofmt-out.txt && \
 	    test ! -s /tmp/gofmt-out.txt
 
+check-elixir:
+	@cd elixir && mix deps.get && mix format --check-formatted && mix compile --warnings-as-errors && mix test
+
 check-all: check-rust
 	@echo ""
-	@echo "Run check-py / check-go / check-js individually as bindings come online"
+	@echo "Run check-py / check-go / check-js / check-elixir individually as bindings come online"
 
 # Mirror what GitHub Actions does, locally. Slow.
 # `lint-rust-full` runs but doesn't fail the run — same as CI's
@@ -251,3 +263,4 @@ clean:
 	rm -rf tests/__pycache__ .pytest_cache htmlcov/ .coverage
 	rm -rf js/node_modules js/dist js/build js/lib
 	rm -rf go/*.so go/*.dll
+	rm -rf elixir/_build elixir/deps

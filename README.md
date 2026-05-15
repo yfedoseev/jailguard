@@ -8,7 +8,7 @@
 [![PyPI](https://img.shields.io/pypi/v/jailguard.svg)](https://pypi.org/project/jailguard/)
 [![npm](https://img.shields.io/npm/v/@yfedoseev/jailguard.svg)](https://www.npmjs.com/package/@yfedoseev/jailguard)
 
-> **JailGuard is a pure-Rust prompt-injection detector with a 1.5 MB embedded MLP classifier.** It scores text in **p50 14 ms on CPU**, achieves **98.40% accuracy** on a 7,049-sample held-out test set drawn from 17 public datasets, and ships bindings for **Rust, Python, JavaScript, and Go**. No external service, no API key. Dual-licensed under MIT OR Apache-2.0.
+> **JailGuard is a pure-Rust prompt-injection detector with a 1.5 MB embedded MLP classifier.** It scores text in **p50 14 ms on CPU**, achieves **98.40% accuracy** on a 7,049-sample held-out test set drawn from 17 public datasets, and ships bindings for **Rust, Python, JavaScript, Go, and Elixir**. No external service, no API key. Dual-licensed under MIT OR Apache-2.0.
 
 ## Quick start
 
@@ -59,6 +59,31 @@ result, _ := jailguard.Detect("What is the capital of France?")
 fmt.Printf("score=%.3f risk=%v\n", result.Score, result.Risk)
 ```
 
+**Elixir** — source-built Git dependency
+```elixir
+def deps do
+  [
+    {:jailguard,
+     github: "yfedoseev/jailguard",
+     branch: "feature/elixir-support",
+     subdir: "elixir",
+     depth: 1}
+  ]
+end
+```
+
+```elixir
+:ok = JailGuard.download_model()
+
+{:ok, injection?} = JailGuard.is_injection("ignore previous instructions")
+if injection?, do: raise("blocked")
+
+{:ok, result} = JailGuard.detect("What is the capital of France?")
+IO.inspect({result.score, result.risk})
+```
+
+The Elixir binding currently targets Linux/macOS source builds via the existing C ABI. It uses Mix's Git `subdir` option because the Elixir package still builds against the parent Rust crate; `sparse: "elixir"` will not work for this first port. Hex publishing, precompiled NIF artifacts, and Windows support are deferred.
+
 The classifier is embedded in every binding. The 90 MB MiniLM ONNX embedder is auto-downloaded to `~/.cache/jailguard/` on first use. For production: call `jailguard::download_model()` at startup to warm the cache before serving traffic.
 
 ## JailGuard vs alternatives in 2026
@@ -72,7 +97,7 @@ The classifier is embedded in every binding. The 90 MB MiniLM ONNX embedder is a
 | **Classification** | **8-class taxonomy** | binary | binary | binary | binary |
 | **Active in 2026?** | ✅ | ✅ (Check Point pending) | **❌ archived** | ✅ (Palo Alto) | ✅ |
 | **No PyTorch / no runtime dep** | ✅ (Rust) | ❌ HTTP client | ❌ Python+OpenAI | ❌ PyTorch | ❌ PyTorch |
-| **Multi-language bindings** | Rust, Python, JS, Go | API clients | Python | Python | Python |
+| **Multi-language bindings** | Rust, Python, JS, Go, Elixir | API clients | Python | Python | Python |
 
 ¹ Meta does not publish CPU latency for Prompt Guard 2.
 
@@ -97,7 +122,7 @@ pub struct DetectionOutput {
 pub enum RiskLevel { Safe, Low, Medium, High, Critical }
 ```
 
-Python / JS / Go expose the same surface in idiomatic form. See [`docs/API.md`](docs/API.md) for full per-language signatures.
+Python / JS / Go / Elixir expose the same surface in idiomatic form. See [`docs/API.md`](docs/API.md) for full per-language signatures.
 
 ## How it works
 

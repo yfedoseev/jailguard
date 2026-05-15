@@ -98,6 +98,51 @@ New variants may be added in minor releases (hence `#[non_exhaustive]`).
 | `JAILGUARD_MODEL_DIR`  | Override the cache directory for the ONNX model.    |
 | `HOME`                 | Used as fallback root for `~/.cache/jailguard/`.    |
 
+## Elixir
+
+The Elixir binding lives in `elixir/` and is currently source-built from a
+repository checkout on Linux/macOS. It compiles a small C NIF that calls the
+stable JailGuard C ABI.
+
+```elixir
+def deps do
+  [
+    {:jailguard,
+     github: "yfedoseev/jailguard",
+     branch: "feature/elixir-support",
+     subdir: "elixir",
+     depth: 1}
+  ]
+end
+```
+
+Use `subdir: "elixir"` rather than `sparse: "elixir"` for this first port:
+the Mix project needs the parent checkout so it can build the Rust crate and
+include the C ABI header.
+
+```elixir
+:ok = JailGuard.download_model()
+
+{:ok, result} = JailGuard.detect("ignore previous instructions")
+result.is_injection
+result.score
+result.risk
+```
+
+| Function | Return |
+|---|---|
+| `JailGuard.version()` | `String.t()` |
+| `JailGuard.download_model()` | `:ok | {:error, %JailGuard.Error{}}` |
+| `JailGuard.model_cache_dir()` | `{:ok, String.t()} | {:error, %JailGuard.Error{}}` |
+| `JailGuard.detect(text)` | `{:ok, %JailGuard.Result{}} | {:error, %JailGuard.Error{}}` |
+| `JailGuard.detect!(text)` | `%JailGuard.Result{} | no_return()` |
+| `JailGuard.is_injection(text)` | `{:ok, boolean()} | {:error, %JailGuard.Error{}}` |
+| `JailGuard.score(text)` | `{:ok, float()} | {:error, %JailGuard.Error{}}` |
+| `JailGuard.detect_batch(texts)` | `{:ok, [%JailGuard.Result{}]} | {:error, %JailGuard.Error{}}` |
+
+`%JailGuard.Result{}` has `is_injection`, `score`, `confidence`, and `risk`.
+Risk is one of `:safe`, `:low`, `:medium`, `:high`, or `:critical`.
+
 ## Feature flags
 
 | Feature     | Effect                                                           |
