@@ -58,7 +58,16 @@ thiserror = "2"
 # API comparison).
 ort = "=2.0.0-rc.9"
 ort-sys = "=2.0.0-rc.9"
-tokenizers = "0.23"
+# Default features pull in `esaxx_fast`, which transitively depends on
+# the C++ esaxx-rs crate. esaxx-rs's build.rs hardcodes
+# cc::Build::new().static_crt(true), forcing /MT on MSVC and producing
+# an LNK2038 mismatch against ort-sys (which links the dynamic CRT /MD
+# onnxruntime.dll). We use WordPiece (BERT-style) tokenization, not
+# Unigram — `esaxx_fast` only affects the Unigram trainer's suffix-
+# array tokenization, so disabling it has no runtime impact for us
+# but unblocks Windows entirely. `onig` + `progressbar` are kept to
+# match the previous default behavior.
+tokenizers = { version = "0.23", default-features = false, features = ["onig", "progressbar"] }
 ndarray = "0.16"
 ureq = "3"
 sha2 = "0.11"

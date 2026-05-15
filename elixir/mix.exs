@@ -1,54 +1,66 @@
 defmodule JailGuard.MixProject do
   use Mix.Project
 
-  @version "0.1.1"
+  @version "0.1.2"
   @source_url "https://github.com/yfedoseev/jailguard"
 
   def project do
     [
       app: :jailguard,
       version: @version,
-      elixir: ">= 1.14.0",
-      compilers: [:elixir_make] ++ Mix.compilers(),
-      make_clean: ["clean"],
-      make_error_message:
-        "could not build the JailGuard Elixir NIF; ensure Rust, cargo, make, and a C compiler are installed",
+      # rustler 0.36 and rustler_precompiled 0.8 require Elixir 1.15+.
+      elixir: ">= 1.15.0",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      description: "Elixir bindings for JailGuard, a pure-Rust prompt-injection detector.",
+      description: description(),
       package: package(),
-      docs: [
-        main: "JailGuard",
-        source_ref: "v#{@version}",
-        source_url: @source_url
-      ]
+      docs: docs(),
+      name: "JailGuard"
     ]
   end
 
   def application do
-    [
-      extra_applications: [:logger]
-    ]
+    [extra_applications: [:logger]]
+  end
+
+  defp description do
+    "Elixir bindings for JailGuard, a pure-Rust prompt-injection detector " <>
+      "with a 1.5 MB embedded MLP classifier."
   end
 
   defp deps do
     [
-      {:elixir_make, "~> 0.9", runtime: false}
+      {:rustler_precompiled, "~> 0.8"},
+      {:rustler, "~> 0.36", optional: true},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
     ]
   end
 
   defp package do
     [
       licenses: ["MIT", "Apache-2.0"],
-      links: %{"GitHub" => @source_url},
-      files: [
-        "c_src",
-        "lib",
-        "test",
-        "Makefile",
-        "mix.exs",
-        "README.md"
-      ]
+      links: %{
+        "GitHub" => @source_url,
+        "Changelog" => "#{@source_url}/blob/main/CHANGELOG.md"
+      },
+      files: ~w(
+        lib
+        native/jailguard_nif/src
+        native/jailguard_nif/Cargo.toml
+        checksum-Elixir.JailGuard.Native.exs
+        .formatter.exs
+        mix.exs
+        README.md
+      )
+    ]
+  end
+
+  defp docs do
+    [
+      main: "JailGuard",
+      source_ref: "v#{@version}",
+      source_url: @source_url,
+      extras: ["README.md"]
     ]
   end
 end

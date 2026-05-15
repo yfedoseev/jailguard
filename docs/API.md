@@ -100,25 +100,16 @@ New variants may be added in minor releases (hence `#[non_exhaustive]`).
 
 ## Elixir
 
-The Elixir binding lives in `elixir/` and is currently source-built from a
-repository checkout on Linux/macOS. It compiles a small C NIF that calls the
-stable JailGuard C ABI.
+The Elixir binding lives in `elixir/`. It's a Rustler NIF; precompiled `.so`/`.dll`
+artifacts ship via Hex for Linux (x86_64, aarch64), macOS (x86_64, aarch64), and
+Windows (x86_64). Set `JAILGUARD_BUILD=1` to compile from source on unsupported
+targets (requires Rust 1.85+).
 
 ```elixir
 def deps do
-  [
-    {:jailguard,
-     github: "yfedoseev/jailguard",
-     branch: "feature/elixir-support",
-     subdir: "elixir",
-     depth: 1}
-  ]
+  [{:jailguard, "~> 0.1.2"}]
 end
 ```
-
-Use `subdir: "elixir"` rather than `sparse: "elixir"` for this first port:
-the Mix project needs the parent checkout so it can build the Rust crate and
-include the C ABI header.
 
 ```elixir
 :ok = JailGuard.download_model()

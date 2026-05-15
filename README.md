@@ -59,16 +59,10 @@ result, _ := jailguard.Detect("What is the capital of France?")
 fmt.Printf("score=%.3f risk=%v\n", result.Score, result.Risk)
 ```
 
-**Elixir** — source-built Git dependency
+**Elixir** — `mix.exs`
 ```elixir
 def deps do
-  [
-    {:jailguard,
-     github: "yfedoseev/jailguard",
-     branch: "feature/elixir-support",
-     subdir: "elixir",
-     depth: 1}
-  ]
+  [{:jailguard, "~> 0.1.2"}]
 end
 ```
 
@@ -82,7 +76,7 @@ if injection?, do: raise("blocked")
 IO.inspect({result.score, result.risk})
 ```
 
-The Elixir binding currently targets Linux/macOS source builds via the existing C ABI. It uses Mix's Git `subdir` option because the Elixir package still builds against the parent Rust crate; `sparse: "elixir"` will not work for this first port. Hex publishing, precompiled NIF artifacts, and Windows support are deferred.
+Precompiled NIFs ship for Linux (x86_64, aarch64), macOS (x86_64, aarch64), and Windows (x86_64) — no Rust toolchain on install. Set `JAILGUARD_BUILD=1` to compile from source on unsupported targets.
 
 The classifier is embedded in every binding. The 90 MB MiniLM ONNX embedder is auto-downloaded to `~/.cache/jailguard/` on first use. For production: call `jailguard::download_model()` at startup to warm the cache before serving traffic.
 

@@ -1,0 +1,189 @@
+name: Elixir Bindings CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+  # JAILGUARD_BUILD=1 forces rustler_precompiled to compile the NIF locally
+  # instead of trying to download a precompiled artifact (which doesn't
+  # exist yet for the current branch version).
+  JAILGUARD_BUILD: "1"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # mix format + compile --warnings-as-errors + tests across (OS, OTP/Elixir).
+  # ---------------------------------------------------------------------------
+  test:
+    name: mix test (Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }} / ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: elixir
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux x86_64 — covers our supported Elixir range. 1.14 dropped
+          # because rustler 0.36 and rustler_precompiled 0.8 require 1.15+.
+          - os: ubuntu-latest
+            elixir: "1.15"
+            otp: "25"
+          - os: ubuntu-latest
+            elixir: "1.16"
+            otp: "26"
+          - os: ubuntu-latest
+            elixir: "1.17"
+            otp: "27"
+          # macOS aarch64 — single representative version
+          - os: macos-latest
+            elixir: "1.17"
+            otp: "27"
+          # Windows x86_64 — single representative version. setup-beam supports
+          # Windows via OTP+Elixir prebuilt archives.
+          - os: windows-latest
+            elixir: "1.17"
+            otp: "27"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      # erlef/setup-beam@v1 auto-detects the runner via the `ImageOS`
+      # env var. GitHub's new `windows-latest` image identifies as
+      # `win25-vs2026`, which the action's allow-list doesn't recognize.
+      # We set `ImageOS=win25` only on Windows runners; using an
+      # expression-evaluated env: at step scope sets the variable to
+      # an empty string on non-Windows, which fails the same lookup.
+      - name: Override ImageOS on Windows runners
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: echo "ImageOS=win25" >> "$GITHUB_ENV"
+
+      - name: Set up Elixir + OTP
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ matrix.otp }}
+          elixir-version: ${{ matrix.elixir }}
+
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+
+      # Swatinem/rust-cache disabled on macOS — see go.yml comment.
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        if: matrix.os != 'macos-latest'
+        with:
+          key: elixir-${{ matrix.os }}-otp${{ matrix.otp }}
+          workspaces: "elixir/native/jailguard_nif -> target"
+
+      - name: Cache hex + mix deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            elixir/deps
+            elixir/_build
+          key: mix-${{ runner.os }}-otp${{ matrix.otp }}-elixir${{ matrix.elixir }}-${{ hashFiles('elixir/mix.exs', 'elixir/mix.lock') }}
+          restore-keys: |
+            mix-${{ runner.os }}-otp${{ matrix.otp }}-elixir${{ matrix.elixir }}-
+
+      # Pre-cache the ONNX model so the test setup_all download is a no-op.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/jailguard
+          key: jailguard-onnx-minilm-v1
+
+      - name: Install hex + rebar
+        shell: bash
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Fetch deps
+        shell: bash
+        run: mix deps.get
+
+      - name: Compile NIF + Elixir (warnings as errors)
+        shell: bash
+        env:
+          CFLAGS_x86_64_pc_windows_msvc: /MD
+          CXXFLAGS_x86_64_pc_windows_msvc: /MD
+        run: mix compile --warnings-as-errors
+
+      - name: Run mix test
+        shell: bash
+        run: mix test
+
+  # ---------------------------------------------------------------------------
+  # mix format check — Linux-only, fast.
+  # ---------------------------------------------------------------------------
+  lint:
+    name: mix format + warnings
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: elixir
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Set up Elixir + OTP
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27"
+          elixir-version: "1.17"
+
+      - name: Install hex + rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Check formatting
+        run: mix format --check-formatted
+
+      - name: Validate mix.exs syntax (load only)
+        run: |
+          # Loads the project module without compiling deps; catches typos
+          # in @version, package() metadata, or RustlerPrecompiled config.
+          mix run --no-start --no-deps-check --no-compile -e ":ok"
+
+  # ---------------------------------------------------------------------------
+  # Native NIF crate clippy + fmt — runs cargo on elixir/native/jailguard_nif
+  # so the Rust side of the binding is held to the same standard as the
+  # parent crate.
+  # ---------------------------------------------------------------------------
+  nif-rust:
+    name: cargo fmt + clippy (NIF crate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          key: nif-rust
+          workspaces: "elixir/native/jailguard_nif -> target"
+      - name: cargo fmt --check
+        run: cargo fmt --all --check --manifest-path elixir/native/jailguard_nif/Cargo.toml
+      - name: cargo clippy
+        run: cargo clippy --release --all-targets --locked --manifest-path elixir/native/jailguard_nif/Cargo.toml -- -D warnings
+
+  # ---------------------------------------------------------------------------
+  # Aggregate gate for branch protection.
+  # ---------------------------------------------------------------------------
+  elixir-success:
+    name: elixir success
+    if: always()
+    needs: [test, lint, nif-rust]
+    runs-on: ubuntu-latest
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+      - run: echo "All Elixir jobs passed"

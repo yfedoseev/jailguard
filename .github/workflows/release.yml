@@ -71,6 +71,14 @@ jobs:
             exit 1
           fi
 
+      - name: Verify elixir/mix.exs version matches
+        run: |
+          MIX_VERSION="$(grep -E '^\s*@version\s+"' elixir/mix.exs | head -1 | sed 's/.*"\(.*\)".*/\1/')"
+          if [[ "$MIX_VERSION" != "${{ steps.v.outputs.version }}" ]]; then
+            echo "::error::elixir/mix.exs version $MIX_VERSION does not match Cargo.toml ${{ steps.v.outputs.version }}"
+            exit 1
+          fi
+
       - name: Verify CHANGELOG entry exists
         run: |
           if ! grep -q "## \[${{ steps.v.outputs.version }}\]\|## ${{ steps.v.outputs.version }}\b" CHANGELOG.md; then
@@ -101,8 +109,12 @@ jobs:
             os: macos-latest
           - target: aarch64-apple-darwin
             os: macos-latest
-          # Windows deferred (LNK2038 CRT mismatch between ort-sys /MD and
-          # esaxx-rs /MT — to be addressed in v0.1.1).
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            # .cargo/config.toml pins `-C target-feature=-crt-static` for this
+            # triple, plus the CFLAGS_x86_64_pc_windows_msvc /MD env var below,
+            # which together force cc-rs and rustc to agree on /MD across
+            # ort-sys + esaxx-rs (was LNK2038 in pre-0.1.2 builds).
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
@@ -269,9 +281,31 @@ jobs:
           name: wheels-macos-${{ matrix.target }}
           path: dist/*.whl
 
-  # build-wheels-windows: deferred to a future release.
-  # ort-sys vs esaxx-rs LNK2038 CRT mismatch (see comment in the
-  # cross-platform native build matrix above).
+  build-wheels-windows:
+    name: wheel (windows ${{ matrix.target }})
+    runs-on: windows-latest
+    needs: [preflight]
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [x64]
+    env:
+      # See comment on build-native for the /MD + -crt-static rationale.
+      CFLAGS_x86_64_pc_windows_msvc: /MD
+      CXXFLAGS_x86_64_pc_windows_msvc: /MD
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+      - uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --features python --out dist
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: wheels-windows-${{ matrix.target }}
+          path: dist/*.whl
 
   build-sdist:
     name: sdist
@@ -287,6 +321,206 @@ jobs:
         with:
           name: sdist
           path: dist/*.tar.gz
+
+  # ===========================================================================
+  # Elixir Rustler NIFs — one .tar.gz per (target, nif-version) pair.
+  # rustler_precompiled looks up these artifacts on the GitHub release at
+  # install time, verified against the bundled checksum-Elixir.JailGuard.Native.exs.
+  # ===========================================================================
+  build-elixir-nifs:
+    name: elixir NIF ${{ matrix.nif }} (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    needs: [preflight]
+    strategy:
+      fail-fast: false
+      matrix:
+        # Cartesian product of nif × target via base matrix; `include`
+        # below attaches the right runner OS to each target. Listing
+        # target only in `include:` produced just the Windows cells —
+        # GH Actions's include semantics didn't cross-multiply with
+        # the base `nif:` list. With target in base, we get the full
+        # 2 × 5 = 10 cells we want.
+        nif: ["2.16", "2.17"]
+        target:
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
+          - x86_64-apple-darwin
+          - aarch64-apple-darwin
+          - x86_64-pc-windows-msvc
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+    env:
+      RUSTLER_NIF_VERSION: ${{ matrix.nif }}
+      # Windows CRT — see .cargo/config.toml.
+      CFLAGS_x86_64_pc_windows_msvc: /MD
+      CXXFLAGS_x86_64_pc_windows_msvc: /MD
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Linux aarch64 cross toolchain
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+      # cargo + rustler_precompiled-shaped packaging, done inline.
+      # We previously used philss/rustler-precompiled-action, but both
+      # v1.1.4 and v1.1.5 unconditionally try to extract a Linux cross-rs
+      # tarball on every runner (including Windows, where tar.exe doesn't
+      # support --wildcards). The composite action's `if: ${{ inputs.use-cross }}`
+      # gate doesn't short-circuit because boolean inputs in composite
+      # actions stringify to "false" — which is truthy in GH Actions
+      # expression context. Doing the cargo build and tarball naming
+      # inline avoids the action entirely.
+      - name: cargo build
+        shell: bash
+        working-directory: elixir/native/jailguard_nif
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+        run: cargo build --locked --release --target ${{ matrix.target }}
+
+      - name: Package as rustler_precompiled tarball
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          # rustler_precompiled artifact naming:
+          #   <libprefix><crate>-v<version>-nif-<nif>-<target>.<ext>.tar.gz
+          # libprefix is "lib" on Linux/macOS, empty on Windows.
+          # ext is ".so" on Linux+macOS (macOS .dylib renamed to .so) and ".dll" on Windows.
+          case "${{ matrix.target }}" in
+            *-pc-windows-*)
+              SRC="elixir/native/jailguard_nif/target/${{ matrix.target }}/release/jailguard_nif.dll"
+              FINAL_NAME="jailguard_nif-v${{ needs.preflight.outputs.version }}-nif-${{ matrix.nif }}-${{ matrix.target }}.dll"
+              ;;
+            *-apple-*)
+              SRC="elixir/native/jailguard_nif/target/${{ matrix.target }}/release/libjailguard_nif.dylib"
+              FINAL_NAME="libjailguard_nif-v${{ needs.preflight.outputs.version }}-nif-${{ matrix.nif }}-${{ matrix.target }}.so"
+              ;;
+            *)
+              SRC="elixir/native/jailguard_nif/target/${{ matrix.target }}/release/libjailguard_nif.so"
+              FINAL_NAME="libjailguard_nif-v${{ needs.preflight.outputs.version }}-nif-${{ matrix.nif }}-${{ matrix.target }}.so"
+              ;;
+          esac
+          test -f "$SRC"
+          cp "$SRC" "$FINAL_NAME"
+          tar -czf "${FINAL_NAME}.tar.gz" "$FINAL_NAME"
+          rm "$FINAL_NAME"
+          ls -la "${FINAL_NAME}.tar.gz"
+          echo "file-path=${FINAL_NAME}.tar.gz" >> "$GITHUB_OUTPUT"
+          echo "file-name=${FINAL_NAME}.tar.gz" >> "$GITHUB_OUTPUT"
+
+      - name: Upload NIF artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: nif-${{ matrix.nif }}-${{ matrix.target }}
+          path: ${{ steps.package.outputs.file-path }}
+
+  # ===========================================================================
+  # NIF static smoke test — extracts the just-built tarball and verifies the
+  # inner .so/.dylib/.dll exists, has plausible size, and (on platforms with
+  # nm available) exports the `nif_init` symbol that beam.smp dlopens.
+  #
+  # Deliberately does NOT run the NIF from Elixir: in dry-run mode the
+  # corresponding GitHub release doesn't exist, so a real RustlerPrecompiled
+  # smoke would try to download a non-existent artifact. A full end-to-end
+  # Elixir smoke is added in a follow-up release once we can point it at
+  # a stable release URL.
+  # ===========================================================================
+  smoke-test-nifs:
+    name: smoke test NIF (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    needs: [preflight, build-elixir-nifs]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+    steps:
+      - name: Download NIF artifact (NIF version 2.17)
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: nif-2.17-${{ matrix.target }}
+          path: nif-stage/
+
+      - name: Verify tarball contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          ls -la nif-stage/
+          # There should be exactly one .tar.gz in nif-stage/.
+          tar -xzf nif-stage/*.tar.gz -C nif-stage/
+          ls -la nif-stage/
+
+          # The inner artifact name is the rustler_precompiled-shaped
+          # libprefix + name + version + nif + target + ext.
+          case "${{ matrix.target }}" in
+            *-pc-windows-*) inner="nif-stage/jailguard_nif-v"*"-${{ matrix.target }}.dll" ;;
+            *)              inner="nif-stage/libjailguard_nif-v"*"-${{ matrix.target }}.so" ;;
+          esac
+          # shellcheck disable=SC2086
+          files=$(ls $inner 2>/dev/null || true)
+          if [ -z "$files" ]; then
+            echo "::error::no NIF artifact matched pattern '$inner'"
+            ls -la nif-stage/
+            exit 1
+          fi
+          for f in $files; do
+            size=$(wc -c < "$f")
+            echo "$f: $size bytes"
+            if [ "$size" -lt 1000000 ]; then
+              echo "::error::$f is suspiciously small (< 1 MB)"
+              exit 1
+            fi
+          done
+
+      - name: Verify nif_init export (Linux x86_64 only)
+        # nif_init is an exported symbol the BEAM dlopens at NIF load time.
+        # We only run this check on native-Linux-x86 because:
+        #   - macOS native nm uses BSD-style flags; -D means "demangle" not
+        #     "dynamic symbols", so the GNU invocation produces nothing
+        #     useful. macOS `strip = "symbols"` also strips the symtab
+        #     enough that `strings` doesn't reliably reveal nif_init.
+        #   - Cross-built artifacts (aarch64-linux from x86 runner) can't
+        #     be inspected with the host's nm.
+        # The build job already ran `cargo build` to a successful linker
+        # exit, which is the strongest signal that exports are correct;
+        # this nm check is belt-and-suspenders for the one platform
+        # where it works cleanly.
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in nif-stage/libjailguard_nif-v*-${{ matrix.target }}.so; do
+            if nm -D --defined-only "$f" | grep -q nif_init; then
+              echo "✓ $f exports nif_init"
+            else
+              echo "::error::$f does not appear to export nif_init"
+              exit 1
+            fi
+          done
 
   # ===========================================================================
   # Docker smoke tests for Linux wheels.
@@ -366,17 +600,46 @@ jobs:
   publish-pypi:
     name: publish to PyPI
     runs-on: ubuntu-latest
-    needs: [preflight, build-wheels-linux, build-wheels-macos, build-sdist, smoke-test-wheels]
+    needs: [preflight, build-wheels-linux, build-wheels-macos, build-wheels-windows, build-sdist, smoke-test-wheels]
     if: needs.preflight.outputs.is_dry_run == 'false'
     environment:
       name: release-pypi
       url: https://pypi.org/project/jailguard/${{ needs.preflight.outputs.version }}/
     steps:
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      # Pull ONLY Python artifacts into dist/. Earlier releases used a
+      # pattern-less download here, which pulled every artifact (napi
+      # addons, libjailguard.so/.a, jailguard.h, the SHA256SUMS manifest)
+      # into dist/ — twine then rejected the upload with
+      # `InvalidDistribution: Unknown distribution format: 'SHA256SUMS'`
+      # before any wheel was uploaded. PyPI never received 0.1.0 or 0.1.1.
+      - name: Download wheel artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: dist/
+          pattern: wheels-*
           merge-multiple: true
-      - run: ls -la dist/
+      - name: Download sdist artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: dist/
+          pattern: sdist
+          merge-multiple: true
+      - name: Verify dist/ contains only wheels + sdist
+        run: |
+          ls -la dist/
+          # Fail fast if anything other than .whl / .tar.gz slipped in.
+          shopt -s nullglob
+          bad=()
+          for f in dist/*; do
+            case "$f" in
+              *.whl|*.tar.gz) ;;
+              *) bad+=("$f") ;;
+            esac
+          done
+          if [ ${#bad[@]} -ne 0 ]; then
+            echo "::error::non-distribution files in dist/: ${bad[*]}"
+            exit 1
+          fi
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
@@ -498,17 +761,17 @@ jobs:
           mkdir -p "$OUT"
 
           pack_static() {
-            local platform="$1" target="$2"
+            local platform="$1" target="$2" libfile="${3:-libjailguard.a}"
             local src="native-libs/native-${target}"
             local tmp; tmp="$(mktemp -d)"
             mkdir -p "$tmp/lib/$platform" "$tmp/include"
 
-            if [ ! -f "$src/libjailguard.a" ]; then
-              echo "::error::missing libjailguard.a for $target"
+            if [ ! -f "$src/$libfile" ]; then
+              echo "::error::missing $libfile for $target"
               return 1
             fi
-            cp "$src/libjailguard.a" "$tmp/lib/$platform/libjailguard.a"
-            cp "$src/jailguard.h"    "$tmp/include/jailguard.h"
+            cp "$src/$libfile"    "$tmp/lib/$platform/$libfile"
+            cp "$src/jailguard.h" "$tmp/include/jailguard.h"
 
             local slug="${platform/_/-}"
             local tgz="$OUT/jailguard-go-ffi-${slug}.tar.gz"
@@ -538,18 +801,24 @@ jobs:
           }
 
           # Static (.a) — for the CGo backend, statically linked.
-          pack_static linux_amd64   x86_64-unknown-linux-gnu
-          pack_static linux_arm64   aarch64-unknown-linux-gnu
-          pack_static darwin_amd64  x86_64-apple-darwin
-          pack_static darwin_arm64  aarch64-apple-darwin
-          # windows_amd64: deferred (no x86_64-pc-windows-msvc artifact)
+          pack_static linux_amd64   x86_64-unknown-linux-gnu  libjailguard.a
+          pack_static linux_arm64   aarch64-unknown-linux-gnu libjailguard.a
+          pack_static darwin_amd64  x86_64-apple-darwin       libjailguard.a
+          pack_static darwin_arm64  aarch64-apple-darwin      libjailguard.a
+          # windows_amd64 static: deferred. Our jailguard.lib is built with MSVC
+          # but Go's cgo on Windows uses mingw-gcc, which can't resolve MSVC-
+          # mangled C++ symbols in the bundled onnxruntime. Needs a parallel
+          # x86_64-pc-windows-gnu build — tracked for 0.1.3.
 
           # Shared (.so/.dylib/.dll) — for the purego backend, dlopen'd at runtime.
           pack_shared linux_amd64   x86_64-unknown-linux-gnu  libjailguard.so
           pack_shared linux_arm64   aarch64-unknown-linux-gnu libjailguard.so
           pack_shared darwin_amd64  x86_64-apple-darwin       libjailguard.dylib
           pack_shared darwin_arm64  aarch64-apple-darwin      libjailguard.dylib
-          # windows_amd64: deferred (no jailguard.dll artifact)
+          # windows_amd64 shared: deferred for the same MSVC/mingw mismatch.
+          # The purego backend doesn't need MSVC symbols at link time, but
+          # we'd still need a gnu-built jailguard.dll for symbol-loading at
+          # runtime to be reliable. Tracked for 0.1.3.
 
           ls -la "$OUT"
 
@@ -579,7 +848,7 @@ jobs:
               echo "::error::$tgz missing include/jailguard.h"
               exit 1
             fi
-            if ! echo "$listing" | grep -qE "^lib/[^/]+/(libjailguard\.(a|so|dylib)|jailguard\.dll)$"; then
+            if ! echo "$listing" | grep -qE "^lib/[^/]+/(libjailguard\.(a|so|dylib)|jailguard\.(dll|lib))$"; then
               echo "::error::$tgz missing a recognized lib file under lib/<platform>/"
               echo "$listing"
               exit 1
@@ -599,7 +868,7 @@ jobs:
   github-release:
     name: GitHub release
     runs-on: ubuntu-latest
-    needs: [preflight, build-native, build-wheels-linux, build-wheels-macos, build-sdist, package-go-ffi, smoke-test-wheels]
+    needs: [preflight, build-native, build-wheels-linux, build-wheels-macos, build-wheels-windows, build-sdist, build-elixir-nifs, package-go-ffi, smoke-test-wheels]
     if: needs.preflight.outputs.is_dry_run == 'false'
     permissions:
       contents: write
@@ -651,12 +920,60 @@ jobs:
             artifacts/**/*
 
   # ===========================================================================
+  # Hex.pm publish — depends on github-release because rustler_precompiled's
+  # checksum-download task fetches the NIF .tar.gz files from the release.
+  # ===========================================================================
+  publish-hex:
+    name: publish to Hex
+    runs-on: ubuntu-latest
+    needs: [preflight, build-elixir-nifs, smoke-test-nifs, github-release]
+    if: needs.preflight.outputs.is_dry_run == 'false'
+    environment:
+      name: release-hex
+      url: https://hex.pm/packages/jailguard/${{ needs.preflight.outputs.version }}
+    defaults:
+      run:
+        working-directory: elixir
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "26"
+          elixir-version: "1.17"
+
+      - name: Install hex + rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Fetch Mix deps
+        run: mix deps.get
+
+      - name: Download checksums for precompiled NIFs
+        env:
+          # Asks rustler_precompiled to fetch the .tar.gz files we just
+          # attached to the GH release and write the canonical checksum file.
+          RUSTLER_PRECOMPILED_FORCE_BUILD_ALL: "false"
+        run: mix rustler_precompiled.download JailGuard.Native --all --print
+
+      - name: Verify checksum file present
+        run: |
+          test -f checksum-Elixir.JailGuard.Native.exs
+          echo "--- checksum-Elixir.JailGuard.Native.exs ---"
+          cat checksum-Elixir.JailGuard.Native.exs | head -20
+
+      - name: mix hex.publish
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+        run: mix hex.publish --yes
+
+  # ===========================================================================
   # Aggregate gate — release succeeds only if every binding published.
   # ===========================================================================
   release-success:
     name: release success
     if: always() && needs.preflight.outputs.is_dry_run == 'false'
-    needs: [preflight, publish-crates-io, publish-pypi, publish-npm, publish-go, github-release]
+    needs: [preflight, publish-crates-io, publish-pypi, publish-npm, publish-go, publish-hex, github-release]
     runs-on: ubuntu-latest
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')

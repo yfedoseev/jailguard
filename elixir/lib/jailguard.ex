@@ -2,9 +2,10 @@ defmodule JailGuard do
   @moduledoc """
   Elixir bindings for JailGuard prompt-injection detection.
 
-  The binding loads a small C NIF that calls JailGuard's stable C ABI.
-  It is source-built from the parent repository checkout in this first
-  port, so `mix compile` requires Rust, Cargo, Make, and a C compiler.
+  The binding loads a Rustler NIF. On supported platforms the NIF is
+  fetched as a precompiled artifact from the matching GitHub release;
+  set `JAILGUARD_BUILD=1` to compile from source instead (requires a
+  Rust toolchain).
   """
 
   alias JailGuard.{Error, Native, Result}
@@ -15,17 +16,17 @@ defmodule JailGuard do
   Returns the linked JailGuard native library version.
   """
   @spec version() :: String.t()
-  def version do
-    Native.version()
-  end
+  def version, do: Native.version()
 
   @doc """
   Pre-downloads the ONNX embedding model into the JailGuard cache.
   """
   @spec download_model() :: :ok | {:error, Error.t()}
   def download_model do
-    Native.download_model()
-    |> normalize_unit()
+    case Native.download_model() do
+      :ok -> :ok
+      {:error, code} -> {:error, Error.new(code)}
+    end
   end
 
   @doc """
@@ -33,8 +34,7 @@ defmodule JailGuard do
   """
   @spec model_cache_dir() :: {:ok, String.t()} | {:error, Error.t()}
   def model_cache_dir do
-    Native.model_cache_dir()
-    |> normalize_value()
+    Native.model_cache_dir() |> normalize_value()
   end
 
   @doc """
@@ -42,9 +42,8 @@ defmodule JailGuard do
   """
   @spec detect(text()) :: {:ok, Result.t()} | {:error, Error.t()}
   def detect(text) do
-    with :ok <- validate_text(text),
-         {:ok, raw} <- Native.detect(text) |> normalize_value() do
-      {:ok, Result.from_native(raw)}
+    with :ok <- validate_text(text) do
+      Native.detect(text) |> normalize_value()
     end
   end
 
@@ -65,8 +64,7 @@ defmodule JailGuard do
   @spec is_injection(text()) :: {:ok, boolean()} | {:error, Error.t()}
   def is_injection(text) do
     with :ok <- validate_text(text) do
-      Native.is_injection(text)
-      |> normalize_value()
+      Native.is_injection(text) |> normalize_value()
     end
   end
 
@@ -76,8 +74,7 @@ defmodule JailGuard do
   @spec score(text()) :: {:ok, float()} | {:error, Error.t()}
   def score(text) do
     with :ok <- validate_text(text) do
-      Native.score(text)
-      |> normalize_value()
+      Native.score(text) |> normalize_value()
     end
   end
 
@@ -86,9 +83,8 @@ defmodule JailGuard do
   """
   @spec detect_batch([text()]) :: {:ok, [Result.t()]} | {:error, Error.t()}
   def detect_batch(texts) when is_list(texts) do
-    with :ok <- validate_texts(texts),
-         {:ok, raw_results} <- Native.detect_batch(texts) |> normalize_value() do
-      {:ok, Enum.map(raw_results, &Result.from_native/1)}
+    with :ok <- validate_texts(texts) do
+      Native.detect_batch(texts) |> normalize_value()
     end
   end
 
@@ -112,9 +108,6 @@ defmodule JailGuard do
       end
     end)
   end
-
-  defp normalize_unit(:ok), do: :ok
-  defp normalize_unit({:error, code}), do: {:error, Error.new(code)}
 
   defp normalize_value({:ok, value}), do: {:ok, value}
   defp normalize_value({:error, code}), do: {:error, Error.new(code)}

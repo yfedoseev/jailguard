@@ -1,0 +1,22 @@
+[package]
+name = "jailguard_nif"
+version = "0.1.2"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+authors = ["Yury Fedoseev"]
+description = "Rustler NIF for the JailGuard Elixir binding."
+publish = false
+
+[lib]
+name = "jailguard_nif"
+crate-type = ["cdylib"]
+
+[dependencies]
+rustler = "0.36"
+jailguard = { path = "../../..", default-features = false }
+
+[profile.release]
+lto = true
+opt-level = 3
+strip = "symbols"

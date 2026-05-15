@@ -258,14 +258,13 @@ fn download_model() -> PyResult<String> {
 /// -------
 /// str
 #[pyfunction]
-fn model_cache_dir() -> String {
-    if let Ok(dir) = std::env::var("JAILGUARD_MODEL_DIR") {
-        return dir;
-    }
-    if let Ok(home) = std::env::var("HOME") {
-        return format!("{home}/.cache/jailguard");
-    }
-    "~/.cache/jailguard".to_string()
+fn model_cache_dir() -> pyo3::PyResult<String> {
+    // Delegate to the canonical Rust function so Windows-specific fallback
+    // logic (USERPROFILE / LOCALAPPDATA when HOME is unset or = "~") stays
+    // in one place. The duplicated env-var ladder this used to inline
+    // hardcoded a literal "~/.cache/jailguard" on Windows when HOME wasn't
+    // set, which crashed pytest::test_model_cache_dir_exists.
+    crate::model_cache_dir().map_err(|e| pyo3::exceptions::PyOSError::new_err(e.to_string()))
 }
 
 // ---------------------------------------------------------------------------

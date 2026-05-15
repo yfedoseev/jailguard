@@ -28,12 +28,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Windows deferred to a future release: esaxx-rs (tokenizers C++
-        # transitive dep) compiles with /MT (static CRT) on MSVC, while
-        # ort-sys links against the dynamic onnxruntime.dll (/MD).
-        # The CRT mismatch produces LNK2038 at link time. Standard
-        # workarounds (CFLAGS=/MD, target-feature=-crt-static) don't
-        # override cc-rs's default choice for esaxx-rs.
+        # Windows is deferred for Go specifically. The CRT mismatch that
+        # blocked native+wheel builds is fixed (esaxx_fast dropped), but
+        # Go's cgo on Windows uses mingw-gcc — which can't link MSVC-
+        # built libraries (jailguard.lib carries MSVC-mangled C++ symbols
+        # from ort-sys's bundled onnxruntime.a, producing thousands of
+        # `undefined reference to ??...` errors at link time).
+        # Proper fix is to ship an x86_64-pc-windows-gnu artifact in
+        # parallel for Go consumers; tracked for 0.1.3.
         os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -59,8 +61,8 @@ jobs:
         env:
           # Force dynamic CRT (/MD) on Windows so esaxx-rs (C++) matches
           # ort-sys (links onnxruntime.dll, also /MD). Empty on non-Windows.
-          CFLAGS: ${{ matrix.os == 'windows-latest' && '/MD' || '' }}
-          CXXFLAGS: ${{ matrix.os == 'windows-latest' && '/MD' || '' }}
+          CFLAGS_x86_64_pc_windows_msvc: /MD
+          CXXFLAGS_x86_64_pc_windows_msvc: /MD
         run: rustup run stable cargo build --locked --release --lib
 
       - name: Upload native lib + header artifact
@@ -87,7 +89,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Windows deferred (see build-lib comment).
+        # Windows deferred for Go — see build-lib comment.
         os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4

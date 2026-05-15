@@ -62,7 +62,7 @@ pub mod napi;
 // Primary API at crate root
 pub use embedded::{detect, detect_batch, is_injection, score, DetectionOutput, RiskLevel};
 pub use error::{Error, Result};
-pub use model_manager::download_model;
+pub use model_manager::{cache_dir_string as model_cache_dir, download_model};
 
 // ============================================================================
 // Feature-gated modules

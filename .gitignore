@@ -85,6 +85,10 @@ js/coverage/
 # Elixir bindings build artifacts
 elixir/_build/
 elixir/deps/
+elixir/doc/
+elixir/.elixir_ls/
+elixir/native/jailguard_nif/target/
+elixir/priv/native/
 
 # Example-local install artifacts (each example installs its package on demand)
 examples/javascript/*/node_modules/

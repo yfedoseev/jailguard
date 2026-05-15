@@ -1,16 +1,23 @@
 defmodule JailGuard.Native do
   @moduledoc false
 
-  @on_load :load_nif
+  mix_config = Mix.Project.config()
+  version = mix_config[:version]
 
-  def load_nif do
-    path =
-      :jailguard
-      |> :code.priv_dir()
-      |> :filename.join(~c"jailguard_nif")
-
-    :erlang.load_nif(path, 0)
-  end
+  use RustlerPrecompiled,
+    otp_app: :jailguard,
+    crate: "jailguard_nif",
+    base_url: "https://github.com/yfedoseev/jailguard/releases/download/v#{version}",
+    force_build: System.get_env("JAILGUARD_BUILD") in ["1", "true"],
+    targets: ~w(
+      aarch64-apple-darwin
+      aarch64-unknown-linux-gnu
+      x86_64-apple-darwin
+      x86_64-pc-windows-msvc
+      x86_64-unknown-linux-gnu
+    ),
+    version: version,
+    nif_versions: ["2.16", "2.17"]
 
   def version, do: :erlang.nif_error(:nif_not_loaded)
   def download_model, do: :erlang.nif_error(:nif_not_loaded)

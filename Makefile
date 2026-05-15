@@ -111,7 +111,7 @@ build-js:
 	@cd js && npm install --silent && npm run build
 
 build-elixir:
-	@cd elixir && mix deps.get && mix compile
+	@cd elixir && JAILGUARD_BUILD=1 mix deps.get && JAILGUARD_BUILD=1 mix compile
 
 # ---------------------------------------------------------------------------
 # Test
@@ -139,7 +139,7 @@ test-go: build-release
 	    go test -v -timeout 60s ./...
 
 test-elixir:
-	@cd elixir && mix deps.get && mix test
+	@cd elixir && JAILGUARD_BUILD=1 mix deps.get && JAILGUARD_BUILD=1 mix test
 
 # ---------------------------------------------------------------------------
 # Bench / smoke
@@ -230,7 +230,10 @@ check-go: build-release
 	    test ! -s /tmp/gofmt-out.txt
 
 check-elixir:
-	@cd elixir && mix deps.get && mix format --check-formatted && mix compile --warnings-as-errors && mix test
+	@cd elixir && JAILGUARD_BUILD=1 mix deps.get && \
+	    mix format --check-formatted && \
+	    JAILGUARD_BUILD=1 mix compile --warnings-as-errors && \
+	    JAILGUARD_BUILD=1 mix test
 
 check-all: check-rust
 	@echo ""
