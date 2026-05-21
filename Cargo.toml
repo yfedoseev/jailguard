@@ -68,7 +68,7 @@ ort-sys = "=2.0.0-rc.9"
 # but unblocks Windows entirely. `onig` + `progressbar` are kept to
 # match the previous default behavior.
 tokenizers = { version = "0.23", default-features = false, features = ["onig", "progressbar"] }
-ndarray = "0.16"
+ndarray = "0.17"
 ureq = "3"
 sha2 = "0.11"
 
