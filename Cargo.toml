@@ -57,7 +57,7 @@ thiserror = "2"
 # lockfile (cargo-semver-checks does this for its baseline-vs-current
 # API comparison).
 ort = "=2.0.0-rc.9"
-ort-sys = "=2.0.0-rc.9"
+ort-sys = "=2.0.0-rc.12"
 # Default features pull in `esaxx_fast`, which transitively depends on
 # the C++ esaxx-rs crate. esaxx-rs's build.rs hardcodes
 # cc::Build::new().static_crt(true), forcing /MT on MSVC and producing
