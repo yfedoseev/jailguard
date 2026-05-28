@@ -13,7 +13,7 @@ name = "jailguard_nif"
 crate-type = ["cdylib"]
 
 [dependencies]
-rustler = "0.37"
+rustler = "0.38"
 jailguard = { path = "../../..", default-features = false }
 
 [profile.release]
