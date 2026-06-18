@@ -38,7 +38,7 @@ jobs:
         # parallel for Go consumers; tracked for 0.1.3.
         os: [ubuntu-latest, macos-latest]
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       # Swatinem/rust-cache disabled on macOS: cache restoration replaces
       # ~/.cargo/bin/{cargo,rustup} symlinks with concrete copies of
@@ -92,7 +92,7 @@ jobs:
         # Windows deferred for Go — see build-lib comment.
         os: [ubuntu-latest, macos-latest]
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -154,7 +154,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-lib]
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
       - uses: actions/setup-go@v6
         with:
           go-version: 'stable'
