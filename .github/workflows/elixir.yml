@@ -85,7 +85,7 @@ jobs:
           workspaces: "elixir/native/jailguard_nif -> target"
 
       - name: Cache hex + mix deps
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             elixir/deps
@@ -95,7 +95,7 @@ jobs:
             mix-${{ runner.os }}-otp${{ matrix.otp }}-elixir${{ matrix.elixir }}-
 
       # Pre-cache the ONNX model so the test setup_all download is a no-op.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.cache/jailguard
           key: jailguard-onnx-minilm-v1
